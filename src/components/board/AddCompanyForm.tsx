@@ -67,9 +67,10 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 const val = e.target.value;
                 setName(val);
                 setNameError('');
-                if (val.trim().length > 0) {
+                const trimmed = val.trim();
+                if (trimmed.length > 0) {
                   const filtered = COMPANY_SUGGESTIONS.filter((s) =>
-                    s.startsWith(val)
+                    s.startsWith(trimmed)
                   ).slice(0, 5);
                   setSuggestions(filtered);
                   setShowSuggestions(filtered.length > 0);
@@ -78,7 +79,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                   setShowSuggestions(false);
                 }
               }}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               className={`ios-input ${nameError ? '!shadow-[0_0_0_3px_rgba(255,59,48,0.3)]' : ''}`}
               placeholder="例: 株式会社○○"
               autoFocus
@@ -89,7 +89,8 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 {suggestions.map((s) => (
                   <li
                     key={s}
-                    onMouseDown={() => {
+                    onPointerDown={(e) => {
+                      e.preventDefault();
                       setName(s);
                       setShowSuggestions(false);
                     }}
