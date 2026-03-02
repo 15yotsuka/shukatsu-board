@@ -45,6 +45,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [showPassword, setShowPassword] = useState(false);
 
   const [selectionMemo, setSelectionMemo] = useState(company.selectionMemo ?? '');
+  const [nextDeadline, setNextDeadline] = useState(company.nextDeadline ?? '');
 
   const trackStatuses = statusColumns
     .filter((s) => s.trackType === company.trackType)
@@ -79,6 +80,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       url: url.trim() || undefined,
       memo: memo.trim() || undefined,
       selectionMemo: selectionMemo.trim() || undefined,
+      nextDeadline: nextDeadline.trim() || undefined,
       statusId,
       myPageUrl: myPageUrl.trim() || undefined,
       myPageId: myPageId.trim() || undefined,
@@ -243,6 +245,15 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
+                    </div>
+                    <div className="px-4 py-3">
+                      <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">次の締切日</label>
+                      <input
+                        type="date"
+                        value={nextDeadline}
+                        onChange={(e) => setNextDeadline(e.target.value)}
+                        className="ios-input"
+                      />
                     </div>
                   </div>
                 </div>
