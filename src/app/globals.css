@@ -185,7 +185,7 @@ body {
 .ios-input {
   background: var(--color-bg);
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px 16px;
   font-size: 16px;
   color: var(--color-text);
@@ -223,7 +223,7 @@ body {
   background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px;
   font-size: 16px;
   font-weight: 600;

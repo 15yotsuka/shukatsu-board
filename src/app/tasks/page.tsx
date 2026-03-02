@@ -73,7 +73,7 @@ function TasksContent() {
             return (
               <div
                 key={c.id}
-                className="bg-card dark:bg-zinc-900 rounded-2xl px-4 py-3 shadow-sm border border-[var(--color-border)] flex items-center gap-3"
+                className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-4 shadow-sm border border-[var(--color-border)] flex items-center gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{c.name}</p>
