@@ -37,18 +37,18 @@ export default function Home() {
       <DeadlineReminder />
       <HeroCardCarousel />
 
-      <div className="px-4 mt-6">
-        <div className="flex items-center justify-between mb-3 px-1">
+      <div className="px-5 mt-6">
+        <div className="flex items-center justify-between mb-4 px-1">
           <h2 className="text-[14px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
             現在の進捗
           </h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((stat) => (
             <Link
               key={stat.label}
               href={stat.href}
-              className="bg-card dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-[var(--color-border)] ios-tap block"
+              className="bg-card dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-[var(--color-border)] block cursor-pointer active:scale-95 transition-transform duration-100 hover:brightness-95 select-none"
             >
               <p className="text-xs text-[var(--color-text-secondary)] mb-1">{stat.label}</p>
               <div className="flex items-baseline gap-1">
