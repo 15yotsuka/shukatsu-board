@@ -34,6 +34,10 @@ export interface Company {
   myPageUrl?: string;
   myPageId?: string;
   myPagePassword?: string;
+  // 拡張メモ（面接メモ・ES・逆質問など自由記述）
+  selectionMemo?: string;
+  // 次の締切日（統計・ソート用）ISO 8601: "2026-03-15"
+  nextDeadline?: string;
 }
 
 // ============================
