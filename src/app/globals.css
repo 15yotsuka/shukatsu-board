@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-primary: #007AFF;
+  --color-primary-light: #E8F0FE;
+  --color-bg: #F2F2F7;
+  --color-card: #FFFFFF;
+  --color-text: #1C1C1E;
+  --color-text-secondary: #8E8E93;
+  --color-border: #E5E5EA;
+  --color-danger: #FF3B30;
+  --color-success: #34C759;
+  --color-warning: #FF9500;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS風モーダルアニメーション */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* iOS風スクロールバー非表示 */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* iOS風タッチフィードバック */
+.ios-tap {
+  transition: opacity 0.15s ease;
+}
+.ios-tap:active {
+  opacity: 0.6;
+}
+
+/* iPhone セーフエリア対応 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* iOS風 入力フィールド共通 */
+.ios-input {
+  background: #F2F2F7;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: #1C1C1E;
+  outline: none;
+  width: 100%;
+  transition: box-shadow 0.2s ease;
+}
+.ios-input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+.ios-input::placeholder {
+  color: #C7C7CC;
+}
+
+/* iOS風 ボタン共通 */
+.ios-button-primary {
+  background: #007AFF;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  width: 100%;
+  text-align: center;
+  transition: opacity 0.15s ease;
+}
+.ios-button-primary:active {
+  opacity: 0.6;
+}
+.ios-button-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ios-button-secondary {
+  background: transparent;
+  color: #007AFF;
+  border: none;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  width: 100%;
+  text-align: center;
+  transition: opacity 0.15s ease;
+}
+.ios-button-secondary:active {
+  opacity: 0.6;
 }
