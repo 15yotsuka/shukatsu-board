@@ -8,6 +8,26 @@ import { PromoteDialog } from '@/components/status/PromoteDialog';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { fireConfetti } from '@/lib/confetti';
 
+interface MemoData {
+  es: string;
+  interview: string;
+  reverseQuestion: string;
+  other: string;
+}
+
+function parseMemo(raw: string | undefined): MemoData {
+  if (!raw) return { es: '', interview: '', reverseQuestion: '', other: '' };
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === 'object' && parsed !== null && 'es' in parsed) {
+      return parsed as MemoData;
+    }
+    return { es: '', interview: '', reverseQuestion: '', other: raw };
+  } catch {
+    return { es: '', interview: '', reverseQuestion: '', other: raw };
+  }
+}
+
 interface CompanyDetailModalProps {
   company: Company;
   onClose: () => void;
@@ -37,7 +57,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [myPagePassword, setMyPagePassword] = useState(company.myPagePassword ?? '');
   const [showPassword, setShowPassword] = useState(false);
 
-  const [selectionMemo, setSelectionMemo] = useState(company.selectionMemo ?? '');
+  const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [nextDeadline, setNextDeadline] = useState(company.nextDeadline ?? '');
 
   const trackStatuses = statusColumns
@@ -67,7 +87,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       industry: industry.trim() || undefined,
       jobType: jobType.trim() || undefined,
       url: url.trim() || undefined,
-      selectionMemo: selectionMemo.trim() || undefined,
+      selectionMemo: (memo.es || memo.interview || memo.reverseQuestion || memo.other)
+        ? JSON.stringify(memo)
+        : undefined,
       nextDeadline: nextDeadline.trim() || undefined,
       statusId,
       myPageUrl: myPageUrl.trim() || undefined,
@@ -288,15 +310,74 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               </div>
             </div>
 
-            {/* Page 2: メモ */}
-            <div className="w-full flex-none overflow-y-auto p-4">
-              <div className="bg-card rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 p-4">
-                <textarea
-                  placeholder="ESの回答、面接内容、逆質問などを自由にメモ..."
-                  value={selectionMemo}
-                  onChange={(e) => setSelectionMemo(e.target.value)}
-                  className="w-full bg-transparent text-[var(--color-text)] text-[15px] leading-relaxed min-h-48 resize-y outline-none"
-                />
+            {/* Page 2: メモ（選考ログ） */}
+            <div className="w-full flex-none overflow-y-auto p-4 space-y-4">
+              {/* ES・志望動機 */}
+              <div className="bg-card rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                <div className="px-4 pt-3 pb-1 border-b border-[var(--color-border)]">
+                  <h4 className="text-[12px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
+                    ES・志望動機
+                  </h4>
+                </div>
+                <div className="p-4">
+                  <textarea
+                    placeholder="ES回答・志望動機を記録..."
+                    value={memo.es}
+                    onChange={(e) => setMemo((prev) => ({ ...prev, es: e.target.value }))}
+                    className="w-full bg-transparent text-[var(--color-text)] text-[15px] leading-relaxed min-h-32 resize-y outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* 面接ログ */}
+              <div className="bg-card rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                <div className="px-4 pt-3 pb-1 border-b border-[var(--color-border)]">
+                  <h4 className="text-[12px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
+                    面接ログ
+                  </h4>
+                </div>
+                <div className="p-4">
+                  <textarea
+                    placeholder="面接日時、質問内容、自分の回答を記録..."
+                    value={memo.interview}
+                    onChange={(e) => setMemo((prev) => ({ ...prev, interview: e.target.value }))}
+                    className="w-full bg-transparent text-[var(--color-text)] text-[15px] leading-relaxed min-h-32 resize-y outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* 逆質問 */}
+              <div className="bg-card rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                <div className="px-4 pt-3 pb-1 border-b border-[var(--color-border)]">
+                  <h4 className="text-[12px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
+                    逆質問
+                  </h4>
+                </div>
+                <div className="p-4">
+                  <textarea
+                    placeholder="準備した逆質問、実際に聞いた内容..."
+                    value={memo.reverseQuestion}
+                    onChange={(e) => setMemo((prev) => ({ ...prev, reverseQuestion: e.target.value }))}
+                    className="w-full bg-transparent text-[var(--color-text)] text-[15px] leading-relaxed min-h-24 resize-y outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* その他メモ */}
+              <div className="bg-card rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                <div className="px-4 pt-3 pb-1 border-b border-[var(--color-border)]">
+                  <h4 className="text-[12px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
+                    その他メモ
+                  </h4>
+                </div>
+                <div className="p-4">
+                  <textarea
+                    placeholder="感想、次回への改善点、企業の雰囲気など..."
+                    value={memo.other}
+                    onChange={(e) => setMemo((prev) => ({ ...prev, other: e.target.value }))}
+                    className="w-full bg-transparent text-[var(--color-text)] text-[15px] leading-relaxed min-h-24 resize-y outline-none"
+                  />
+                </div>
               </div>
             </div>
           </div>
