@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { COMPANY_SUGGESTIONS } from '@/lib/companySuggestions';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -21,6 +22,8 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [url, setUrl] = useState('');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [nameError, setNameError] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleSubmit = () => {
     const trimmed = name.trim();
@@ -53,7 +56,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
         </div>
 
         <div className="p-4 space-y-4">
-          <div>
+          <div className="relative">
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
               企業名 <span className="text-[var(--color-danger)]">*</span>
             </label>
@@ -61,14 +64,42 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
               type="text"
               value={name}
               onChange={(e) => {
-                setName(e.target.value);
+                const val = e.target.value;
+                setName(val);
                 setNameError('');
+                if (val.trim().length > 0) {
+                  const filtered = COMPANY_SUGGESTIONS.filter((s) =>
+                    s.startsWith(val)
+                  ).slice(0, 5);
+                  setSuggestions(filtered);
+                  setShowSuggestions(filtered.length > 0);
+                } else {
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                }
               }}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               className={`ios-input ${nameError ? '!shadow-[0_0_0_3px_rgba(255,59,48,0.3)]' : ''}`}
               placeholder="例: 株式会社○○"
               autoFocus
             />
             {nameError && <p className="text-[var(--color-danger)] text-[12px] mt-1">{nameError}</p>}
+            {showSuggestions && (
+              <ul className="absolute z-10 w-full mt-1 bg-card rounded-xl shadow-lg ring-1 ring-black/10 dark:ring-white/10 overflow-hidden">
+                {suggestions.map((s) => (
+                  <li
+                    key={s}
+                    onMouseDown={() => {
+                      setName(s);
+                      setShowSuggestions(false);
+                    }}
+                    className="px-4 py-2.5 text-[15px] text-[var(--color-text)] hover:bg-[var(--color-border)] cursor-pointer"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div>
