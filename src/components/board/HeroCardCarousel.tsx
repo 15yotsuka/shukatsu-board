@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useAppStore } from '@/store/useAppStore';
 import { parseISO, startOfDay, addDays, isWithinInterval, format } from 'date-fns';
@@ -75,7 +76,7 @@ export function HeroCardCarousel() {
   return (
     <section className="mt-4">
       <div className="flex items-center justify-between mb-3 px-5">
-        <h2 className="text-[14px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
+        <h2 className="text-[13px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
           {mode === 'deadline' ? '直近の締切' : mode === 'interview' ? '次の面接' : 'メモ'}
         </h2>
         <button
@@ -92,8 +93,8 @@ export function HeroCardCarousel() {
 
       {mode === 'custom' ? (
         <div className="px-4">
-          <div className="w-full bg-card dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-[var(--color-border)]">
-            <p className="text-[16px] text-[var(--color-text)] whitespace-pre-wrap">{customText || '—'}</p>
+          <div className="w-full bg-gradient-to-br from-[#007AFF] to-[#0055D4] rounded-3xl p-6 shadow-2xl">
+            <p className="text-[16px] text-white whitespace-pre-wrap">{customText || '—'}</p>
           </div>
         </div>
       ) : (
@@ -105,14 +106,14 @@ export function HeroCardCarousel() {
                 return (
                   <div
                     key={c.id}
-                    className="flex-none w-[85vw] max-w-sm bg-card dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-[var(--color-border)]"
+                    className="flex-none w-[88vw] max-w-sm bg-gradient-to-br from-[#007AFF] to-[#0055D4] rounded-3xl p-6 shadow-2xl"
                   >
-                    <p className="text-[17px] font-bold text-[var(--color-text)] mb-2">{c.name}</p>
+                    <p className="text-[17px] font-bold text-white mb-2">{c.name}</p>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="rounded-full px-2.5 py-0.5 text-[12px] font-medium bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                      <span className="rounded-full px-2.5 py-0.5 text-[12px] font-medium bg-white/20 text-white">
                         {getStatusName(c.statusId)}
                       </span>
-                      <span className="text-[13px] font-semibold text-[var(--color-danger)]">{dateLabel}</span>
+                      <span className="text-[13px] font-semibold text-white/90">{dateLabel}</span>
                     </div>
                   </div>
                 );
@@ -121,11 +122,12 @@ export function HeroCardCarousel() {
               interviewItems.map((i) => (
                 <div
                   key={i.id}
-                  className="flex-none w-[85vw] max-w-sm bg-card dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-[var(--color-border)]"
+                  className="flex-none w-[88vw] max-w-sm bg-gradient-to-br from-[#007AFF] to-[#0055D4] rounded-3xl p-6 shadow-2xl"
                 >
-                  <p className="text-[17px] font-bold text-[var(--color-text)] mb-2">{getCompanyName(i.companyId)}</p>
-                  <p className="text-[14px] font-medium text-[var(--color-text-secondary)] mb-1">{i.type}</p>
-                  <p className="text-[13px] font-semibold text-[var(--color-primary)]">
+                  <Clock className="w-5 h-5 text-white/70 mb-2" />
+                  <p className="text-[17px] font-bold text-white mb-2">{getCompanyName(i.companyId)}</p>
+                  <p className="text-[14px] font-medium text-white/80 mb-1">{i.type}</p>
+                  <p className="text-[13px] font-semibold text-white">
                     {format(new Date(i.datetime), 'M/d (E) HH:mm', { locale: ja })}
                   </p>
                 </div>
