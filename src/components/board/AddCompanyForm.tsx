@@ -42,20 +42,20 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
+      <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
         {/* Grab bar */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
-          <div className="w-9 h-1 bg-[#E5E5EA] rounded-full" />
+          <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
         </div>
 
         <div className="px-4 pt-4 pb-2">
-          <h2 className="text-[17px] font-bold text-center text-[#1C1C1E]">企業を追加</h2>
+          <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">企業を追加</h2>
         </div>
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">
-              企業名 <span className="text-[#FF3B30]">*</span>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
+              企業名 <span className="text-[var(--color-danger)]">*</span>
             </label>
             <input
               type="text"
@@ -68,11 +68,11 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
               placeholder="例: 株式会社○○"
               autoFocus
             />
-            {nameError && <p className="text-[#FF3B30] text-[12px] mt-1">{nameError}</p>}
+            {nameError && <p className="text-[var(--color-danger)] text-[12px] mt-1">{nameError}</p>}
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">業界</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">業界</label>
             <input
               type="text"
               value={industry}
@@ -83,7 +83,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">URL</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">URL</label>
             <input
               type="url"
               value={url}
@@ -94,7 +94,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">初期ステータス</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期ステータス</label>
             <select
               value={statusId}
               onChange={(e) => setStatusId(e.target.value)}

@@ -48,23 +48,23 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
   };
 
   return (
-    <div className="bg-white rounded-xl p-4">
+    <div className="bg-card dark:bg-zinc-900 rounded-xl p-4">
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          className="w-11 h-11 flex items-center justify-center rounded-full text-[#007AFF] ios-tap"
+          className="w-11 h-11 flex items-center justify-center rounded-full text-[var(--color-primary)] ios-tap"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h2 className="text-[17px] font-bold text-[#1C1C1E]">
+        <h2 className="text-[17px] font-bold text-[var(--color-text)]">
           {format(currentMonth, 'yyyy年M月', { locale: ja })}
         </h2>
         <button
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="w-11 h-11 flex items-center justify-center rounded-full text-[#007AFF] ios-tap"
+          className="w-11 h-11 flex items-center justify-center rounded-full text-[var(--color-primary)] ios-tap"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -77,9 +77,8 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
         {WEEKDAYS.map((wd, i) => (
           <div
             key={wd}
-            className={`text-center text-[11px] font-semibold uppercase py-1 ${
-              i === 0 ? 'text-[#FF3B30]' : i === 6 ? 'text-[#007AFF]' : 'text-[#8E8E93]'
-            }`}
+            className={`text-center text-[11px] font-semibold uppercase py-1 ${i === 0 ? 'text-[var(--color-danger)]' : i === 6 ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'
+              }`}
           >
             {wd}
           </div>
@@ -99,22 +98,20 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
             <button
               key={d.toISOString()}
               onClick={() => onDateSelect(d, dateInterviews)}
-              className={`relative w-10 h-10 mx-auto flex flex-col items-center justify-center text-[15px] rounded-full ios-tap ${
-                !isCurrentMonth
-                  ? 'text-[#C7C7CC]'
-                  : today
-                  ? 'bg-[#007AFF] text-white font-bold'
+              className={`relative w-10 h-10 mx-auto flex flex-col items-center justify-center text-[15px] rounded-full ios-tap ${!isCurrentMonth
+                ? 'text-[var(--color-border)]'
+                : today
+                  ? 'bg-[var(--color-primary)] text-white font-bold'
                   : isSelected
-                  ? 'bg-[#E8F0FE] text-[#007AFF] font-semibold'
-                  : 'text-[#1C1C1E]'
-              }`}
+                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
+                    : 'text-[var(--color-text)]'
+                }`}
             >
               <span>{format(d, 'd')}</span>
               {hasInterviews && (
                 <span
-                  className={`absolute bottom-0.5 w-1.5 h-1.5 rounded-full ${
-                    today ? 'bg-white' : 'bg-[#007AFF]'
-                  }`}
+                  className={`absolute bottom-0.5 w-1.5 h-1.5 rounded-full ${today ? 'bg-[var(--color-card)]' : 'bg-[var(--color-primary)]'
+                    }`}
                 />
               )}
             </button>

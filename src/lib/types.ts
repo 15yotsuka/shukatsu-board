@@ -20,6 +20,7 @@ export interface Company {
   id: string;
   name: string;
   industry?: string;
+  jobType?: string;
   url?: string;
   statusId: string;
   trackType: TrackType;

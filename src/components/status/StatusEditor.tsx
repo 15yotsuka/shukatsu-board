@@ -117,19 +117,19 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-[#F2F2F7] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto animate-slide-up">
+      <div className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto animate-slide-up">
         {/* Grab bar */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
-          <div className="w-9 h-1 bg-[#E5E5EA] rounded-full" />
+          <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
         </div>
 
         <div className="px-4 pt-4 pb-2">
-          <h2 className="text-[17px] font-bold text-center text-[#1C1C1E]">ステータス編集</h2>
+          <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">ステータス編集</h2>
         </div>
 
         <div className="p-4">
           {deleteError && (
-            <div className="mb-3 p-3 bg-[#FF3B30]/10 text-[#FF3B30] text-[14px] rounded-xl">
+            <div className="mb-3 p-3 bg-[var(--color-danger)]/10 text-[var(--color-danger)] text-[14px] rounded-xl">
               {deleteError}
             </div>
           )}
@@ -143,7 +143,7 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
               items={trackStatuses.map((s) => s.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="bg-white rounded-xl divide-y divide-[#E5E5EA] mb-6">
+              <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] mb-6">
                 {trackStatuses.map((status) => (
                   <SortableStatusItem
                     key={status.id}
@@ -178,34 +178,34 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
           </div>
 
           {/* Backup / Restore */}
-          <div className="mt-6 bg-white rounded-xl overflow-hidden">
-            <div className="px-4 py-2 border-b border-[#E5E5EA]">
-              <span className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wide">
+          <div className="mt-6 bg-card rounded-xl overflow-hidden">
+            <div className="px-4 py-2 border-b border-[var(--color-border)]">
+              <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
                 バックアップ
               </span>
             </div>
             <button
               onClick={handleExport}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap border-b border-[#E5E5EA]"
+              className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap border-b border-[var(--color-border)]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#007AFF] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-primary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               <div>
-                <div className="text-[15px] text-[#1C1C1E]">エクスポート</div>
-                <div className="text-[12px] text-[#8E8E93]">JSONファイルとして保存</div>
+                <div className="text-[15px] text-[var(--color-text)]">エクスポート</div>
+                <div className="text-[12px] text-[var(--color-text-secondary)]">JSONファイルとして保存</div>
               </div>
             </button>
             <button
               onClick={() => importRef.current?.click()}
               className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#34C759] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               <div>
-                <div className="text-[15px] text-[#1C1C1E]">インポート（復元）</div>
-                <div className="text-[12px] text-[#8E8E93]">JSONファイルから復元</div>
+                <div className="text-[15px] text-[var(--color-text)]">インポート（復元）</div>
+                <div className="text-[12px] text-[var(--color-text-secondary)]">JSONファイルから復元</div>
               </div>
             </button>
             <input
@@ -268,14 +268,13 @@ function SortableStatusItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`px-4 py-3 flex items-center gap-3 min-h-[44px] ${
-        isDragging ? 'opacity-50 bg-[#F2F2F7]' : ''
-      }`}
+      className={`px-4 py-3 flex items-center gap-3 min-h-[44px] ${isDragging ? 'opacity-50 bg-[var(--color-bg)]' : ''
+        }`}
     >
       <div
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing touch-manipulation p-1 text-[#C7C7CC]"
+        className="cursor-grab active:cursor-grabbing touch-manipulation p-1 text-[var(--color-border)]"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
@@ -295,19 +294,19 @@ function SortableStatusItem({
       ) : (
         <button
           onClick={() => setIsEditing(true)}
-          className="flex-1 text-left text-[15px] text-[#1C1C1E] min-h-[44px] flex items-center ios-tap"
+          className="flex-1 text-left text-[15px] text-[var(--color-text)] min-h-[44px] flex items-center ios-tap"
         >
           {status.name}
         </button>
       )}
 
-      <span className="text-[12px] text-[#8E8E93] bg-[#E5E5EA] rounded-full px-2 py-0.5">
+      <span className="text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full px-2 py-0.5">
         {companyCount}
       </span>
 
       <button
         onClick={() => onDelete(status.id)}
-        className="w-11 h-11 flex items-center justify-center text-[#FF3B30] ios-tap"
+        className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap"
         title={companyCount > 0 ? '企業がある場合は削除できません' : '削除'}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

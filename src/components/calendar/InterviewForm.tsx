@@ -51,14 +51,14 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
   return (
     <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
+      <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
         {/* Grab bar */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
-          <div className="w-9 h-1 bg-[#E5E5EA] rounded-full" />
+          <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
         </div>
 
         <div className="px-4 pt-4 pb-2">
-          <h2 className="text-[17px] font-bold text-center text-[#1C1C1E]">
+          <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">
             {interview ? '面接を編集' : '面接を追加'}
           </h2>
         </div>
@@ -66,7 +66,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
         <div className="p-4 space-y-4">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">日付</label>
+              <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">日付</label>
               <input
                 type="date"
                 value={date}
@@ -75,7 +75,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
               />
             </div>
             <div className="flex-1">
-              <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">時間</label>
+              <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">時間</label>
               <input
                 type="time"
                 value={time}
@@ -86,7 +86,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">面接種別</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">面接種別</label>
             <input
               type="text"
               value={type}
@@ -97,7 +97,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">場所</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">場所</label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -108,7 +108,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
               />
               <button
                 onClick={() => setLocation('オンライン')}
-                className="px-4 text-[#007AFF] text-[15px] font-medium ios-tap whitespace-nowrap"
+                className="px-4 text-[var(--color-primary)] text-[15px] font-medium ios-tap whitespace-nowrap"
               >
                 オンライン
               </button>
@@ -116,7 +116,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">メモ</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">メモ</label>
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}

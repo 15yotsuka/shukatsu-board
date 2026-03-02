@@ -45,25 +45,25 @@ export function ESCopyDialog({ targetCompanyId, onClose }: ESCopyDialogProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto animate-slide-up">
+      <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto animate-slide-up">
         {/* Grab bar */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
-          <div className="w-9 h-1 bg-[#E5E5EA] rounded-full" />
+          <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
         </div>
 
         <div className="px-4 pt-4 pb-2">
-          <h2 className="text-[17px] font-bold text-center text-[#1C1C1E]">他の企業からコピー</h2>
+          <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">他の企業からコピー</h2>
         </div>
 
         <div className="p-4 space-y-4">
           {companiesWithES.length === 0 ? (
-            <p className="text-[14px] text-[#8E8E93] text-center py-4">
+            <p className="text-[14px] text-[var(--color-text-secondary)] text-center py-4">
               コピーできるESがある企業がありません
             </p>
           ) : (
             <>
               <div>
-                <label className="block text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-1.5">
+                <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
                   コピー元の企業
                 </label>
                 <select
@@ -82,13 +82,13 @@ export function ESCopyDialog({ targetCompanyId, onClose }: ESCopyDialogProps) {
 
               {sourceCompanyId && sourceEntries.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide">プレビュー</p>
-                  <div className="bg-[#F2F2F7] rounded-xl divide-y divide-[#E5E5EA]">
+                  <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">プレビュー</p>
+                  <div className="bg-[var(--color-bg)] rounded-xl divide-y divide-[var(--color-border)]">
                     {sourceEntries.map((entry) => (
                       <div key={entry.id} className="px-4 py-3">
-                        <p className="text-[15px] font-medium text-[#1C1C1E]">{entry.question}</p>
+                        <p className="text-[15px] font-medium text-[var(--color-text)]">{entry.question}</p>
                         {entry.answer && (
-                          <p className="text-[13px] text-[#8E8E93] mt-1 line-clamp-2">
+                          <p className="text-[13px] text-[var(--color-text-secondary)] mt-1 line-clamp-2">
                             {entry.answer}
                           </p>
                         )}

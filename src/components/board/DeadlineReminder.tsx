@@ -50,7 +50,7 @@ export function DeadlineReminder() {
     return (
         <div className="mx-3 mt-3 rounded-2xl overflow-hidden shadow-sm">
             {/* ヘッダー */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--color-card)] border-b border-[var(--color-border)]">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-card border-b border-[var(--color-border)]">
                 <div className="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-danger)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -69,15 +69,15 @@ export function DeadlineReminder() {
             </div>
 
             {/* リスト */}
-            <div className="bg-[var(--color-card)] divide-y divide-[var(--color-border)]">
+            <div className="bg-card divide-y divide-[var(--color-border)]">
                 {upcoming.map(({ interview, daysUntil, company }) => {
                     const urgency = getUrgency(daysUntil);
                     return (
                         <div key={interview.id} className="flex items-center gap-3 px-4 py-3">
                             {/* 緊急度バッジ */}
                             <div className={`shrink-0 min-w-[44px] text-center px-2 py-1 rounded-lg text-[12px] font-bold ${urgency === 'urgent'
-                                    ? 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
-                                    : 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
+                                ? 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
+                                : 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
                                 }`}>
                                 {getDayLabel(daysUntil)}
                             </div>

@@ -49,7 +49,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       {...attributes}
       {...listeners}
       onClick={() => onTap(company)}
-      className={`bg-[var(--color-card)] rounded-xl shadow-sm p-3.5 ios-tap ios-card-hover cursor-grab active:cursor-grabbing touch-manipulation ${isDragging ? 'opacity-50 shadow-lg' : ''
+      className={`bg-card rounded-xl shadow-sm p-3.5 ios-tap ios-card-hover cursor-grab active:cursor-grabbing touch-manipulation ${isDragging ? 'opacity-50 shadow-lg' : ''
         }`}
     >
       <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>

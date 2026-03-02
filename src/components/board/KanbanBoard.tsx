@@ -141,14 +141,14 @@ export function KanbanBoard() {
               key={status.id}
               onClick={() => scrollToColumn(idx)}
               className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold ios-tap transition-colors duration-200 ${isActive
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-card)] text-[var(--color-text-secondary)]'
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'bg-card text-[var(--color-text-secondary)]'
                 }`}
             >
               {status.name}
               <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${isActive
-                  ? 'bg-white/25 text-white'
-                  : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                ? 'bg-white/25 text-white'
+                : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
                 }`}>
                 {count}
               </span>
@@ -185,7 +185,7 @@ export function KanbanBoard() {
         </div>
         <DragOverlay>
           {activeCompany ? (
-            <div className="bg-[var(--color-card)] rounded-xl shadow-lg border border-[var(--color-primary)]/20 p-3.5 w-[280px] opacity-90 rotate-3 scale-105">
+            <div className="bg-card rounded-xl shadow-lg border border-[var(--color-primary)]/20 p-3.5 w-[280px] opacity-90 rotate-3 scale-105">
               <p className="text-[15px] font-semibold text-[var(--color-text)]">{activeCompany.name}</p>
               {activeCompany.industry && (
                 <p className="text-[13px] text-[var(--color-text-secondary)] mt-1">{activeCompany.industry}</p>

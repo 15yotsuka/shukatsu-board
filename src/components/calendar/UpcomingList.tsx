@@ -20,42 +20,42 @@ export function UpcomingList() {
 
   if (upcomingInterviews.length === 0) {
     return (
-      <div className="bg-white rounded-xl p-4 mb-4">
-        <h3 className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide mb-2">直近の面接予定</h3>
-        <p className="text-[14px] text-[#8E8E93] text-center py-4">面接予定はまだありません</p>
+      <div className="bg-card dark:bg-zinc-900 rounded-xl p-4 mb-4">
+        <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">直近の面接予定</h3>
+        <p className="text-[14px] text-[var(--color-text-secondary)] text-center py-4">面接予定はまだありません</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl mb-4 overflow-hidden">
+    <div className="bg-card dark:bg-zinc-900 rounded-xl mb-4 overflow-hidden">
       <div className="px-4 pt-4 pb-2">
-        <h3 className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide">直近の面接予定</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">直近の面接予定</h3>
       </div>
-      <div className="divide-y divide-[#E5E5EA]">
+      <div className="divide-y divide-[var(--color-border)]">
         {upcomingInterviews.map((interview) => (
           <div
             key={interview.id}
             className="flex items-center gap-3 px-4 py-3 ios-tap"
           >
             <div className="flex-shrink-0 w-12 text-center">
-              <p className="text-[12px] text-[#8E8E93]">
+              <p className="text-[12px] text-[var(--color-text-secondary)]">
                 {format(new Date(interview.datetime), 'M/d', { locale: ja })}
               </p>
-              <p className="text-[15px] font-bold text-[#1C1C1E]">
+              <p className="text-[15px] font-bold text-[var(--color-text)]">
                 {format(new Date(interview.datetime), 'HH:mm')}
               </p>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-medium text-[#1C1C1E] truncate">
+              <p className="text-[15px] font-medium text-[var(--color-text)] truncate">
                 {getCompanyName(interview.companyId)}
               </p>
-              <p className="text-[13px] text-[#8E8E93] truncate">
+              <p className="text-[13px] text-[var(--color-text-secondary)] truncate">
                 {interview.type}
                 {interview.location && ` / ${interview.location}`}
               </p>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#C7C7CC] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-border)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </div>

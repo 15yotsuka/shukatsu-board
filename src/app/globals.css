@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4: darkモードを.darkクラスベースに設定 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-primary: #007AFF;
   --color-primary-light: #E8F0FE;
@@ -16,12 +19,12 @@
 /* ダークモード */
 .dark {
   --color-primary: #0A84FF;
-  --color-primary-light: #1D3461;
-  --color-bg: #1C1C1E;
-  --color-card: #2C2C2E;
-  --color-text: #F2F2F7;
-  --color-text-secondary: #AEAEB2;
-  --color-border: #48484A;
+  --color-primary-light: #1a2744;
+  --color-bg: #09090b;
+  --color-card: #18181b;
+  --color-text: #f4f4f5;
+  --color-text-secondary: #71717a;
+  --color-border: #27272a;
   --color-danger: #FF453A;
   --color-success: #30D158;
   --color-warning: #FF9F0A;
@@ -38,6 +41,46 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* CSS変数ベースのユーティリティ（Tailwindの任意値が効かない場合の保険） */
+.bg-card {
+  background-color: var(--color-card) !important;
+}
+
+.bg-page {
+  background-color: var(--color-bg) !important;
+}
+
+.bg-surface-border {
+  background-color: var(--color-border) !important;
+}
+
+.text-main {
+  color: var(--color-text) !important;
+}
+
+.text-sub {
+  color: var(--color-text-secondary) !important;
+}
+
+.border-theme {
+  border-color: var(--color-border) !important;
+}
+
+/* SegmentControl（TrackTabs）用 */
+.seg-track {
+  background-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.seg-tab-active {
+  background-color: var(--color-card);
+  color: var(--color-text);
+}
+
+/* BottomNav背景 */
+.nav-bg {
+  background-color: color-mix(in srgb, var(--color-card) 75%, transparent);
 }
 
 /* iOS風モーダルアニメーション */
@@ -106,6 +149,11 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.40);
 }
 
+/* ナビバー用ガラス背景 */
+.glass-nav {
+  background: color-mix(in srgb, var(--color-card) 80%, transparent);
+}
+
 /* 保存成功チェックアニメーション */
 @keyframes check-pop {
   0% {
@@ -135,12 +183,12 @@ body {
 
 /* iOS風 入力フィールド共通 */
 .ios-input {
-  background: #F2F2F7;
+  background: var(--color-bg);
   border: none;
   border-radius: 12px;
   padding: 14px 16px;
   font-size: 16px;
-  color: #1C1C1E;
+  color: var(--color-text);
   outline: none;
   width: 100%;
   transition: box-shadow 0.2s ease, background 0.2s ease;
@@ -148,31 +196,31 @@ body {
 
 .ios-input:focus {
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
-  background: #FFFFFF;
+  background: var(--color-card);
 }
 
 .ios-input::placeholder {
-  color: #C7C7CC;
+  color: var(--color-text-secondary);
 }
 
 /* ダーク時の入力フィールド */
 .dark .ios-input {
-  background: #3A3A3C;
-  color: #F2F2F7;
+  background: #27272a;
+  color: #f4f4f5;
 }
 
 .dark .ios-input:focus {
-  background: #48484A;
+  background: #3f3f46;
   box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35);
 }
 
 .dark .ios-input::placeholder {
-  color: #636366;
+  color: #52525b;
 }
 
 /* iOS風 ボタン共通 */
 .ios-button-primary {
-  background: #007AFF;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 12px;
@@ -195,7 +243,7 @@ body {
 
 .ios-button-secondary {
   background: transparent;
-  color: #007AFF;
+  color: var(--color-primary);
   border: none;
   padding: 12px;
   font-size: 16px;
@@ -211,5 +259,5 @@ body {
 }
 
 .dark .ios-button-secondary {
-  color: #0A84FF;
+  color: var(--color-primary);
 }

@@ -13,17 +13,16 @@ export function TrackTabs() {
   const setActiveTrack = useAppStore((s) => s.setActiveTrack);
 
   return (
-    <div className="sticky top-14 z-40 bg-[#F2F2F7] px-4 py-3">
-      <div className="flex bg-[#E5E5EA]/60 rounded-lg p-0.5">
+    <div className="sticky top-14 z-40 bg-[var(--color-bg)] dark:bg-zinc-950 px-4 py-3">
+      <div className="flex bg-gray-100 dark:bg-zinc-800 rounded-lg p-0.5">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTrack(tab.value)}
-            className={`flex-1 py-2 text-[13px] font-semibold rounded-md transition-all duration-200 ${
-              activeTrack === tab.value
-                ? 'bg-white text-[#1C1C1E] shadow-sm'
-                : 'text-[#8E8E93]'
-            }`}
+            className={`flex-1 py-2 text-[13px] font-semibold rounded-md transition-all duration-200 ${activeTrack === tab.value
+              ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm'
+              : 'text-gray-500 dark:text-zinc-400'
+              }`}
           >
             {tab.label}
           </button>
