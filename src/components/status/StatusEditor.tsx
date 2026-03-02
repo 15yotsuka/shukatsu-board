@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -31,9 +31,50 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
   const updateStatus = useAppStore((s) => s.updateStatus);
   const deleteStatus = useAppStore((s) => s.deleteStatus);
   const reorderStatuses = useAppStore((s) => s.reorderStatuses);
+  const loadBackup = useAppStore((s) => s.loadBackup);
 
   const [newStatusName, setNewStatusName] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const importRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = () => {
+    const state = useAppStore.getState();
+    const data = {
+      schemaVersion: state.schemaVersion,
+      companies: state.companies,
+      statusColumns: state.statusColumns,
+      interviews: state.interviews,
+      esEntries: state.esEntries,
+      activeTrack: state.activeTrack,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shukatsu-board-backup-${today}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!window.confirm('現在のデータはすべて上書きされます。\nバックアップから復元しますか？')) return;
+        loadBackup(data);
+      } catch {
+        alert('JSONファイルの読み込みに失敗しました。\nファイルが正しい形式か確認してください。');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
 
   const trackStatuses = statusColumns
     .filter((s) => s.trackType === activeTrack)
@@ -134,6 +175,46 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
             >
               追加
             </button>
+          </div>
+
+          {/* Backup / Restore */}
+          <div className="mt-6 bg-white rounded-xl overflow-hidden">
+            <div className="px-4 py-2 border-b border-[#E5E5EA]">
+              <span className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wide">
+                バックアップ
+              </span>
+            </div>
+            <button
+              onClick={handleExport}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap border-b border-[#E5E5EA]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#007AFF] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <div>
+                <div className="text-[15px] text-[#1C1C1E]">エクスポート</div>
+                <div className="text-[12px] text-[#8E8E93]">JSONファイルとして保存</div>
+              </div>
+            </button>
+            <button
+              onClick={() => importRef.current?.click()}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#34C759] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <div>
+                <div className="text-[15px] text-[#1C1C1E]">インポート（復元）</div>
+                <div className="text-[12px] text-[#8E8E93]">JSONファイルから復元</div>
+              </div>
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
           </div>
 
           <button onClick={onClose} className="ios-button-secondary mt-4">

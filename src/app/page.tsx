@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { TrackTabs } from '@/components/layout/TrackTabs';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { AddCompanyForm } from '@/components/board/AddCompanyForm';
+import { DeadlineReminder } from '@/components/board/DeadlineReminder';
 
 export default function Home() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -11,6 +12,7 @@ export default function Home() {
   return (
     <>
       <TrackTabs />
+      <DeadlineReminder />
       <KanbanBoard />
 
       {/* FAB - Floating Action Button */}

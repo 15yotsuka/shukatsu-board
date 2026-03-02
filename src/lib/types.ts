@@ -30,6 +30,9 @@ export interface Company {
   esEntries?: ESEntry[];
   noteUrl?: string;
   memo?: string;
+  myPageUrl?: string;
+  myPageId?: string;
+  myPagePassword?: string;
 }
 
 // ============================

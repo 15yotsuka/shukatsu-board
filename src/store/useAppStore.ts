@@ -44,6 +44,9 @@ interface AppActions {
   updateESEntry: (id: string, updates: Partial<Omit<ESEntry, 'id'>>) => void;
   deleteESEntry: (id: string) => void;
   reorderESEntries: (companyId: string, orderedIds: string[]) => void;
+
+  // Backup / Restore
+  loadBackup: (data: Partial<AppState>) => void;
 }
 
 type AppStore = AppState & AppActions;
@@ -295,6 +298,18 @@ export const useAppStore = create<AppStore>()(
             return newOrder >= 0 ? { ...e, order: newOrder } : e;
           }),
         }));
+      },
+
+      // Backup / Restore
+      loadBackup: (data) => {
+        set({
+          schemaVersion: data.schemaVersion ?? CURRENT_SCHEMA_VERSION,
+          companies: data.companies ?? [],
+          statusColumns: data.statusColumns ?? createAllDefaultStatuses(),
+          interviews: data.interviews ?? [],
+          esEntries: data.esEntries ?? [],
+          activeTrack: data.activeTrack ?? 'intern',
+        });
       },
     }),
     {

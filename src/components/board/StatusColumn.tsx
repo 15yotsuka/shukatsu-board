@@ -9,9 +9,10 @@ interface StatusColumnProps {
   status: StatusColumnType;
   companies: Company[];
   onCompanyTap: (company: Company) => void;
+  colRef?: (el: HTMLDivElement | null) => void;
 }
 
-export function StatusColumn({ status, companies, onCompanyTap }: StatusColumnProps) {
+export function StatusColumn({ status, companies, onCompanyTap, colRef }: StatusColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${status.id}`,
     data: { type: 'column', statusId: status.id },
@@ -23,15 +24,15 @@ export function StatusColumn({ status, companies, onCompanyTap }: StatusColumnPr
 
   return (
     <div
-      className={`flex-shrink-0 min-w-[280px] w-[85vw] max-w-[320px] snap-start rounded-2xl p-3 ${
-        isOver ? 'ring-2 ring-[#007AFF]' : ''
-      }`}
+      ref={colRef}
+      className={`flex-shrink-0 min-w-[280px] w-[85vw] max-w-[320px] snap-start rounded-2xl p-3 ${isOver ? 'ring-2 ring-[var(--color-primary)]' : ''
+        }`}
     >
       <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wide">
+        <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
           {status.name}
         </h3>
-        <span className="text-[12px] bg-[#E5E5EA] text-[#8E8E93] rounded-full px-2 py-0.5">
+        <span className="text-[12px] bg-[var(--color-border)] text-[var(--color-text-secondary)] rounded-full px-2 py-0.5">
           {companies.length}
         </span>
       </div>

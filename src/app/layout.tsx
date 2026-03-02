@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "ShukatsuBoard - 就活管理ツール",
@@ -20,16 +21,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="antialiased bg-[#F2F2F7] text-[#1C1C1E]">
-        <Header />
-        <main className="pt-14 pb-16 min-h-screen">
-          {children}
-        </main>
-        <BottomNav />
+      <body className="antialiased bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-300">
+        <ThemeProvider>
+          <Header />
+          <main className="pt-14 pb-16 min-h-screen">
+            {children}
+          </main>
+          <BottomNav />
+        </ThemeProvider>
       </body>
     </html>
   );
