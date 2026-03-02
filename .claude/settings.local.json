@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(git add src/lib/types.ts src/lib/confetti.ts src/lib/companySuggestions.ts)",
+      "Bash(git commit -m \"feat: add type fields, confetti util, company suggestions\")",
+      "Bash(git:*)"
+    ]
+  }
+}

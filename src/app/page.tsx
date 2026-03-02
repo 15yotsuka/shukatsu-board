@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { TrackTabs } from '@/components/layout/TrackTabs';
 import { DeadlineReminder } from '@/components/board/DeadlineReminder';
-import { TodayDeadlineCarousel } from '@/components/board/TodayDeadlineCarousel';
+import { HeroCardCarousel } from '@/components/board/HeroCardCarousel';
 
 export default function Home() {
   const companies = useAppStore((s) => s.companies);
@@ -24,16 +25,17 @@ export default function Home() {
   ).length;
 
   const stats = [
-    { label: 'エントリー', value: totalEntries, unit: '社', color: 'text-[var(--color-text)]' },
-    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]' },
-    { label: 'インターン参加', value: internCount, unit: '社', color: 'text-[var(--color-success)]' },
-    { label: '内定', value: offerCount, unit: '社', color: 'text-[var(--color-warning)]' },
+    { label: 'エントリー', value: totalEntries, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks' },
+    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=面接中' },
+    { label: 'インターン参加', value: internCount, unit: '社', color: 'text-[var(--color-success)]', href: '/tasks?filter=インターン参加' },
+    { label: '内定', value: offerCount, unit: '社', color: 'text-[var(--color-warning)]', href: '/tasks?filter=内定' },
   ];
 
   return (
     <div className="pb-24">
       <TrackTabs />
       <DeadlineReminder />
+      <HeroCardCarousel />
 
       <div className="px-4 mt-6">
         <div className="flex items-center justify-between mb-3 px-1">
@@ -43,21 +45,20 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {stats.map((stat) => (
-            <div
+            <Link
               key={stat.label}
-              className="bg-card dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-[var(--color-border)]"
+              href={stat.href}
+              className="bg-card dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-[var(--color-border)] ios-tap block"
             >
               <p className="text-xs text-[var(--color-text-secondary)] mb-1">{stat.label}</p>
               <div className="flex items-baseline gap-1">
                 <span className={`text-3xl font-bold ${stat.color}`}>{stat.value}</span>
                 <span className="text-xs text-[var(--color-text-secondary)]">{stat.unit}</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
-
-      <TodayDeadlineCarousel />
     </div>
   );
 }
