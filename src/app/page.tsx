@@ -26,7 +26,7 @@ export default function Home() {
 
   const stats = [
     { label: 'エントリー', value: totalEntries, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks' },
-    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=面接中' },
+    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=面接' },
     { label: 'インターン参加', value: internCount, unit: '社', color: 'text-[var(--color-success)]', href: '/tasks?filter=インターン参加' },
     { label: '内定', value: offerCount, unit: '社', color: 'text-[var(--color-warning)]', href: '/tasks?filter=内定' },
   ];

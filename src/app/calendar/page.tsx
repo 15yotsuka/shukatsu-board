@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
+import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview } from '@/lib/types';
 import { format } from 'date-fns';
@@ -11,6 +12,8 @@ import { ja } from 'date-fns/locale';
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedInterviews, setSelectedInterviews] = useState<Interview[]>([]);
+  const [showAddInterview, setShowAddInterview] = useState(false);
+  const [addInterviewCompanyId, setAddInterviewCompanyId] = useState('');
   const companies = useAppStore((s) => s.companies);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
 
@@ -24,7 +27,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <div className="px-4 py-4 pb-28 space-y-4">
       <UpcomingList />
       <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} />
 
@@ -73,6 +76,52 @@ export default function CalendarPage() {
             {format(selectedDate, 'M月d日', { locale: ja })}の面接予定はありません
           </p>
         </div>
+      )}
+
+      {/* 面接追加フローティングボタン */}
+      <button
+        onClick={() => setShowAddInterview(true)}
+        className="fixed bottom-20 right-5 z-40 w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center ios-tap"
+        aria-label="面接を追加"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {showAddInterview && !addInterviewCompanyId && (
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowAddInterview(false)} />
+          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
+            <div className="flex justify-center pb-1 md:hidden">
+              <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
+            </div>
+            <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">企業を選択</h2>
+            {companies.length === 0 ? (
+              <p className="text-center text-[var(--color-text-secondary)] text-[14px] py-4">企業が登録されていません</p>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {companies.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setAddInterviewCompanyId(c.id)}
+                    className="w-full text-left px-4 py-3 bg-[var(--color-bg)] rounded-xl text-[15px] font-medium text-[var(--color-text)] ios-tap"
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setShowAddInterview(false)} className="ios-button-secondary">キャンセル</button>
+          </div>
+        </div>
+      )}
+
+      {showAddInterview && addInterviewCompanyId && (
+        <InterviewForm
+          companyId={addInterviewCompanyId}
+          onClose={() => { setShowAddInterview(false); setAddInterviewCompanyId(''); }}
+        />
       )}
     </div>
   );

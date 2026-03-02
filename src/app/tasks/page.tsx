@@ -4,13 +4,16 @@ import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { AddCompanyForm } from '@/components/board/AddCompanyForm';
+import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { createSampleCompanies } from '@/lib/sampleData';
+import type { Company } from '@/lib/types';
 
 function TasksContent() {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
   const addCompany = useAppStore((s) => s.addCompany);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -73,19 +76,28 @@ function TasksContent() {
             return (
               <div
                 key={c.id}
-                className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-4 shadow-sm border border-[var(--color-border)] flex items-center gap-3"
+                onClick={() => setSelectedCompany(c)}
+                className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-4 shadow-sm border border-[var(--color-border)] flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform duration-100 ios-tap"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{c.name}</p>
+                  {c.industry && (
+                    <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5 truncate">{c.industry}</p>
+                  )}
                   {c.nextDeadline && (
                     <p className="text-[12px] text-[var(--color-danger)] mt-0.5">
                       締切: {c.nextDeadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
                     </p>
                   )}
                 </div>
-                <span className="flex-none rounded-full px-2 py-0.5 text-xs font-medium bg-[var(--color-primary)]/10 text-[var(--color-primary)] whitespace-nowrap">
-                  {statusName}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-[var(--color-primary)]/10 text-[var(--color-primary)] whitespace-nowrap">
+                    {statusName}
+                  </span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             );
           })}
@@ -103,6 +115,12 @@ function TasksContent() {
       </button>
 
       {showAddForm && <AddCompanyForm onClose={() => setShowAddForm(false)} />}
+      {selectedCompany && (
+        <CompanyDetailModal
+          company={selectedCompany}
+          onClose={() => setSelectedCompany(null)}
+        />
+      )}
     </div>
   );
 }

@@ -20,6 +20,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [name, setName] = useState('');
   const [industry, setIndustry] = useState('');
   const [url, setUrl] = useState('');
+  const [deadline, setDeadline] = useState('');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -36,6 +37,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       name: trimmed,
       industry: industry.trim() || undefined,
       url: url.trim() || undefined,
+      nextDeadline: deadline.trim() || undefined,
       statusId,
       trackType: activeTrack,
     });
@@ -122,6 +124,16 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
               onChange={(e) => setUrl(e.target.value)}
               className="ios-input"
               placeholder="https://..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">締切日</label>
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="ios-input"
             />
           </div>
 

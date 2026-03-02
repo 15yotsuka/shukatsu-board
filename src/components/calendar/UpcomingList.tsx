@@ -1,12 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { format, isAfter, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
+import type { Company } from '@/lib/types';
 
 export function UpcomingList() {
   const interviews = useAppStore((s) => s.interviews);
   const companies = useAppStore((s) => s.companies);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
   const today = startOfDay(new Date());
   const upcomingInterviews = interviews
@@ -16,6 +20,10 @@ export function UpcomingList() {
 
   const getCompanyName = (companyId: string): string => {
     return companies.find((c) => c.id === companyId)?.name ?? '不明な企業';
+  };
+
+  const getCompany = (companyId: string): Company | undefined => {
+    return companies.find((c) => c.id === companyId);
   };
 
   if (upcomingInterviews.length === 0) {
@@ -28,39 +36,52 @@ export function UpcomingList() {
   }
 
   return (
-    <div className="bg-card dark:bg-zinc-900 rounded-xl mb-4 overflow-hidden">
-      <div className="px-4 pt-4 pb-2">
-        <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">直近の面接予定</h3>
-      </div>
-      <div className="divide-y divide-[var(--color-border)]">
-        {upcomingInterviews.map((interview) => (
-          <div
-            key={interview.id}
-            className="flex items-center gap-3 px-4 py-3 ios-tap"
-          >
-            <div className="flex-shrink-0 w-12 text-center">
-              <p className="text-[12px] text-[var(--color-text-secondary)]">
-                {format(new Date(interview.datetime), 'M/d', { locale: ja })}
-              </p>
-              <p className="text-[15px] font-bold text-[var(--color-text)]">
-                {format(new Date(interview.datetime), 'HH:mm')}
-              </p>
+    <>
+      <div className="bg-card dark:bg-zinc-900 rounded-xl mb-4 overflow-hidden">
+        <div className="px-4 pt-4 pb-2">
+          <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">直近の面接予定</h3>
+        </div>
+        <div className="divide-y divide-[var(--color-border)]">
+          {upcomingInterviews.map((interview) => (
+            <div
+              key={interview.id}
+              onClick={() => {
+                const c = getCompany(interview.companyId);
+                if (c) setSelectedCompany(c);
+              }}
+              className="flex items-center gap-3 px-4 py-3 ios-tap cursor-pointer"
+            >
+              <div className="flex-shrink-0 w-12 text-center">
+                <p className="text-[12px] text-[var(--color-text-secondary)]">
+                  {format(new Date(interview.datetime), 'M/d', { locale: ja })}
+                </p>
+                <p className="text-[15px] font-bold text-[var(--color-text)]">
+                  {format(new Date(interview.datetime), 'HH:mm')}
+                </p>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-medium text-[var(--color-text)] truncate">
+                  {getCompanyName(interview.companyId)}
+                </p>
+                <p className="text-[13px] text-[var(--color-text-secondary)] truncate">
+                  {interview.type}
+                  {interview.location && ` / ${interview.location}`}
+                </p>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-border)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-medium text-[var(--color-text)] truncate">
-                {getCompanyName(interview.companyId)}
-              </p>
-              <p className="text-[13px] text-[var(--color-text-secondary)] truncate">
-                {interview.type}
-                {interview.location && ` / ${interview.location}`}
-              </p>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-border)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {selectedCompany && (
+        <CompanyDetailModal
+          company={selectedCompany}
+          onClose={() => setSelectedCompany(null)}
+        />
+      )}
+    </>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
@@ -27,6 +28,9 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     transition,
   };
 
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const didMoveRef = useRef(false);
+
   const updatedDate = new Date(company.updatedAt).toLocaleDateString('ja-JP', {
     month: 'short',
     day: 'numeric',
@@ -48,8 +52,21 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      onClick={() => onTap(company)}
-      className={`bg-card rounded-xl shadow-sm p-3.5 ios-tap ios-card-hover cursor-grab active:cursor-grabbing touch-manipulation ${isDragging ? 'opacity-50 shadow-lg' : ''
+      onPointerDown={(e) => {
+        pointerStartRef.current = { x: e.clientX, y: e.clientY };
+        didMoveRef.current = false;
+      }}
+      onPointerMove={(e) => {
+        if (pointerStartRef.current) {
+          const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+          const dy = Math.abs(e.clientY - pointerStartRef.current.y);
+          if (dx > 6 || dy > 6) didMoveRef.current = true;
+        }
+      }}
+      onClick={() => {
+        if (!didMoveRef.current) onTap(company);
+      }}
+      className={`bg-card rounded-xl shadow-sm p-3.5 ios-card-hover cursor-grab active:cursor-grabbing touch-manipulation select-none ${isDragging ? 'opacity-50 shadow-lg' : ''
         }`}
     >
       <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>

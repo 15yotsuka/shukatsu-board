@@ -49,7 +49,10 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-zinc-800 safe-area-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
+              : pathname === item.href || pathname.startsWith(item.href + '/')  || pathname.startsWith(item.href + '?');
           return (
             <Link
               key={item.href}

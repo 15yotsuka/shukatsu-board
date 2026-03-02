@@ -71,8 +71,6 @@ export function HeroCardCarousel() {
       ? deadlineItems.length > 0
       : interviewItems.length > 0;
 
-  if (!hasContent && mode !== 'custom') return null;
-
   return (
     <section className="mt-4">
       <div className="flex items-center justify-between mb-3 px-5">
@@ -91,7 +89,23 @@ export function HeroCardCarousel() {
         </button>
       </div>
 
-      {mode === 'custom' ? (
+      {!hasContent && mode !== 'custom' ? (
+        <div className="px-4">
+          <div className="w-full bg-gradient-to-br from-[#007AFF] to-[#0055D4] rounded-3xl p-6 shadow-2xl">
+            <p className="text-[13px] font-semibold text-white/70 uppercase tracking-widest mb-2">
+              {mode === 'deadline' ? '締切管理' : '面接管理'}
+            </p>
+            <p className="text-[18px] font-bold text-white mb-1">
+              {mode === 'deadline' ? '最初の締切を登録しよう' : '面接予定を追加しよう'}
+            </p>
+            <p className="text-[13px] text-white/75 leading-relaxed">
+              {mode === 'deadline'
+                ? '企業の詳細画面から締切日を設定すると、ここに表示されます'
+                : '企業の詳細画面から面接予定を追加すると、ここに表示されます'}
+            </p>
+          </div>
+        </div>
+      ) : mode === 'custom' ? (
         <div className="px-4">
           <div className="w-full bg-gradient-to-br from-[#007AFF] to-[#0055D4] rounded-3xl p-6 shadow-2xl">
             <p className="text-[16px] text-white whitespace-pre-wrap">{customText || '—'}</p>

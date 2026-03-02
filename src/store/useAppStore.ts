@@ -224,14 +224,24 @@ export const useAppStore = create<AppStore>()(
           id: nanoid(),
           name: company.name,
           industry: company.industry,
+          jobType: company.jobType,
           url: company.url,
+          myPageUrl: company.myPageUrl,
+          myPageId: company.myPageId,
+          myPagePassword: company.myPagePassword,
+          selectionMemo: company.selectionMemo,
           statusId: firstMainStatus.id,
           trackType: 'main',
           orderInColumn: companiesInTarget.length,
           createdAt: now,
           updatedAt: now,
         };
-        set({ companies: [...state.companies, newCompany] });
+        set({
+          companies: [
+            ...state.companies.filter((c) => c.id !== companyId),
+            newCompany,
+          ],
+        });
       },
 
       // Interview CRUD
