@@ -7,6 +7,7 @@ import type { Company } from '@/lib/types';
 import { PromoteDialog } from '@/components/status/PromoteDialog';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { ESForm } from '@/components/es/ESForm';
+import { fireConfetti } from '@/lib/confetti';
 
 interface CompanyDetailModalProps {
   company: Company;
@@ -24,7 +25,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const esEntries = useAppStore((s) => s.esEntries);
   const addESEntry = useAppStore((s) => s.addESEntry);
 
-  const [activeTab, setActiveTab] = useState<'details' | 'es'>('details');
+  const [activeTab, setActiveTab] = useState<'basic' | 'mypage' | 'memo' | 'es'>('basic');
 
   const [name, setName] = useState(company.name);
   const [industry, setIndustry] = useState(company.industry ?? '');
@@ -42,6 +43,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [myPageId, setMyPageId] = useState(company.myPageId ?? '');
   const [myPagePassword, setMyPagePassword] = useState(company.myPagePassword ?? '');
   const [showPassword, setShowPassword] = useState(false);
+
+  const [selectionMemo, setSelectionMemo] = useState(company.selectionMemo ?? '');
 
   const trackStatuses = statusColumns
     .filter((s) => s.trackType === company.trackType)
@@ -61,12 +64,21 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       setNameError('企業名は必須です');
       return;
     }
+
+    if (statusId !== company.statusId) {
+      const newStatus = statusColumns.find((s) => s.id === statusId);
+      if (newStatus && (newStatus.name === '内定' || newStatus.name === 'インターン参加')) {
+        fireConfetti();
+      }
+    }
+
     updateCompany(company.id, {
       name: trimmed,
       industry: industry.trim() || undefined,
       jobType: jobType.trim() || undefined,
       url: url.trim() || undefined,
       memo: memo.trim() || undefined,
+      selectionMemo: selectionMemo.trim() || undefined,
       statusId,
       myPageUrl: myPageUrl.trim() || undefined,
       myPageId: myPageId.trim() || undefined,
@@ -136,33 +148,39 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           </div>
           <h2 className="text-[18px] font-bold text-center text-[var(--color-text)] mb-3">{company.name}</h2>
 
-          <div className="flex gap-4 px-2">
-            <button
-              onClick={() => setActiveTab('details')}
-              className={`pb-3 text-[15px] font-semibold transition-colors relative ${activeTab === 'details' ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'}`}
-            >
-              詳細情報
-              {activeTab === 'details' && (
-                <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--color-primary)] rounded-t-full" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('es')}
-              className={`pb-3 text-[15px] font-semibold transition-colors relative ${activeTab === 'es' ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'}`}
-            >
-              ES管理
-              {activeTab === 'es' && (
-                <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--color-primary)] rounded-t-full" />
-              )}
-            </button>
+          <div className="flex gap-1 px-2 overflow-x-auto">
+            {([
+              { key: 'basic', label: '基本情報' },
+              { key: 'mypage', label: 'マイページ' },
+              { key: 'memo', label: 'メモ' },
+              { key: 'es', label: 'ES管理' },
+            ] as const).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`pb-3 px-2 text-[14px] font-semibold transition-colors relative whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? 'text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-secondary)]'
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.key && (
+                  <motion.div
+                    layoutId="tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--color-primary)] rounded-t-full"
+                  />
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="overflow-y-auto p-4 flex-1">
           <AnimatePresence mode="wait">
-            {activeTab === 'details' ? (
+            {activeTab === 'basic' && (
               <motion.div
-                key="details"
+                key="basic"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -226,100 +244,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                         ))}
                       </select>
                     </div>
-                  </div>
-                </div>
-
-                {/* マイページ情報 */}
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2 px-1">
-                    マイページ情報
-                  </h3>
-                  <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                    <div className="divide-y divide-[var(--color-border)]">
-                      <div className="px-4 py-3">
-                        <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-                          マイページURL
-                        </label>
-                        <input
-                          type="url"
-                          value={myPageUrl}
-                          onChange={(e) => setMyPageUrl(e.target.value)}
-                          className="ios-input"
-                          placeholder="https://mypage.example.com"
-                        />
-                        {myPageUrl.trim() && (
-                          <a
-                            href={myPageUrl.trim()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 mt-2 text-[14px] text-[var(--color-primary)] font-medium ios-tap"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            マイページを開く
-                          </a>
-                        )}
-                      </div>
-                      <div className="px-4 py-3">
-                        <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-                          ログインID
-                        </label>
-                        <input
-                          type="text"
-                          value={myPageId}
-                          onChange={(e) => setMyPageId(e.target.value)}
-                          className="ios-input"
-                          placeholder="メールアドレス / ID"
-                        />
-                      </div>
-                      <div className="px-4 py-3">
-                        <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-                          パスワード
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            value={myPagePassword}
-                            onChange={(e) => setMyPagePassword(e.target.value)}
-                            className="ios-input flex-1"
-                            placeholder="パスワード"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="w-11 h-11 flex items-center justify-center text-[var(--color-text-secondary)] ios-tap shrink-0"
-                            aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
-                          >
-                            {showPassword ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12c1.292 4.338 5.31 7.5 10.066 7.5.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                              </svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 選考メモ */}
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2 px-1">
-                    選考メモ
-                  </h3>
-                  <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5 p-4">
-                    <textarea
-                      placeholder="ESの回答、面接内容、逆質問などを自由にメモしましょう..."
-                      value={memo}
-                      onChange={(e) => setMemo(e.target.value)}
-                      className="w-full bg-transparent text-[var(--color-text)] min-h-[160px] resize-y outline-none"
-                    />
                   </div>
                 </div>
 
@@ -387,7 +311,121 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   削除
                 </button>
               </motion.div>
-            ) : (
+            )}
+
+            {activeTab === 'mypage' && (
+              <motion.div
+                key="mypage"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {/* マイページ情報 */}
+                <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                  <div className="divide-y divide-[var(--color-border)]">
+                    <div className="px-4 py-3">
+                      <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
+                        マイページURL
+                      </label>
+                      <input
+                        type="url"
+                        value={myPageUrl}
+                        onChange={(e) => setMyPageUrl(e.target.value)}
+                        className="ios-input"
+                        placeholder="https://mypage.example.com"
+                      />
+                      {myPageUrl.trim() && (
+                        <a
+                          href={myPageUrl.trim()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-2 text-[14px] text-[var(--color-primary)] font-medium ios-tap"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          マイページを開く
+                        </a>
+                      )}
+                    </div>
+                    <div className="px-4 py-3">
+                      <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
+                        ログインID
+                      </label>
+                      <input
+                        type="text"
+                        value={myPageId}
+                        onChange={(e) => setMyPageId(e.target.value)}
+                        className="ios-input"
+                        placeholder="メールアドレス / ID"
+                      />
+                    </div>
+                    <div className="px-4 py-3">
+                      <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
+                        パスワード
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={myPagePassword}
+                          onChange={(e) => setMyPagePassword(e.target.value)}
+                          className="ios-input flex-1"
+                          placeholder="パスワード"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="w-11 h-11 flex items-center justify-center text-[var(--color-text-secondary)] ios-tap shrink-0"
+                          aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
+                        >
+                          {showPassword ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12c1.292 4.338 5.31 7.5 10.066 7.5.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={handleSave} className="ios-button-primary shadow-sm hover:opacity-90 transition-opacity">
+                  保存
+                </button>
+              </motion.div>
+            )}
+
+            {activeTab === 'memo' && (
+              <motion.div
+                key="memo"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="bg-card rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 p-4">
+                  <textarea
+                    placeholder="ESの回答、面接内容、逆質問などを自由にメモ..."
+                    value={selectionMemo}
+                    onChange={(e) => setSelectionMemo(e.target.value)}
+                    className="w-full bg-transparent text-[var(--color-text)] min-h-48 resize-y outline-none"
+                  />
+                </div>
+                <button onClick={handleSave} className="ios-button-primary shadow-sm hover:opacity-90 transition-opacity">
+                  保存
+                </button>
+              </motion.div>
+            )}
+
+            {activeTab === 'es' && (
               <motion.div
                 key="es"
                 initial={{ opacity: 0, x: 20 }}
