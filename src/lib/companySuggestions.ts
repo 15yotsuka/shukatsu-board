@@ -1,4 +1,109 @@
-export const COMPANY_SUGGESTIONS = [
+export interface CompanySuggestion {
+  name: string;
+  industry: string;
+  color: string;
+}
+
+// Explicit company → industry/color mappings (spec-defined + major companies)
+const COMPANY_DATA: Record<string, { industry: string; color: string }> = {
+  // IT/通信
+  "NTTデータ": { industry: "IT/通信", color: "#0055D4" },
+  "株式会社NTTデータ": { industry: "IT/通信", color: "#0055D4" },
+  "ソフトバンク": { industry: "IT/通信", color: "#CDB300" },
+  "ソフトバンク株式会社": { industry: "IT/通信", color: "#CDB300" },
+  "サイバーエージェント": { industry: "IT/通信", color: "#21B526" },
+  "株式会社サイバーエージェント": { industry: "IT/通信", color: "#21B526" },
+  "楽天グループ株式会社": { industry: "IT/通信", color: "#BF0000" },
+  "株式会社メルカリ": { industry: "IT/通信", color: "#FF0211" },
+  "株式会社DeNA": { industry: "IT/通信", color: "#0033CC" },
+  "freee株式会社": { industry: "IT/通信", color: "#04A9BC" },
+  "株式会社マネーフォワード": { industry: "IT/通信", color: "#003399" },
+  "株式会社NTTドコモ": { industry: "IT/通信", color: "#E60012" },
+  "KDDI株式会社": { industry: "IT/通信", color: "#E60012" },
+  "楽天モバイル株式会社": { industry: "IT/通信", color: "#BF0000" },
+  "日本電信電話株式会社": { industry: "IT/通信", color: "#0055D4" },
+  "TIS株式会社": { industry: "IT/通信", color: "#0066CC" },
+  "SCSK株式会社": { industry: "IT/通信", color: "#0066CC" },
+  "富士通株式会社": { industry: "IT/通信", color: "#FF0000" },
+  "日本電気株式会社": { industry: "IT/通信", color: "#003399" },
+  "ヤフー株式会社": { industry: "IT/通信", color: "#FF0033" },
+  // 金融
+  "三菱UFJ銀行": { industry: "金融", color: "#E60012" },
+  "株式会社三菱UFJ銀行": { industry: "金融", color: "#E60012" },
+  "株式会社みずほ銀行": { industry: "金融", color: "#003087" },
+  "株式会社三井住友銀行": { industry: "金融", color: "#00A040" },
+  "野村證券株式会社": { industry: "金融", color: "#E60012" },
+  "大和証券株式会社": { industry: "金融", color: "#0033A0" },
+  "SMBC日興証券株式会社": { industry: "金融", color: "#00A040" },
+  "オリックス株式会社": { industry: "金融", color: "#003399" },
+  // 保険
+  "東京海上日動": { industry: "金融", color: "#E1A117" },
+  "東京海上日動火災保険株式会社": { industry: "金融", color: "#E1A117" },
+  "損害保険ジャパン株式会社": { industry: "金融", color: "#0066CC" },
+  "三井住友海上火災保険株式会社": { industry: "金融", color: "#00A040" },
+  "日本生命保険相互会社": { industry: "金融", color: "#E60012" },
+  "第一生命保険株式会社": { industry: "金融", color: "#E60012" },
+  "明治安田生命保険相互会社": { industry: "金融", color: "#003399" },
+  // コンサル
+  "アクセンチュア": { industry: "コンサル", color: "#A100FF" },
+  "アクセンチュア株式会社": { industry: "コンサル", color: "#A100FF" },
+  "デロイト トーマツ コンサルティング合同会社": { industry: "コンサル", color: "#86BC25" },
+  "PwCコンサルティング合同会社": { industry: "コンサル", color: "#D04A02" },
+  "EYストラテジー・アンド・コンサルティング株式会社": { industry: "コンサル", color: "#FFE600" },
+  "KPMGコンサルティング株式会社": { industry: "コンサル", color: "#00338D" },
+  "株式会社野村総合研究所": { industry: "コンサル", color: "#003399" },
+  "株式会社三菱総合研究所": { industry: "コンサル", color: "#E60012" },
+  "株式会社ボストン コンサルティング グループ": { industry: "コンサル", color: "#00984A" },
+  "ボストン コンサルティング グループ合同会社": { industry: "コンサル", color: "#00984A" },
+  // メーカー・自動車
+  "トヨタ自動車": { industry: "メーカー", color: "#EB0A1E" },
+  "トヨタ自動車株式会社": { industry: "メーカー", color: "#EB0A1E" },
+  "本田技研工業株式会社": { industry: "メーカー", color: "#CC0000" },
+  "日産自動車株式会社": { industry: "メーカー", color: "#C3002F" },
+  "ソニーグループ株式会社": { industry: "メーカー", color: "#003087" },
+  "パナソニックホールディングス株式会社": { industry: "メーカー", color: "#003087" },
+  "三菱電機株式会社": { industry: "メーカー", color: "#E60012" },
+  "株式会社日立製作所": { industry: "メーカー", color: "#E60012" },
+  // 商社
+  "三菱商事": { industry: "商社", color: "#E60012" },
+  "三菱商事株式会社": { industry: "商社", color: "#E60012" },
+  "伊藤忠商事株式会社": { industry: "商社", color: "#003399" },
+  "三井物産株式会社": { industry: "商社", color: "#E60012" },
+  "住友商事株式会社": { industry: "商社", color: "#003399" },
+  "丸紅株式会社": { industry: "商社", color: "#E60012" },
+  "豊田通商株式会社": { industry: "商社", color: "#EB0A1E" },
+  "双日株式会社": { industry: "商社", color: "#0055A4" },
+};
+
+// Pattern-based fallback derivation
+function deriveIndustry(name: string): { industry: string; color: string } {
+  if (COMPANY_DATA[name]) return COMPANY_DATA[name];
+  if (/銀行|証券|信託|フィナンシャル/.test(name)) return { industry: "金融", color: "#E60012" };
+  if (/保険/.test(name)) return { industry: "金融", color: "#E1A117" };
+  if (/商事|物産|双日|丸紅|伊藤忠/.test(name)) return { industry: "商社", color: "#E8820C" };
+  if (/コンサルティング|マッキンゼー|ベイン/.test(name)) return { industry: "コンサル", color: "#A100FF" };
+  if (/ソフトバンク|ドコモ|KDDI|NTT/.test(name)) return { industry: "IT/通信", color: "#0055D4" };
+  if (/ソリューション|システム|テクノロジ|データ|デジタル|ソフトウェア|ネットワーク/.test(name)) return { industry: "IT/通信", color: "#0055D4" };
+  if (/自動車|モーター|カー/.test(name)) return { industry: "メーカー", color: "#EB0A1E" };
+  if (/電機|電気|エレクトロニクス|精工|製作所/.test(name)) return { industry: "メーカー", color: "#6B7280" };
+  if (/製薬|ファーマ|薬品|医薬/.test(name)) return { industry: "医薬品", color: "#DC143C" };
+  if (/不動産/.test(name)) return { industry: "不動産", color: "#2E8B57" };
+  if (/建設|工務店|建工/.test(name)) return { industry: "建設", color: "#8B4513" };
+  if (/食品|飲料|ビール|製菓|乳業|製パン/.test(name)) return { industry: "食品", color: "#228B22" };
+  if (/広告|エージェンシー/.test(name)) return { industry: "広告", color: "#FF5733" };
+  if (/テレビ|新聞|放送|出版|映画|エンタ|メディア/.test(name)) return { industry: "メディア", color: "#FF5733" };
+  if (/急便|運輸|物流|ロジスティ|倉庫|港湾|航空|旅客鉄道/.test(name)) return { industry: "物流/運輸", color: "#0066CC" };
+  if (/ホテル|リゾート|旅館|旅行/.test(name)) return { industry: "サービス", color: "#708090" };
+  if (/百貨店|マート|スーパー|コンビニ|ファミリーマート|ローソン|セブン/.test(name)) return { industry: "小売", color: "#CC5500" };
+  if (/電力|ガス|エネルギー|石油|石炭/.test(name)) return { industry: "エネルギー", color: "#FF8C00" };
+  if (/化学|ケミカル|素材|化成|繊維/.test(name)) return { industry: "化学", color: "#9370DB" };
+  if (/ゲーム|エンタメ|エンターテイン|コナミ|バンダイ|任天堂/.test(name)) return { industry: "ゲーム/エンタメ", color: "#E91E8C" };
+  if (/人材|リクルート|パーソル|エン・ジャパン/.test(name)) return { industry: "人材/教育", color: "#20B2AA" };
+  if (/重工|機械|航空宇宙/.test(name)) return { industry: "重工業", color: "#6B7280" };
+  return { industry: "", color: "#6B7280" };
+}
+
+export const COMPANY_NAMES: string[] = [
   "トヨタ自動車株式会社",
   "本田技研工業株式会社",
   "日産自動車株式会社",
@@ -496,5 +601,17 @@ export const COMPANY_SUGGESTIONS = [
   "株式会社エディオン",
   "株式会社ケーズホールディングス",
   "株式会社ノジマ",
-  "株式会社ジョーシン（上新電機株式会社）"
+  "株式会社ジョーシン（上新電機株式会社）",
 ];
+
+export function getCompanySuggestions(query: string): CompanySuggestion[] {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  return COMPANY_NAMES
+    .filter((name) => name.startsWith(trimmed))
+    .slice(0, 5)
+    .map((name) => ({ name, ...deriveIndustry(name) }));
+}
+
+// Keep backward compat export
+export const COMPANY_SUGGESTIONS = COMPANY_NAMES;

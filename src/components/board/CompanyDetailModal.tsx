@@ -7,6 +7,8 @@ import type { Company } from '@/lib/types';
 import { PromoteDialog } from '@/components/status/PromoteDialog';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { fireConfetti } from '@/lib/confetti';
+import { useToast } from '@/lib/useToast';
+import { PRIORITY_CONFIG, type CompanyPriority } from '@/lib/types';
 
 interface MemoData {
   es: string;
@@ -39,6 +41,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const statusColumns = useAppStore((s) => s.statusColumns);
   const interviews = useAppStore((s) => s.interviews);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
+  const showToast = useToast((s) => s.show);
 
   const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
 
@@ -59,6 +62,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [nextDeadline, setNextDeadline] = useState(company.nextDeadline ?? '');
+  const [priority, setPriority] = useState<CompanyPriority | ''>(company.priority ?? '');
 
   const trackStatuses = statusColumns
     .filter((s) => s.trackType === company.trackType)
@@ -75,11 +79,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       return;
     }
 
-    if (statusId !== company.statusId) {
-      const newStatus = statusColumns.find((s) => s.id === statusId);
-      if (newStatus && (newStatus.name === '内定' || newStatus.name === 'インターン参加')) {
+    const newStatus = statusColumns.find((s) => s.id === statusId);
+    if (statusId !== company.statusId && newStatus) {
+      if (newStatus.name === '内定' || newStatus.name === 'インターン参加') {
         fireConfetti();
       }
+      showToast(`『${trimmed}』を【${newStatus.name}】に更新しました。`);
     }
 
     updateCompany(company.id, {
@@ -95,6 +100,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       myPageUrl: myPageUrl.trim() || undefined,
       myPageId: myPageId.trim() || undefined,
       myPagePassword: myPagePassword.trim() || undefined,
+      priority: priority || undefined,
     });
     onClose();
   };
@@ -205,6 +211,27 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">次の締切日</label>
                     <input type="date" value={nextDeadline} onChange={(e) => setNextDeadline(e.target.value)} className="ios-input" />
                   </div>
+                </div>
+              </div>
+
+              {/* 優先度タグ */}
+              <div className="px-1">
+                <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">優先度タグ</p>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(PRIORITY_CONFIG) as [CompanyPriority, typeof PRIORITY_CONFIG[CompanyPriority]][]).map(([key, config]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setPriority(priority === key ? '' : key)}
+                      className={`px-3 py-1 rounded-full text-[13px] font-semibold transition-all ios-tap ${
+                        priority === key
+                          ? config.className + ' ring-2 ring-current'
+                          : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                      }`}
+                    >
+                      {config.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

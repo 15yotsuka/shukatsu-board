@@ -11,14 +11,16 @@ export const DEFAULT_INTERN_STATUS_NAMES = [
 ];
 
 export const DEFAULT_MAIN_STATUS_NAMES = [
-  '興味あり',
-  'ES提出',
-  '書類通過',
-  '一次面接',
-  '二次面接',
+  '未エントリー',
+  'ES作成中',
+  'ES提出済',
+  'Webテスト受検済',
+  '1次面接',
+  '2次面接',
   '最終面接',
+  'インターン選考中',
   '内定',
-  '不合格',
+  'お見送り',
 ];
 
 export const ES_TEMPLATE_QUESTIONS = [

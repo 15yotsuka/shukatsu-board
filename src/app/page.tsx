@@ -6,6 +6,11 @@ import { TrackTabs } from '@/components/layout/TrackTabs';
 import { DeadlineReminder } from '@/components/board/DeadlineReminder';
 import { HeroCardCarousel } from '@/components/board/HeroCardCarousel';
 
+const ENTRY_STATUSES = ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'];
+const INTERVIEW_STATUSES = ['1次面接', '2次面接', '最終面接'];
+const INTERN_STATUSES = ['インターン選考中'];
+const OFFER_STATUSES = ['内定'];
+
 export default function Home() {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
@@ -13,21 +18,26 @@ export default function Home() {
   const getStatusName = (statusId: string) =>
     statusColumns.find((s) => s.id === statusId)?.name ?? '';
 
-  const totalEntries = companies.length;
+  const entryCount = companies.filter((c) =>
+    ENTRY_STATUSES.includes(getStatusName(c.statusId))
+  ).length;
+
   const interviewingCount = companies.filter((c) =>
-    getStatusName(c.statusId).includes('面接')
+    INTERVIEW_STATUSES.includes(getStatusName(c.statusId))
   ).length;
+
   const internCount = companies.filter((c) =>
-    getStatusName(c.statusId) === 'インターン参加'
+    INTERN_STATUSES.includes(getStatusName(c.statusId))
   ).length;
+
   const offerCount = companies.filter((c) =>
-    getStatusName(c.statusId) === '内定'
+    OFFER_STATUSES.includes(getStatusName(c.statusId))
   ).length;
 
   const stats = [
-    { label: 'エントリー', value: totalEntries, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks' },
-    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=面接' },
-    { label: 'インターン参加', value: internCount, unit: '社', color: 'text-[var(--color-success)]', href: '/tasks?filter=インターン参加' },
+    { label: 'エントリー', value: entryCount, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks' },
+    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=1次面接' },
+    { label: 'インターン', value: internCount, unit: '社', color: 'text-[var(--color-success)]', href: '/tasks?filter=インターン選考中' },
     { label: '内定', value: offerCount, unit: '社', color: 'text-[var(--color-warning)]', href: '/tasks?filter=内定' },
   ];
 

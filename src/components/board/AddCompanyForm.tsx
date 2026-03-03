@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { COMPANY_SUGGESTIONS } from '@/lib/companySuggestions';
+import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
+import { PRIORITY_CONFIG, type CompanyPriority } from '@/lib/types';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -22,8 +23,9 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [url, setUrl] = useState('');
   const [deadline, setDeadline] = useState('');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
+  const [priority, setPriority] = useState<CompanyPriority | ''>('');
   const [nameError, setNameError] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleSubmit = () => {
@@ -40,8 +42,15 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       nextDeadline: deadline.trim() || undefined,
       statusId,
       trackType: activeTrack,
+      priority: priority || undefined,
     });
     onClose();
+  };
+
+  const handleSelectSuggestion = (s: CompanySuggestion) => {
+    setName(s.name);
+    if (s.industry) setIndustry(s.industry);
+    setShowSuggestions(false);
   };
 
   return (
@@ -58,6 +67,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* 企業名 + サジェスト */}
           <div className="relative">
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
               企業名 <span className="text-[var(--color-danger)]">*</span>
@@ -69,17 +79,9 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 const val = e.target.value;
                 setName(val);
                 setNameError('');
-                const trimmed = val.trim();
-                if (trimmed.length > 0) {
-                  const filtered = COMPANY_SUGGESTIONS.filter((s) =>
-                    s.startsWith(trimmed)
-                  ).slice(0, 5);
-                  setSuggestions(filtered);
-                  setShowSuggestions(filtered.length > 0);
-                } else {
-                  setSuggestions([]);
-                  setShowSuggestions(false);
-                }
+                const results = getCompanySuggestions(val);
+                setSuggestions(results);
+                setShowSuggestions(results.length > 0);
               }}
               className={`ios-input ${nameError ? '!shadow-[0_0_0_3px_rgba(255,59,48,0.3)]' : ''}`}
               placeholder="例: 株式会社○○"
@@ -90,21 +92,32 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
               <ul className="absolute z-10 w-full mt-1 bg-card rounded-xl shadow-lg ring-1 ring-black/10 dark:ring-white/10 overflow-hidden">
                 {suggestions.map((s) => (
                   <li
-                    key={s}
+                    key={s.name}
                     onPointerDown={(e) => {
                       e.preventDefault();
-                      setName(s);
-                      setShowSuggestions(false);
+                      handleSelectSuggestion(s);
                     }}
-                    className="px-4 py-2.5 text-[15px] text-[var(--color-text)] hover:bg-[var(--color-border)] cursor-pointer"
+                    className="flex items-center justify-between px-4 py-2.5 hover:bg-[var(--color-border)] cursor-pointer gap-3"
                   >
-                    {s}
+                    <span className="text-[15px] text-[var(--color-text)] truncate">{s.name}</span>
+                    {s.industry && (
+                      <span
+                        className="flex-none text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{
+                          color: s.color,
+                          backgroundColor: `${s.color}18`,
+                        }}
+                      >
+                        {s.industry}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
+          {/* 業界 */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">業界</label>
             <input
@@ -116,6 +129,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             />
           </div>
 
+          {/* URL */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">URL</label>
             <input
@@ -127,6 +141,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             />
           </div>
 
+          {/* 締切日 */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">締切日</label>
             <input
@@ -137,6 +152,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             />
           </div>
 
+          {/* 初期ステータス */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期ステータス</label>
             <select
@@ -150,6 +166,27 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 優先度タグ */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">優先度タグ</label>
+            <div className="flex flex-wrap gap-2">
+              {(Object.entries(PRIORITY_CONFIG) as [CompanyPriority, typeof PRIORITY_CONFIG[CompanyPriority]][]).map(([key, config]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setPriority(priority === key ? '' : key)}
+                  className={`px-3 py-1 rounded-full text-[13px] font-semibold transition-all ios-tap ${
+                    priority === key
+                      ? config.className + ' ring-2 ring-current'
+                      : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                  }`}
+                >
+                  {config.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button onClick={handleSubmit} className="ios-button-primary">

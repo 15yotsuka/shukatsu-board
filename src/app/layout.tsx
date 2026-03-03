@@ -3,6 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { ToastDisplay } from "@/components/layout/ToastDisplay";
 
 export const metadata: Metadata = {
   title: "ShukatsuBoard - 就活管理ツール",
@@ -32,6 +33,7 @@ export default function RootLayout({
             {children}
           </main>
           <BottomNav />
+          <ToastDisplay />
         </ThemeProvider>
       </body>
     </html>
