@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { TrackTabs } from '@/components/layout/TrackTabs';
 import { DeadlineReminder } from '@/components/board/DeadlineReminder';
 import { HeroCardCarousel } from '@/components/board/HeroCardCarousel';
+import { MiniWeekCalendar } from '@/components/board/MiniWeekCalendar';
 
 const ENTRY_STATUSES = ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'];
 const INTERVIEW_STATUSES = ['1次面接', '2次面接', '最終面接'];
@@ -69,6 +70,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      <MiniWeekCalendar />
     </div>
   );
 }

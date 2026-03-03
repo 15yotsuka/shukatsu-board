@@ -512,7 +512,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             {company.trackType === 'intern' && (
               <button
                 onClick={() => setShowPromote(true)}
-                className="text-[13px] text-zinc-400 underline underline-offset-2 ios-tap py-2"
+                className="w-full text-center text-sm text-zinc-400 dark:text-zinc-500 py-2 mt-2 ios-tap"
               >
                 本選考に移動する
               </button>
