@@ -12,6 +12,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
+import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
 import { StatusColumn } from './StatusColumn';
@@ -117,12 +118,14 @@ export function KanbanBoard() {
           <p className="text-[17px] font-semibold text-[var(--color-text)] mb-1">登録された企業はありません</p>
           <p className="text-[14px] text-[var(--color-text-secondary)]">右下の「＋」からデータを追加してください。</p>
         </div>
+        <AnimatePresence>
         {selectedCompany && (
           <CompanyDetailModal
             company={selectedCompany}
             onClose={() => setSelectedCompany(null)}
           />
         )}
+      </AnimatePresence>
       </>
     );
   }
@@ -192,12 +195,14 @@ export function KanbanBoard() {
           ) : null}
         </DragOverlay>
       </DndContext>
-      {selectedCompany && (
-        <CompanyDetailModal
-          company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
-        />
-      )}
+      <AnimatePresence>
+        {selectedCompany && (
+          <CompanyDetailModal
+            company={selectedCompany}
+            onClose={() => setSelectedCompany(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

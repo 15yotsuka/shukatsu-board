@@ -12,6 +12,7 @@ export function getDefaultStorageData(): StorageData {
     interviews: [],
     esEntries: [],
     activeTrack: 'intern',
+    scheduledActions: [],
   };
 }
 
@@ -75,5 +76,6 @@ function migrateData(data: StorageData): StorageData {
     interviews: data.interviews ?? [],
     esEntries: data.esEntries ?? [],
     activeTrack: data.activeTrack ?? 'intern',
+    scheduledActions: data.scheduledActions ?? [],
   };
 }

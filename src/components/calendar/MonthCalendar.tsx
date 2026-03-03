@@ -16,10 +16,11 @@ import {
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useAppStore } from '@/store/useAppStore';
-import type { Interview } from '@/lib/types';
+import type { Interview, ScheduledAction } from '@/lib/types';
+import { ACTION_TYPE_COLORS } from '@/lib/types';
 
 interface MonthCalendarProps {
-  onDateSelect: (date: Date, interviews: Interview[]) => void;
+  onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
   selectedDate?: Date | null;
 }
 
@@ -28,6 +29,7 @@ const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const interviews = useAppStore((s) => s.interviews);
+  const scheduledActions = useAppStore((s) => s.scheduledActions);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -45,6 +47,11 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
     return interviews.filter((interview) =>
       isSameDay(new Date(interview.datetime), date)
     );
+  };
+
+  const getActionsForDate = (date: Date): ScheduledAction[] => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return scheduledActions.filter((a) => a.date === dateStr);
   };
 
   return (
@@ -89,18 +96,23 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
       <div className="grid grid-cols-7">
         {days.map((d) => {
           const dateInterviews = getInterviewsForDate(d);
-          const hasInterviews = dateInterviews.length > 0;
+          const dateActions = getActionsForDate(d);
           const isCurrentMonth = isSameMonth(d, currentMonth);
-          const today = isToday(d);
+          const todayCell = isToday(d);
           const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
+
+          const dots: string[] = [
+            ...(dateInterviews.length > 0 ? ['#FF9500'] : []),
+            ...dateActions.slice(0, 2).map((a) => ACTION_TYPE_COLORS[a.type]),
+          ].slice(0, 3);
 
           return (
             <button
               key={d.toISOString()}
-              onClick={() => onDateSelect(d, dateInterviews)}
+              onClick={() => onDateSelect(d, dateInterviews, dateActions)}
               className={`relative w-10 h-10 mx-auto flex flex-col items-center justify-center text-[15px] rounded-full ios-tap ${!isCurrentMonth
                 ? 'text-[var(--color-border)]'
-                : today
+                : todayCell
                   ? 'bg-[var(--color-primary)] text-white font-bold'
                   : isSelected
                     ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
@@ -108,11 +120,16 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
                 }`}
             >
               <span>{format(d, 'd')}</span>
-              {hasInterviews && (
-                <span
-                  className={`absolute bottom-0.5 w-1.5 h-1.5 rounded-full ${today ? 'bg-[var(--color-card)]' : 'bg-[var(--color-primary)]'
-                    }`}
-                />
+              {dots.length > 0 && (
+                <div className="absolute bottom-0.5 flex gap-0.5">
+                  {dots.map((color, i) => (
+                    <span
+                      key={i}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: todayCell ? 'rgba(255,255,255,0.8)' : color }}
+                    />
+                  ))}
+                </div>
               )}
             </button>
           );

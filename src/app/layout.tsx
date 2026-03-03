@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ToastDisplay } from "@/components/layout/ToastDisplay";
+import { PageTransition } from "@/components/layout/PageTransition";
 
 export const metadata: Metadata = {
   title: "ShukatsuBoard - 就活管理ツール",
@@ -30,7 +31,7 @@ export default function RootLayout({
         <ThemeProvider>
           <Header />
           <main className="pt-14 pb-16 min-h-screen">
-            {children}
+            <PageTransition>{children}</PageTransition>
           </main>
           <BottomNav />
           <ToastDisplay />

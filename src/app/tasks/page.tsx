@@ -2,11 +2,22 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { createSampleCompanies } from '@/lib/sampleData';
 import type { Company } from '@/lib/types';
+import { PRIORITY_CONFIG } from '@/lib/types';
+
+const getBadgeStyle = (statusName: string): string => {
+  if (statusName.includes('面接')) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
+  if (statusName.includes('内定')) return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
+  if (statusName.includes('インターン')) return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+  if (statusName.includes('ES') || statusName.includes('書類')) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+  if (statusName.includes('通過')) return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+  return 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300';
+};
 
 function TasksContent() {
   const companies = useAppStore((s) => s.companies);
@@ -77,10 +88,17 @@ function TasksContent() {
               <div
                 key={c.id}
                 onClick={() => setSelectedCompany(c)}
-                className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-4 shadow-sm border border-[var(--color-border)] flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform duration-100 ios-tap"
+                className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-4 shadow-sm border border-[var(--color-border)] flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all duration-150 ios-tap hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{c.name}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{c.name}</p>
+                    {c.priority && PRIORITY_CONFIG[c.priority] && (
+                      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${PRIORITY_CONFIG[c.priority].className}`}>
+                        {PRIORITY_CONFIG[c.priority].label}
+                      </span>
+                    )}
+                  </div>
                   {c.industry && (
                     <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5 truncate">{c.industry}</p>
                   )}
@@ -91,7 +109,7 @@ function TasksContent() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-[var(--color-primary)]/10 text-[var(--color-primary)] whitespace-nowrap">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${getBadgeStyle(statusName)}`}>
                     {statusName}
                   </span>
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -114,13 +132,17 @@ function TasksContent() {
         </svg>
       </button>
 
-      {showAddForm && <AddCompanyForm onClose={() => setShowAddForm(false)} />}
-      {selectedCompany && (
-        <CompanyDetailModal
-          company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
-        />
-      )}
+      <AnimatePresence>
+        {showAddForm && <AddCompanyForm onClose={() => setShowAddForm(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {selectedCompany && (
+          <CompanyDetailModal
+            company={selectedCompany}
+            onClose={() => setSelectedCompany(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

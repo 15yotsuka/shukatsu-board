@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
 import { PRIORITY_CONFIG, type CompanyPriority } from '@/lib/types';
@@ -55,8 +56,21 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
-      <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
+      <motion.div
+        className="absolute inset-0 bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg"
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 24, opacity: 0 }}
+        transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+      >
         {/* Grab bar */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
           <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
@@ -196,7 +210,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             キャンセル
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -5,21 +5,25 @@ import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { useAppStore } from '@/store/useAppStore';
-import type { Interview } from '@/lib/types';
+import type { Interview, ScheduledAction } from '@/lib/types';
+import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS } from '@/lib/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedInterviews, setSelectedInterviews] = useState<Interview[]>([]);
+  const [selectedActions, setSelectedActions] = useState<ScheduledAction[]>([]);
   const [showAddInterview, setShowAddInterview] = useState(false);
   const [addInterviewCompanyId, setAddInterviewCompanyId] = useState('');
   const companies = useAppStore((s) => s.companies);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
+  const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
 
-  const handleDateSelect = (date: Date, interviews: Interview[]) => {
+  const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
     setSelectedDate(date);
     setSelectedInterviews(interviews);
+    setSelectedActions(actions);
   };
 
   const getCompanyName = (companyId: string): string => {
@@ -70,10 +74,48 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedInterviews.length === 0 && (
+      {selectedDate && selectedActions.length > 0 && (
+        <div className="bg-card rounded-xl overflow-hidden">
+          <div className="px-4 pt-4 pb-2">
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+              {format(selectedDate, 'M月d日（E）', { locale: ja })}の予定
+            </h3>
+          </div>
+          <div className="divide-y divide-[var(--color-border)]">
+            {selectedActions.map((action) => (
+              <div key={action.id} className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full flex-none"
+                    style={{ backgroundColor: ACTION_TYPE_COLORS[action.type] }}
+                  />
+                  <div>
+                    <p className="text-[15px] font-medium text-[var(--color-text)]">
+                      {ACTION_TYPE_LABELS[action.type]}
+                    </p>
+                    <p className="text-[13px] text-[var(--color-text-secondary)]">
+                      {getCompanyName(action.companyId)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => deleteScheduledAction(action.id)}
+                  className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && (
         <div className="bg-card rounded-xl p-4">
           <p className="text-[14px] text-[var(--color-text-secondary)] text-center">
-            {format(selectedDate, 'M月d日', { locale: ja })}の面接予定はありません
+            {format(selectedDate, 'M月d日', { locale: ja })}の予定はありません
           </p>
         </div>
       )}

@@ -8,6 +8,7 @@ import type {
   TrackType,
   Interview,
   ESEntry,
+  ScheduledAction,
 } from '@/lib/types';
 import { createAllDefaultStatuses } from '@/lib/defaults';
 
@@ -45,13 +46,18 @@ interface AppActions {
   deleteESEntry: (id: string) => void;
   reorderESEntries: (companyId: string, orderedIds: string[]) => void;
 
+  // ScheduledAction CRUD
+  addScheduledAction: (action: Omit<ScheduledAction, 'id'>) => void;
+  updateScheduledAction: (id: string, updates: Partial<ScheduledAction>) => void;
+  deleteScheduledAction: (id: string) => void;
+
   // Backup / Restore
   loadBackup: (data: Partial<AppState>) => void;
 }
 
 type AppStore = AppState & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 2;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -62,6 +68,7 @@ export const useAppStore = create<AppStore>()(
       statusColumns: createAllDefaultStatuses(),
       interviews: [],
       esEntries: [],
+      scheduledActions: [],
       activeTrack: 'intern' as TrackType,
 
       // Company CRUD
@@ -96,6 +103,7 @@ export const useAppStore = create<AppStore>()(
           companies: state.companies.filter((c) => c.id !== id),
           interviews: state.interviews.filter((i) => i.companyId !== id),
           esEntries: state.esEntries.filter((e) => e.companyId !== id),
+          scheduledActions: state.scheduledActions.filter((a) => a.companyId !== id),
         }));
       },
 
@@ -310,6 +318,26 @@ export const useAppStore = create<AppStore>()(
         }));
       },
 
+      // ScheduledAction CRUD
+      addScheduledAction: (action) => {
+        const newAction: ScheduledAction = { ...action, id: nanoid() };
+        set((state) => ({ scheduledActions: [...state.scheduledActions, newAction] }));
+      },
+
+      updateScheduledAction: (id, updates) => {
+        set((state) => ({
+          scheduledActions: state.scheduledActions.map((a) =>
+            a.id === id ? { ...a, ...updates } : a
+          ),
+        }));
+      },
+
+      deleteScheduledAction: (id) => {
+        set((state) => ({
+          scheduledActions: state.scheduledActions.filter((a) => a.id !== id),
+        }));
+      },
+
       // Backup / Restore
       loadBackup: (data) => {
         set({
@@ -318,6 +346,7 @@ export const useAppStore = create<AppStore>()(
           statusColumns: data.statusColumns ?? createAllDefaultStatuses(),
           interviews: data.interviews ?? [],
           esEntries: data.esEntries ?? [],
+          scheduledActions: (data as AppState).scheduledActions ?? [],
           activeTrack: data.activeTrack ?? 'intern',
         });
       },
@@ -326,14 +355,15 @@ export const useAppStore = create<AppStore>()(
       name: 'shukatsu-board-data',
       version: CURRENT_SCHEMA_VERSION,
       migrate: (persistedState, version) => {
-        if (version === 0 || version < CURRENT_SCHEMA_VERSION) {
-          const state = persistedState as Partial<AppState>;
+        const state = persistedState as Partial<AppState>;
+        if (version < CURRENT_SCHEMA_VERSION) {
           return {
             schemaVersion: CURRENT_SCHEMA_VERSION,
             companies: state.companies ?? [],
             statusColumns: state.statusColumns ?? createAllDefaultStatuses(),
             interviews: state.interviews ?? [],
             esEntries: state.esEntries ?? [],
+            scheduledActions: state.scheduledActions ?? [],
             activeTrack: state.activeTrack ?? 'intern',
           } as AppState;
         }

@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { TrackType } from '@/lib/types';
 
@@ -19,12 +20,22 @@ export function TrackTabs() {
           <button
             key={tab.value}
             onClick={() => setActiveTrack(tab.value)}
-            className={`flex-1 py-2 text-[13px] font-semibold rounded-md transition-all duration-200 ${activeTrack === tab.value
-              ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm'
-              : 'text-gray-500 dark:text-zinc-400'
-              }`}
+            className="relative flex-1 py-2 text-[13px] font-semibold rounded-md ios-tap"
           >
-            {tab.label}
+            {activeTrack === tab.value && (
+              <motion.div
+                layoutId="track-tab-bg"
+                className="absolute inset-0 bg-white dark:bg-zinc-700 rounded-md shadow-sm"
+                transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+              />
+            )}
+            <span className={`relative z-10 transition-colors duration-200 ${
+              activeTrack === tab.value
+                ? 'text-gray-900 dark:text-white'
+                : 'text-gray-500 dark:text-zinc-400'
+            }`}>
+              {tab.label}
+            </span>
           </button>
         ))}
       </div>

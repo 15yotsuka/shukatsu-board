@@ -8,7 +8,15 @@ import { PromoteDialog } from '@/components/status/PromoteDialog';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { fireConfetti } from '@/lib/confetti';
 import { useToast } from '@/lib/useToast';
-import { PRIORITY_CONFIG, type CompanyPriority } from '@/lib/types';
+import {
+  PRIORITY_CONFIG,
+  ACTION_TYPE_LABELS,
+  ACTION_TYPE_COLORS,
+  type CompanyPriority,
+  type ActionType,
+} from '@/lib/types';
+import { format, parseISO } from 'date-fns';
+import { ja } from 'date-fns/locale';
 
 interface MemoData {
   es: string;
@@ -41,6 +49,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const statusColumns = useAppStore((s) => s.statusColumns);
   const interviews = useAppStore((s) => s.interviews);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
+  const scheduledActions = useAppStore((s) => s.scheduledActions.filter((a) => a.companyId === company.id));
+  const addScheduledAction = useAppStore((s) => s.addScheduledAction);
+  const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const showToast = useToast((s) => s.show);
 
   const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
@@ -61,8 +72,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [showPassword, setShowPassword] = useState(false);
 
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
-  const [nextDeadline, setNextDeadline] = useState(company.nextDeadline ?? '');
   const [priority, setPriority] = useState<CompanyPriority | ''>(company.priority ?? '');
+  const [newActionType, setNewActionType] = useState<ActionType>('es');
+  const [newActionDate, setNewActionDate] = useState('');
 
   const trackStatuses = statusColumns
     .filter((s) => s.trackType === company.trackType)
@@ -87,6 +99,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       showToast(`『${trimmed}』を【${newStatus.name}】に更新しました。`);
     }
 
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const futureActions = scheduledActions
+      .filter((a) => a.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const autoDeadline = futureActions[0]?.date;
+
     updateCompany(company.id, {
       name: trimmed,
       industry: industry.trim() || undefined,
@@ -95,7 +113,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       selectionMemo: (memo.es || memo.interview || memo.reverseQuestion || memo.other)
         ? JSON.stringify(memo)
         : undefined,
-      nextDeadline: nextDeadline.trim() || undefined,
+      nextDeadline: autoDeadline || undefined,
       statusId,
       myPageUrl: myPageUrl.trim() || undefined,
       myPageId: myPageId.trim() || undefined,
@@ -121,10 +139,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         onClick={onClose}
       />
       <motion.div
-        initial={{ y: '100%', opacity: 0 }}
+        initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        exit={{ y: 24, opacity: 0 }}
+        transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
         className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
       >
         {/* Fixed header */}
@@ -156,11 +174,17 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
-            {nextDeadline && (
-              <span className="flex-none text-[13px] font-semibold text-[var(--color-danger)] bg-[var(--color-danger)]/10 rounded-full px-3 py-1">
-                {nextDeadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
-              </span>
-            )}
+            {(() => {
+              const today = format(new Date(), 'yyyy-MM-dd');
+              const next = [...scheduledActions]
+                .filter((a) => a.date >= today)
+                .sort((a, b) => a.date.localeCompare(b.date))[0];
+              return next ? (
+                <span className="flex-none text-[13px] font-semibold text-[var(--color-danger)] bg-[var(--color-danger)]/10 rounded-full px-3 py-1">
+                  {ACTION_TYPE_LABELS[next.type]} {next.date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                </span>
+              ) : null;
+            })()}
           </div>
 
           {/* Segmented control */}
@@ -207,11 +231,74 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">URL</label>
                     <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} className="ios-input" placeholder="https://..." />
                   </div>
-                  <div className="px-4 py-3">
-                    <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">次の締切日</label>
-                    <input type="date" value={nextDeadline} onChange={(e) => setNextDeadline(e.target.value)} className="ios-input" />
-                  </div>
                 </div>
+              </div>
+
+              {/* 予定アクション */}
+              <div>
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">予定アクション</h3>
+                </div>
+                {/* 追加フォーム */}
+                <div className="flex gap-2 mb-3">
+                  <select
+                    value={newActionType}
+                    onChange={(e) => setNewActionType(e.target.value as ActionType)}
+                    className="ios-input flex-none w-auto text-[13px] py-2"
+                  >
+                    {(Object.entries(ACTION_TYPE_LABELS) as [ActionType, string][]).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="date"
+                    value={newActionDate}
+                    onChange={(e) => setNewActionDate(e.target.value)}
+                    className="ios-input flex-1 text-[13px] py-2"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newActionDate) return;
+                      addScheduledAction({ companyId: company.id, type: newActionType, date: newActionDate });
+                      setNewActionDate('');
+                    }}
+                    disabled={!newActionDate}
+                    className="px-3 py-2 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40 flex-none"
+                  >
+                    + 追加
+                  </button>
+                </div>
+                {/* 登録済みリスト */}
+                {scheduledActions.length > 0 && (
+                  <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                    {[...scheduledActions]
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .map((action) => (
+                        <div key={action.id} className="flex items-center justify-between px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-2 h-2 rounded-full flex-none"
+                              style={{ backgroundColor: ACTION_TYPE_COLORS[action.type] }}
+                            />
+                            <span className="text-[14px] font-medium text-[var(--color-text)]">
+                              {ACTION_TYPE_LABELS[action.type]}
+                            </span>
+                            <span className="text-[13px] text-[var(--color-text-secondary)]">
+                              {format(parseISO(action.date), 'M/d (E)', { locale: ja })}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => deleteScheduledAction(action.id)}
+                            className="w-9 h-9 flex items-center justify-center text-[var(--color-danger)] ios-tap"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
 
               {/* 優先度タグ */}
@@ -415,20 +502,22 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           <button onClick={handleSave} className="ios-button-primary shadow-sm hover:opacity-90 transition-opacity">
             保存
           </button>
-          {company.trackType === 'intern' && (
+          <div className="flex items-center justify-between pt-1">
             <button
-              onClick={() => setShowPromote(true)}
-              className="w-full text-[var(--color-primary)] bg-[var(--color-primary-light)] rounded-xl py-3 text-center text-[16px] font-semibold ios-tap"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-[var(--color-danger)] text-[14px] font-medium ios-tap py-2"
             >
-              本選考に進む
+              削除
             </button>
-          )}
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full text-[var(--color-danger)] text-center py-2.5 text-[15px] font-medium ios-tap"
-          >
-            削除
-          </button>
+            {company.trackType === 'intern' && (
+              <button
+                onClick={() => setShowPromote(true)}
+                className="text-[13px] text-zinc-400 underline underline-offset-2 ios-tap py-2"
+              >
+                本選考に移動する
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
 

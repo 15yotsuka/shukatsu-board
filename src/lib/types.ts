@@ -92,6 +92,34 @@ export interface AppState {
   interviews: Interview[];
   esEntries: ESEntry[];
   activeTrack: TrackType;
+  scheduledActions: ScheduledAction[];
+}
+
+// ============================
+// 予定アクション（締切・面接など）
+// ============================
+export type ActionType = 'es' | 'webtest' | 'interview' | 'other';
+
+export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
+  es: 'ES提出',
+  webtest: 'Webテスト',
+  interview: '面接',
+  other: 'その他',
+};
+
+export const ACTION_TYPE_COLORS: Record<ActionType, string> = {
+  es: '#007AFF',
+  webtest: '#9B59B6',
+  interview: '#FF9500',
+  other: '#8E8E93',
+};
+
+export interface ScheduledAction {
+  id: string;
+  companyId: string;
+  type: ActionType;
+  date: string; // "2026-03-15"
+  note?: string;
 }
 
 // ============================
@@ -104,4 +132,5 @@ export interface StorageData {
   interviews: Interview[];
   esEntries: ESEntry[];
   activeTrack: TrackType;
+  scheduledActions: ScheduledAction[];
 }
