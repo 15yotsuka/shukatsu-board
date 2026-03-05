@@ -38,6 +38,9 @@ export interface Company {
   selectionMemo?: string;
   // 次の締切日（統計・ソート用）ISO 8601: "2026-03-15"
   nextDeadline?: string;
+  // 直近の予定アクション（ソート・カルーセル用）
+  nextActionDate?: string;
+  nextActionType?: ActionType;
   // 優先度タグ
   priority?: CompanyPriority;
 }
@@ -98,12 +101,13 @@ export interface AppState {
 // ============================
 // 予定アクション（締切・面接など）
 // ============================
-export type ActionType = 'es' | 'webtest' | 'interview' | 'other';
+export type ActionType = 'es' | 'webtest' | 'interview' | 'final' | 'other';
 
 export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   es: 'ES提出',
   webtest: 'Webテスト',
   interview: '面接',
+  final: '最終面接',
   other: 'その他',
 };
 
@@ -111,6 +115,7 @@ export const ACTION_TYPE_COLORS: Record<ActionType, string> = {
   es: '#007AFF',
   webtest: '#9B59B6',
   interview: '#FF9500',
+  final: '#FF3B30',
   other: '#8E8E93',
 };
 

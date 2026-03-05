@@ -321,7 +321,27 @@ export const useAppStore = create<AppStore>()(
       // ScheduledAction CRUD
       addScheduledAction: (action) => {
         const newAction: ScheduledAction = { ...action, id: nanoid() };
-        set((state) => ({ scheduledActions: [...state.scheduledActions, newAction] }));
+        set((state) => {
+          const newActions = [...state.scheduledActions, newAction];
+          const today = new Date().toISOString().slice(0, 10);
+          const nextAction = newActions
+            .filter((a) => a.companyId === action.companyId && a.date >= today)
+            .sort((a, b) => a.date.localeCompare(b.date))[0];
+          return {
+            scheduledActions: newActions,
+            companies: state.companies.map((c) =>
+              c.id === action.companyId
+                ? {
+                    ...c,
+                    nextActionDate: nextAction?.date,
+                    nextActionType: nextAction?.type,
+                    nextDeadline: nextAction?.date,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : c
+            ),
+          };
+        });
       },
 
       updateScheduledAction: (id, updates) => {
@@ -333,9 +353,29 @@ export const useAppStore = create<AppStore>()(
       },
 
       deleteScheduledAction: (id) => {
-        set((state) => ({
-          scheduledActions: state.scheduledActions.filter((a) => a.id !== id),
-        }));
+        set((state) => {
+          const removed = state.scheduledActions.find((a) => a.id === id);
+          const newActions = state.scheduledActions.filter((a) => a.id !== id);
+          if (!removed) return { scheduledActions: newActions };
+          const today = new Date().toISOString().slice(0, 10);
+          const nextAction = newActions
+            .filter((a) => a.companyId === removed.companyId && a.date >= today)
+            .sort((a, b) => a.date.localeCompare(b.date))[0];
+          return {
+            scheduledActions: newActions,
+            companies: state.companies.map((c) =>
+              c.id === removed.companyId
+                ? {
+                    ...c,
+                    nextActionDate: nextAction?.date,
+                    nextActionType: nextAction?.type,
+                    nextDeadline: nextAction?.date,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : c
+            ),
+          };
+        });
       },
 
       // Backup / Restore

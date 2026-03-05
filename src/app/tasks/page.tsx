@@ -8,7 +8,7 @@ import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { createSampleCompanies } from '@/lib/sampleData';
 import type { Company } from '@/lib/types';
-import { PRIORITY_CONFIG } from '@/lib/types';
+import { PRIORITY_CONFIG, ACTION_TYPE_LABELS } from '@/lib/types';
 import { useToast } from '@/lib/useToast';
 import { format } from 'date-fns';
 
@@ -69,7 +69,12 @@ function TasksContent() {
     const currentIdx = trackCols.findIndex((s) => s.id === company.statusId);
     if (currentIdx === -1 || currentIdx >= trackCols.length - 1) return;
     const nextStatus = trackCols[currentIdx + 1];
-    updateCompany(company.id, { statusId: nextStatus.id });
+    updateCompany(company.id, {
+      statusId: nextStatus.id,
+      nextActionDate: undefined,
+      nextActionType: undefined,
+      nextDeadline: undefined,
+    });
     showToast(`『${company.name}』を【${nextStatus.name}】に更新しました。`);
     setExpandedId(null);
   };
@@ -89,14 +94,21 @@ function TasksContent() {
       })
     : companies;
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (a.nextDeadline && b.nextDeadline) return a.nextDeadline.localeCompare(b.nextDeadline);
-    if (a.nextDeadline) return -1;
-    if (b.nextDeadline) return 1;
-    return 0;
-  });
-
   const today = format(new Date(), 'yyyy-MM-dd');
+
+  // お見送りを分離してアーカイブ表示
+  const active = filtered.filter((c) => !getStatusName(c.statusId).includes('お見送り'));
+  const archived = filtered.filter((c) => getStatusName(c.statusId).includes('お見送り'));
+
+  const sorted = [...active].sort((a, b) => {
+    if (a.nextActionDate && b.nextActionDate)
+      return a.nextActionDate.localeCompare(b.nextActionDate);
+    if (a.nextActionDate) return -1;
+    if (b.nextActionDate) return 1;
+    const orderA = statusColumns.find((s) => s.id === a.statusId)?.order ?? 0;
+    const orderB = statusColumns.find((s) => s.id === b.statusId)?.order ?? 0;
+    return orderB - orderA;
+  });
 
   return (
     <div className="pb-24 px-4 pt-4">
@@ -114,7 +126,7 @@ function TasksContent() {
         </div>
       )}
 
-      {sorted.length === 0 && !filter ? (
+      {sorted.length === 0 && archived.length === 0 && !filter ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-[16px] font-semibold text-[var(--color-text)] mb-1">企業が登録されていません</p>
           <p className="text-[13px] text-[var(--color-text-secondary)]">右下の＋ボタンから追加してください</p>
@@ -125,16 +137,17 @@ function TasksContent() {
             サンプルを追加
           </button>
         </div>
-      ) : sorted.length === 0 && filter ? (
+      ) : sorted.length === 0 && archived.length === 0 && filter ? (
         <p className="text-center text-[var(--color-text-secondary)] py-20">該当する企業はありません</p>
       ) : (
+        <>
         <div className="space-y-2">
           {sorted.map((c) => {
             const statusName = getStatusName(c.statusId);
             const milestoneIdx = getMilestoneIndex(statusName);
             const { current, total } = getStatusPosition(c);
             const isExpanded = expandedId === c.id;
-            const hasDeadlineNow = !!(c.nextDeadline && c.nextDeadline <= today);
+            const hasDeadlineNow = !!(c.nextActionDate && c.nextActionDate <= today);
 
             return (
               <div
@@ -158,9 +171,11 @@ function TasksContent() {
                     {c.industry && (
                       <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5 truncate">{c.industry}</p>
                     )}
-                    {c.nextDeadline && (
+                    {c.nextActionDate && (
                       <p className={`text-[12px] mt-0.5 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-secondary)]'}`}>
-                        締切: {c.nextDeadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                        {c.nextActionType ? ACTION_TYPE_LABELS[c.nextActionType] : '予定'}:{' '}
+                        {c.nextActionDate.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                        {hasDeadlineNow && ' ・結果は？'}
                       </p>
                     )}
                   </div>
@@ -255,6 +270,38 @@ function TasksContent() {
             );
           })}
         </div>
+
+        {/* アーカイブ（お見送り）セクション */}
+        {archived.length > 0 && (
+          <div className="mt-6">
+            <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide px-1 mb-2">
+              アーカイブ（お見送り {archived.length}件）
+            </p>
+            <div className="space-y-2 opacity-60">
+              {archived.map((c) => {
+                const statusName = getStatusName(c.statusId);
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedCompany(c)}
+                    className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-3 shadow-sm border border-[var(--color-border)] flex items-center gap-3 cursor-pointer"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">{c.name}</p>
+                      {c.industry && (
+                        <p className="text-[12px] text-[var(--color-text-secondary)] truncate">{c.industry}</p>
+                      )}
+                    </div>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
+                      {statusName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       <button
