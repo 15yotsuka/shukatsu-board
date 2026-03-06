@@ -8,6 +8,7 @@ import { ACTION_TYPE_COLORS, type ActionType } from '@/lib/types';
 
 export function MiniWeekCalendar() {
   const scheduledActions = useAppStore((s) => s.scheduledActions);
+  const companies = useAppStore((s) => s.companies);
 
   const today = startOfDay(new Date());
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
@@ -15,6 +16,11 @@ export function MiniWeekCalendar() {
   const getActionsForDay = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return scheduledActions.filter((a) => a.date === dateStr);
+  };
+
+  const hasDeadlineOnDay = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return companies.some((c) => c.nextDeadline === dateStr);
   };
 
   return (
@@ -29,6 +35,7 @@ export function MiniWeekCalendar() {
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, i) => {
             const actions = getActionsForDay(day);
+            const hasDeadline = hasDeadlineOnDay(day);
             const isToday = i === 0;
             const dayLabel = format(day, 'E', { locale: ja });
             const dateLabel = format(day, 'd');
@@ -48,7 +55,10 @@ export function MiniWeekCalendar() {
                   {dateLabel}
                 </span>
                 <div className="flex flex-wrap justify-center gap-0.5 min-h-[8px]">
-                  {actions.slice(0, 3).map((action, j) => (
+                  {hasDeadline && (
+                    <div className="w-1.5 h-1.5 rounded-full flex-none" style={{ backgroundColor: '#FF3B30' }} />
+                  )}
+                  {actions.slice(0, 2).map((action, j) => (
                     <div
                       key={j}
                       className="w-1.5 h-1.5 rounded-full flex-none"

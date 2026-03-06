@@ -20,6 +20,10 @@ export default function CalendarPage() {
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
 
+  const selectedDeadlineCompanies = selectedDate
+    ? companies.filter((c) => c.nextDeadline === format(selectedDate, 'yyyy-MM-dd'))
+    : [];
+
   const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
     setSelectedDate(date);
     setSelectedInterviews(interviews);
@@ -112,7 +116,25 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && (
+      {selectedDate && selectedDeadlineCompanies.length > 0 && (
+        <div className="bg-card rounded-xl overflow-hidden">
+          <div className="px-4 pt-4 pb-2">
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+              {format(selectedDate, 'M月d日（E）', { locale: ja })}の締切
+            </h3>
+          </div>
+          <div className="divide-y divide-[var(--color-border)]">
+            {selectedDeadlineCompanies.map((company) => (
+              <div key={company.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: '#FF3B30' }} />
+                <p className="text-[15px] font-medium text-[var(--color-text)]">{company.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && selectedDeadlineCompanies.length === 0 && (
         <div className="bg-card rounded-xl p-4">
           <p className="text-[14px] text-[var(--color-text-secondary)] text-center">
             {format(selectedDate, 'M月d日', { locale: ja })}の予定はありません

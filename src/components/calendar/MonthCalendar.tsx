@@ -19,6 +19,8 @@ import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_COLORS } from '@/lib/types';
 
+const DEADLINE_DOT_COLOR = '#FF3B30';
+
 interface MonthCalendarProps {
   onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
   selectedDate?: Date | null;
@@ -30,6 +32,7 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
+  const companies = useAppStore((s) => s.companies);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -52,6 +55,11 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
   const getActionsForDate = (date: Date): ScheduledAction[] => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return scheduledActions.filter((a) => a.date === dateStr);
+  };
+
+  const hasDeadlineOnDate = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return companies.some((c) => c.nextDeadline === dateStr);
   };
 
   return (
@@ -101,9 +109,11 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
           const todayCell = isToday(d);
           const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
 
+          const hasDeadline = hasDeadlineOnDate(d);
           const dots: string[] = [
+            ...(hasDeadline ? [DEADLINE_DOT_COLOR] : []),
             ...(dateInterviews.length > 0 ? ['#FF9500'] : []),
-            ...dateActions.slice(0, 2).map((a) => ACTION_TYPE_COLORS[a.type]),
+            ...dateActions.slice(0, 1).map((a) => ACTION_TYPE_COLORS[a.type]),
           ].slice(0, 3);
 
           return (

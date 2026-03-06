@@ -46,7 +46,18 @@ export function UpcomingList() {
       color: ACTION_TYPE_COLORS[a.type],
     }));
 
-  const unified = [...interviewItems, ...actionItems]
+  const deadlineItems: UnifiedItem[] = companies
+    .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr)
+    .map((c) => ({
+      kind: 'action' as const,
+      sortKey: c.nextDeadline! + 'T00:00:00',
+      companyId: c.id,
+      label: `締切 - ${c.name}`,
+      sub: format(parseISO(c.nextDeadline!), 'M/d（E）', { locale: ja }),
+      color: '#FF3B30',
+    }));
+
+  const unified = [...interviewItems, ...actionItems, ...deadlineItems]
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
     .slice(0, 10);
 

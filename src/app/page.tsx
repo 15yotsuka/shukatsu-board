@@ -35,8 +35,8 @@ export default function Home() {
   ).length;
 
   const stats = [
-    { label: 'エントリー', value: entryCount, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks' },
-    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=1次面接' },
+    { label: 'エントリー', value: entryCount, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks?filter=エントリー' },
+    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=面接中' },
     { label: 'インターン', value: internCount, unit: '社', color: 'text-[var(--color-success)]', href: '/tasks?filter=インターン選考中' },
     { label: '内定', value: offerCount, unit: '社', color: 'text-[var(--color-warning)]', href: '/tasks?filter=内定' },
   ];

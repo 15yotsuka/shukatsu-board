@@ -6,11 +6,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
+import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies } from '@/lib/sampleData';
 import type { Company } from '@/lib/types';
 import { PRIORITY_CONFIG, ACTION_TYPE_LABELS } from '@/lib/types';
+import { MILESTONES, getMilestoneIndex } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
 import { format } from 'date-fns';
+
+const FILTER_GROUPS: Record<string, string[]> = {
+  'エントリー': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
+  '面接中': ['1次面接', '2次面接', '最終面接'],
+};
 
 const getBadgeStyle = (statusName: string): string => {
   if (statusName.includes('面接')) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
@@ -19,17 +26,6 @@ const getBadgeStyle = (statusName: string): string => {
   if (statusName.includes('ES') || statusName.includes('書類')) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
   if (statusName.includes('通過')) return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
   return 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300';
-};
-
-const MILESTONES = ['ES', 'Webテスト', '面接', '最終面接', '内定'];
-
-const getMilestoneIndex = (statusName: string): number => {
-  if (statusName.includes('最終')) return 3;
-  if (statusName.includes('内定')) return 4;
-  if (statusName.includes('面接')) return 2;
-  if (statusName.includes('Web') || statusName.includes('テスト')) return 1;
-  if (statusName.includes('ES') || statusName.includes('書類')) return 0;
-  return 0;
 };
 
 function TasksContent() {
@@ -86,6 +82,7 @@ function TasksContent() {
   const filtered = filter
     ? companies.filter((c) => {
         const name = getStatusName(c.statusId);
+        if (FILTER_GROUPS[filter]) return FILTER_GROUPS[filter].includes(name);
         return name === filter || name.includes(filter);
       })
     : companies;
@@ -140,7 +137,7 @@ function TasksContent() {
         <div className="space-y-2">
           {sorted.map((c) => {
             const statusName = getStatusName(c.statusId);
-            const milestoneIdx = getMilestoneIndex(statusName);
+            const milestoneIdx = getMilestoneIndex(statusName, c.selectionType ?? 'main_only');
             const { current, total } = getStatusPosition(c);
             const isExpanded = expandedId === c.id;
             const hasDeadlineNow = !!(c.nextActionDate && c.nextActionDate <= today);
@@ -210,10 +207,10 @@ function TasksContent() {
                           <div className="absolute left-0 right-0 h-0.5 bg-zinc-200 dark:bg-zinc-700 top-[5px]">
                             <div
                               className="h-full bg-blue-500 transition-all duration-300"
-                              style={{ width: `${(milestoneIdx / (MILESTONES.length - 1)) * 100}%` }}
+                              style={{ width: `${(milestoneIdx / (MILESTONES[c.selectionType ?? 'main_only'].length - 1)) * 100}%` }}
                             />
                           </div>
-                          {MILESTONES.map((label, i) => (
+                          {MILESTONES[c.selectionType ?? 'main_only'].map((label, i) => (
                             <div key={i} className="flex flex-col items-center relative z-10 gap-1">
                               <div className={`w-3 h-3 rounded-full flex-none ${
                                 i < milestoneIdx
@@ -315,10 +312,22 @@ function TasksContent() {
       </AnimatePresence>
       <AnimatePresence>
         {selectedCompany && (
-          <CompanyDetailModal
-            company={selectedCompany}
-            onClose={() => setSelectedCompany(null)}
-          />
+          <ErrorBoundary
+            fallback={
+              <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                <div className="bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl text-center">
+                  <p className="text-[17px] font-bold text-[var(--color-text)] mb-2">表示エラー</p>
+                  <p className="text-[14px] text-[var(--color-text-secondary)] mb-4">企業データの読み込みに失敗しました。</p>
+                  <button onClick={() => setSelectedCompany(null)} className="ios-button-primary">閉じる</button>
+                </div>
+              </div>
+            }
+          >
+            <CompanyDetailModal
+              company={selectedCompany}
+              onClose={() => setSelectedCompany(null)}
+            />
+          </ErrorBoundary>
         )}
       </AnimatePresence>
     </div>
