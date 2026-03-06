@@ -1,16 +1,10 @@
 // ============================
-// 選考トラック種別
-// ============================
-export type TrackType = 'intern' | 'main';
-
-// ============================
 // ステータスカラム（カンバンの列）
 // ============================
 export interface StatusColumn {
   id: string;
   name: string;
   order: number;
-  trackType: TrackType;
 }
 
 // ============================
@@ -23,7 +17,6 @@ export interface Company {
   jobType?: string;
   url?: string;
   statusId: string;
-  trackType: TrackType;
   orderInColumn: number;
   createdAt: string;
   updatedAt: string;
@@ -94,7 +87,6 @@ export interface AppState {
   statusColumns: StatusColumn[];
   interviews: Interview[];
   esEntries: ESEntry[];
-  activeTrack: TrackType;
   scheduledActions: ScheduledAction[];
 }
 
@@ -136,6 +128,5 @@ export interface StorageData {
   statusColumns: StatusColumn[];
   interviews: Interview[];
   esEntries: ESEntry[];
-  activeTrack: TrackType;
   scheduledActions: ScheduledAction[];
 }

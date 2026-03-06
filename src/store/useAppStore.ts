@@ -5,7 +5,6 @@ import type {
   AppState,
   Company,
   StatusColumn,
-  TrackType,
   Interview,
   ESEntry,
   ScheduledAction,
@@ -19,19 +18,14 @@ interface AppActions {
   ) => void;
   updateCompany: (id: string, updates: Partial<Omit<Company, 'id'>>) => void;
   deleteCompany: (id: string) => void;
+  deleteAllCompanies: () => void;
   moveCompany: (companyId: string, newStatusId: string, newOrder: number) => void;
 
   // Status CRUD
-  addStatus: (name: string, trackType: TrackType) => void;
+  addStatus: (name: string) => void;
   updateStatus: (id: string, name: string) => void;
   deleteStatus: (id: string) => boolean;
-  reorderStatuses: (trackType: TrackType, orderedIds: string[]) => void;
-
-  // Track
-  setActiveTrack: (track: TrackType) => void;
-
-  // Promote
-  promoteToMain: (companyId: string) => void;
+  reorderStatuses: (orderedIds: string[]) => void;
 
   // Interview CRUD (Phase 2)
   addInterview: (
@@ -57,7 +51,7 @@ interface AppActions {
 
 type AppStore = AppState & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -69,7 +63,6 @@ export const useAppStore = create<AppStore>()(
       interviews: [],
       esEntries: [],
       scheduledActions: [],
-      activeTrack: 'intern' as TrackType,
 
       // Company CRUD
       addCompany: (company) => {
@@ -105,6 +98,10 @@ export const useAppStore = create<AppStore>()(
           esEntries: state.esEntries.filter((e) => e.companyId !== id),
           scheduledActions: state.scheduledActions.filter((a) => a.companyId !== id),
         }));
+      },
+
+      deleteAllCompanies: () => {
+        set({ companies: [], interviews: [], esEntries: [], scheduledActions: [] });
       },
 
       moveCompany: (companyId, newStatusId, newOrder) => {
@@ -161,16 +158,12 @@ export const useAppStore = create<AppStore>()(
       },
 
       // Status CRUD
-      addStatus: (name, trackType) => {
+      addStatus: (name) => {
         const state = get();
-        const trackStatuses = state.statusColumns.filter(
-          (s) => s.trackType === trackType
-        );
         const newStatus: StatusColumn = {
           id: nanoid(),
           name,
-          order: trackStatuses.length,
-          trackType,
+          order: state.statusColumns.length,
         };
         set({ statusColumns: [...state.statusColumns, newStatus] });
       },
@@ -197,59 +190,13 @@ export const useAppStore = create<AppStore>()(
         return true;
       },
 
-      reorderStatuses: (trackType, orderedIds) => {
+      reorderStatuses: (orderedIds) => {
         set((state) => ({
           statusColumns: state.statusColumns.map((s) => {
-            if (s.trackType !== trackType) return s;
             const newOrder = orderedIds.indexOf(s.id);
             return newOrder >= 0 ? { ...s, order: newOrder } : s;
           }),
         }));
-      },
-
-      // Track
-      setActiveTrack: (track) => {
-        set({ activeTrack: track });
-      },
-
-      // Promote
-      promoteToMain: (companyId) => {
-        const state = get();
-        const company = state.companies.find((c) => c.id === companyId);
-        if (!company) return;
-
-        const mainStatuses = state.statusColumns
-          .filter((s) => s.trackType === 'main')
-          .sort((a, b) => a.order - b.order);
-        const firstMainStatus = mainStatuses[0];
-        if (!firstMainStatus) return;
-
-        const now = new Date().toISOString();
-        const companiesInTarget = state.companies.filter(
-          (c) => c.statusId === firstMainStatus.id
-        );
-        const newCompany: Company = {
-          id: nanoid(),
-          name: company.name,
-          industry: company.industry,
-          jobType: company.jobType,
-          url: company.url,
-          myPageUrl: company.myPageUrl,
-          myPageId: company.myPageId,
-          myPagePassword: company.myPagePassword,
-          selectionMemo: company.selectionMemo,
-          statusId: firstMainStatus.id,
-          trackType: 'main',
-          orderInColumn: companiesInTarget.length,
-          createdAt: now,
-          updatedAt: now,
-        };
-        set({
-          companies: [
-            ...state.companies.filter((c) => c.id !== companyId),
-            newCompany,
-          ],
-        });
       },
 
       // Interview CRUD
@@ -387,7 +334,6 @@ export const useAppStore = create<AppStore>()(
           interviews: data.interviews ?? [],
           esEntries: data.esEntries ?? [],
           scheduledActions: (data as AppState).scheduledActions ?? [],
-          activeTrack: data.activeTrack ?? 'intern',
         });
       },
     }),
@@ -395,19 +341,27 @@ export const useAppStore = create<AppStore>()(
       name: 'shukatsu-board-data',
       version: CURRENT_SCHEMA_VERSION,
       migrate: (persistedState, version) => {
-        const state = persistedState as Partial<AppState>;
-        if (version < CURRENT_SCHEMA_VERSION) {
-          return {
-            schemaVersion: CURRENT_SCHEMA_VERSION,
-            companies: state.companies ?? [],
-            statusColumns: state.statusColumns ?? createAllDefaultStatuses(),
-            interviews: state.interviews ?? [],
-            esEntries: state.esEntries ?? [],
-            scheduledActions: state.scheduledActions ?? [],
-            activeTrack: state.activeTrack ?? 'intern',
-          } as AppState;
-        }
-        return persistedState as AppState;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const state = persistedState as any;
+        // v1→v2→v3: strip trackType from companies/statusColumns, remove activeTrack
+        return {
+          schemaVersion: CURRENT_SCHEMA_VERSION,
+          companies: (state.companies ?? []).map((c: Company & { trackType?: unknown }) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { trackType, ...rest } = c as Company & { trackType?: unknown };
+            return rest;
+          }),
+          statusColumns: (state.statusColumns ?? createAllDefaultStatuses()).map(
+            (s: StatusColumn & { trackType?: unknown }) => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { trackType, ...rest } = s as StatusColumn & { trackType?: unknown };
+              return rest;
+            }
+          ),
+          interviews: state.interviews ?? [],
+          esEntries: state.esEntries ?? [],
+          scheduledActions: state.scheduledActions ?? [],
+        } as AppState;
       },
     }
   )

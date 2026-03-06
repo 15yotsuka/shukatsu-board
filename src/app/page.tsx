@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
-import { TrackTabs } from '@/components/layout/TrackTabs';
 import { DeadlineReminder } from '@/components/board/DeadlineReminder';
 import { HeroCardCarousel } from '@/components/board/HeroCardCarousel';
 import { MiniWeekCalendar } from '@/components/board/MiniWeekCalendar';
@@ -44,7 +43,6 @@ export default function Home() {
 
   return (
     <div className="pb-24">
-      <TrackTabs />
       <DeadlineReminder />
       <HeroCardCarousel />
 

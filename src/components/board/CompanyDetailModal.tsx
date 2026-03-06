@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
-import { PromoteDialog } from '@/components/status/PromoteDialog';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { fireConfetti } from '@/lib/confetti';
 import { useToast } from '@/lib/useToast';
@@ -62,7 +61,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [url, setUrl] = useState(company.url ?? '');
   const [statusId, setStatusId] = useState(company.statusId);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showPromote, setShowPromote] = useState(false);
   const [showInterviewForm, setShowInterviewForm] = useState(false);
   const [nameError, setNameError] = useState('');
 
@@ -76,9 +74,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [newActionType, setNewActionType] = useState<ActionType>('es');
   const [newActionDate, setNewActionDate] = useState('');
 
-  const trackStatuses = statusColumns
-    .filter((s) => s.trackType === company.trackType)
-    .sort((a, b) => a.order - b.order);
+  const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
   const companyInterviews = interviews
     .filter((i) => i.companyId === company.id)
@@ -509,14 +505,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             >
               削除
             </button>
-            {company.trackType === 'intern' && (
-              <button
-                onClick={() => setShowPromote(true)}
-                className="w-full text-center text-sm text-zinc-400 dark:text-zinc-500 py-2 mt-2 ios-tap"
-              >
-                本選考に移動する
-              </button>
-            )}
           </div>
         </div>
       </motion.div>
@@ -554,14 +542,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             </div>
           </motion.div>
         </div>
-      )}
-
-      {showPromote && (
-        <PromoteDialog
-          company={company}
-          onClose={() => setShowPromote(false)}
-          onPromoted={onClose}
-        />
       )}
 
       {showInterviewForm && (

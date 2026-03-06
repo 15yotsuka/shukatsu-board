@@ -12,12 +12,9 @@ interface AddCompanyFormProps {
 
 export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const addCompany = useAppStore((s) => s.addCompany);
-  const activeTrack = useAppStore((s) => s.activeTrack);
   const statusColumns = useAppStore((s) => s.statusColumns);
 
-  const trackStatuses = statusColumns
-    .filter((s) => s.trackType === activeTrack)
-    .sort((a, b) => a.order - b.order);
+  const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
   const [name, setName] = useState('');
   const [industry, setIndustry] = useState('');
@@ -42,7 +39,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       url: url.trim() || undefined,
       nextDeadline: deadline.trim() || undefined,
       statusId,
-      trackType: activeTrack,
       priority: priority || undefined,
     });
     onClose();

@@ -8,31 +8,31 @@ const d = (days: number) => {
 };
 
 export function createSampleCompanies(
-  statusColumns: { id: string; name: string; trackType: string }[]
+  statusColumns: { id: string; name: string }[]
 ): Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'orderInColumn'>[] {
-  const internStatuses = statusColumns.filter((s) => s.trackType === 'intern');
-  const mainStatuses = statusColumns.filter((s) => s.trackType === 'main');
+  const sorted = [...statusColumns].sort((a, b) => {
+    const aIdx = statusColumns.indexOf(a);
+    const bIdx = statusColumns.indexOf(b);
+    return aIdx - bIdx;
+  });
 
-  const getStatus = (arr: typeof internStatuses, name: string) =>
-    arr.find((s) => s.name.includes(name))?.id ?? arr[0]?.id ?? '';
+  const getStatus = (name: string) =>
+    sorted.find((s) => s.name.includes(name))?.id ?? sorted[0]?.id ?? '';
 
-  const internFirst = internStatuses[0]?.id ?? '';
-  const internInterview = getStatus(internStatuses, '面接');
-  const internOffer = getStatus(internStatuses, 'インターン参加');
-  const mainFirst = mainStatuses[0]?.id ?? '';
-  const mainInterview = getStatus(mainStatuses, '面接');
-  const mainOffer = getStatus(mainStatuses, '内定');
+  const first = sorted[0]?.id ?? '';
+  const interview = getStatus('面接');
+  const offer = getStatus('内定');
 
   return [
-    { name: 'トヨタ自動車株式会社', industry: '自動車', jobType: '総合職', trackType: 'intern', statusId: internFirst, nextDeadline: d(3) },
-    { name: 'ソニーグループ株式会社', industry: '電機・電子', jobType: 'エンジニア', trackType: 'intern', statusId: internInterview, nextDeadline: d(7) },
-    { name: 'アクセンチュア株式会社', industry: 'コンサル', jobType: 'コンサルタント', trackType: 'intern', statusId: internOffer },
-    { name: '株式会社NTTデータ', industry: 'IT・SI', jobType: 'SE', trackType: 'main', statusId: mainFirst, nextDeadline: d(5) },
-    { name: '三菱商事株式会社', industry: '総合商社', jobType: '総合職', trackType: 'main', statusId: mainFirst },
-    { name: '楽天グループ株式会社', industry: 'IT・EC', jobType: 'エンジニア', trackType: 'main', statusId: mainInterview, nextDeadline: d(10) },
-    { name: '株式会社リクルートホールディングス', industry: '人材・メディア', jobType: '総合職', trackType: 'main', statusId: mainInterview },
-    { name: '野村證券株式会社', industry: '証券', jobType: '総合職', trackType: 'main', statusId: mainFirst, nextDeadline: d(14) },
-    { name: '任天堂株式会社', industry: 'ゲーム', jobType: 'エンジニア', trackType: 'main', statusId: mainOffer },
-    { name: 'デロイト トーマツ コンサルティング合同会社', industry: 'コンサル', jobType: 'コンサルタント', trackType: 'main', statusId: mainInterview },
+    { name: 'トヨタ自動車株式会社', industry: '自動車', jobType: '総合職', statusId: first, nextDeadline: d(3) },
+    { name: 'ソニーグループ株式会社', industry: '電機・電子', jobType: 'エンジニア', statusId: interview, nextDeadline: d(7) },
+    { name: 'アクセンチュア株式会社', industry: 'コンサル', jobType: 'コンサルタント', statusId: getStatus('ES') },
+    { name: '株式会社NTTデータ', industry: 'IT・SI', jobType: 'SE', statusId: first, nextDeadline: d(5) },
+    { name: '三菱商事株式会社', industry: '総合商社', jobType: '総合職', statusId: first },
+    { name: '楽天グループ株式会社', industry: 'IT・EC', jobType: 'エンジニア', statusId: interview, nextDeadline: d(10) },
+    { name: '株式会社リクルートホールディングス', industry: '人材・メディア', jobType: '総合職', statusId: interview },
+    { name: '野村證券株式会社', industry: '証券', jobType: '総合職', statusId: first, nextDeadline: d(14) },
+    { name: '任天堂株式会社', industry: 'ゲーム', jobType: 'エンジニア', statusId: offer },
+    { name: 'デロイト トーマツ コンサルティング合同会社', industry: 'コンサル', jobType: 'コンサルタント', statusId: interview },
   ] as Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'orderInColumn'>[];
 }

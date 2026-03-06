@@ -2,7 +2,7 @@ import type { StorageData } from './types';
 import { createAllDefaultStatuses } from './defaults';
 
 const STORAGE_KEY = 'shukatsu-board-data';
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 3;
 
 export function getDefaultStorageData(): StorageData {
   return {
@@ -11,7 +11,6 @@ export function getDefaultStorageData(): StorageData {
     statusColumns: createAllDefaultStatuses(),
     interviews: [],
     esEntries: [],
-    activeTrack: 'intern',
     scheduledActions: [],
   };
 }
@@ -67,15 +66,14 @@ function isValidStorageData(data: unknown): data is StorageData {
   );
 }
 
-function migrateData(data: StorageData): StorageData {
-  // Future migrations will be handled here
-  // For now, v1 is the only version
+function migrateData(data: StorageData & { activeTrack?: unknown }): StorageData {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { activeTrack, ...rest } = data;
   return {
-    ...data,
+    ...rest,
     schemaVersion: CURRENT_SCHEMA_VERSION,
     interviews: data.interviews ?? [],
     esEntries: data.esEntries ?? [],
-    activeTrack: data.activeTrack ?? 'intern',
     scheduledActions: data.scheduledActions ?? [],
   };
 }

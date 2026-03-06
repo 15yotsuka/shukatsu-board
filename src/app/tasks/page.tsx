@@ -54,18 +54,14 @@ function TasksContent() {
   };
 
   const getStatusPosition = (company: Company) => {
-    const trackCols = statusColumns
-      .filter((s) => s.trackType === company.trackType)
-      .sort((a, b) => a.order - b.order);
+    const trackCols = [...statusColumns].sort((a, b) => a.order - b.order);
     const total = trackCols.length;
     const current = trackCols.findIndex((s) => s.id === company.statusId) + 1;
     return { current, total };
   };
 
   const handlePass = (company: Company) => {
-    const trackCols = statusColumns
-      .filter((s) => s.trackType === company.trackType)
-      .sort((a, b) => a.order - b.order);
+    const trackCols = [...statusColumns].sort((a, b) => a.order - b.order);
     const currentIdx = trackCols.findIndex((s) => s.id === company.statusId);
     if (currentIdx === -1 || currentIdx >= trackCols.length - 1) return;
     const nextStatus = trackCols[currentIdx + 1];

@@ -8,7 +8,8 @@
       "Bash(start:*)",
       "Bash(ipconfig:*)",
       "Bash(npx vercel:*)",
-      "WebFetch(domain:shukatsu-board-4ztnwomec-15yotsukas-projects.vercel.app)"
+      "WebFetch(domain:shukatsu-board-4ztnwomec-15yotsukas-projects.vercel.app)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

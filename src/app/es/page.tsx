@@ -66,7 +66,7 @@ export default function ESPage() {
           <option value="">企業を選択してください</option>
           {companies.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}（{c.trackType === 'intern' ? 'インターン' : '本選考'}）
+              {c.name}
             </option>
           ))}
         </select>

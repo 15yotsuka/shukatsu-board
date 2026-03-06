@@ -19,7 +19,6 @@ import { StatusColumn } from './StatusColumn';
 import { CompanyDetailModal } from './CompanyDetailModal';
 
 export function KanbanBoard() {
-  const activeTrack = useAppStore((s) => s.activeTrack);
   const statusColumns = useAppStore((s) => s.statusColumns);
   const companies = useAppStore((s) => s.companies);
   const moveCompany = useAppStore((s) => s.moveCompany);
@@ -31,11 +30,9 @@ export function KanbanBoard() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const trackStatuses = statusColumns
-    .filter((s) => s.trackType === activeTrack)
-    .sort((a, b) => a.order - b.order);
+  const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
-  const trackCompanies = companies.filter((c) => c.trackType === activeTrack);
+  const trackCompanies = companies;
 
   // スクロール位置でアクティブカラムを検出
   useEffect(() => {
@@ -55,9 +52,6 @@ export function KanbanBoard() {
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
   }, [trackStatuses.length]);
-
-  // trackが変わったらリセット
-  useEffect(() => { setActiveColIndex(0); }, [activeTrack]);
 
   const scrollToColumn = (idx: number) => {
     const el = colRefs.current[idx];
