@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
@@ -43,6 +43,12 @@ interface CompanyDetailModalProps {
 }
 
 export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const updateCompany = useAppStore((s) => s.updateCompany);
   const deleteCompany = useAppStore((s) => s.deleteCompany);
   const statusColumns = useAppStore((s) => s.statusColumns);
@@ -131,7 +137,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm touch-none"
         onClick={onClose}
       />
       <motion.div
@@ -212,7 +218,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             style={{ transform: `translateX(-${activeTab * 100}%)` }}
           >
             {/* Page 0: 基本情報 */}
-            <div className="w-full flex-none overflow-y-auto p-4 space-y-4">
+            <div className="w-full flex-none overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                 <div className="divide-y divide-[var(--color-border)]">
                   <div className="px-4 py-3">
@@ -363,7 +369,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             </div>
 
             {/* Page 1: マイページ */}
-            <div className="w-full flex-none overflow-y-auto p-4">
+            <div className="w-full flex-none overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                 <div className="divide-y divide-[var(--color-border)]">
                   <div className="px-4 py-3">
@@ -421,7 +427,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             </div>
 
             {/* Page 2: メモ（選考ログ） */}
-            <div className="w-full flex-none overflow-y-auto p-4 space-y-4">
+            <div className="w-full flex-none overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               {/* ES・志望動機 */}
               <div className="bg-card rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                 <div className="px-4 pt-3 pb-1 border-b border-[var(--color-border)]">
