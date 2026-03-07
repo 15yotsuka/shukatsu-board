@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
@@ -26,6 +27,7 @@ export default function Home() {
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const interviews = useAppStore((s) => s.interviews);
 
+  const router = useRouter();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -181,15 +183,24 @@ export default function Home() {
       {/* Stat chips */}
       <div className="fixed bottom-[5.5rem] left-0 right-0 flex justify-center pointer-events-none">
         <div className="flex gap-2 pointer-events-auto">
-          <span className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm">
+          <button
+            onClick={() => router.push('/tasks?filter=active')}
+            className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
+          >
             進行中 {activeCount}社
-          </span>
-          <span className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm">
+          </button>
+          <button
+            onClick={() => router.push('/tasks?filter=offer')}
+            className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm ios-tap active:scale-95 transition-transform"
+          >
             内定 {offerCount}社
-          </span>
-          <span className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm">
+          </button>
+          <button
+            onClick={() => router.push('/tasks?filter=rejected')}
+            className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
+          >
             見送り {sayonaraCount}社
-          </span>
+          </button>
         </div>
       </div>
 

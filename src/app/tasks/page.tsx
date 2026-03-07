@@ -37,6 +37,15 @@ type SortOrder = 'asc' | 'desc';
 const FILTER_GROUPS: Record<string, string[]> = {
   'エントリー': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
   '面接中': ['1次面接', '2次面接', '最終面接'],
+  'active': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中'],
+  'offer': ['内定'],
+  'rejected': ['お見送り'],
+};
+
+const FILTER_LABELS: Record<string, string> = {
+  'active': '進行中',
+  'offer': '内定',
+  'rejected': 'お見送り',
 };
 
 const TAG_ORDER: Tag[] = ['優遇あり', '早期選考', 'リクルーター面談', '結果待ち', 'インターン参加済み'];
@@ -166,8 +175,8 @@ function TaskCard({
         {(nextStepLabel || upcomingInterview) && (
           <div className="flex items-center gap-3 flex-wrap text-[12px]">
             {nextStepLabel && (
-              <span className={`flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-secondary)]'}`}>
-                📅 {nextStepLabel}
+              <span className={`flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-zinc-400'}`}>
+                {nextStepLabel}
               </span>
             )}
             {upcomingInterview && (() => {
@@ -176,8 +185,8 @@ function TaskCard({
               const startTime = format(dt, 'HH:mm');
               const endStr = upcomingInterview.endTime ? `~${upcomingInterview.endTime}` : '';
               return (
-                <span className="flex items-center gap-1 text-[var(--color-primary)]">
-                  🕐 {dateStr} {startTime}{endStr} {upcomingInterview.type}
+                <span className="flex items-center gap-1 text-blue-500">
+                  {dateStr} {startTime}{endStr} {upcomingInterview.type}
                 </span>
               );
             })()}
@@ -399,7 +408,7 @@ function TasksContent() {
 
       {filter && (
         <div className="flex items-center justify-between bg-[var(--color-primary)]/10 rounded-xl px-4 py-2.5 mb-4">
-          <span className="text-[14px] font-medium text-[var(--color-primary)]">フィルタ: {filter}</span>
+          <span className="text-[14px] font-medium text-[var(--color-primary)]">フィルタ: {FILTER_LABELS[filter] ?? filter}</span>
           <button
             onClick={() => router.push('/tasks')}
             className="text-[14px] font-semibold text-[var(--color-primary)] ios-tap"
