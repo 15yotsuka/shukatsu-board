@@ -76,6 +76,22 @@ export default function Home() {
         });
       });
 
+    // 企業の直接締切日（nextActionDate）
+    companies.forEach((c) => {
+      if (!c.nextActionDate || c.nextActionDate < today) return;
+      const d = parseISO(c.nextActionDate);
+      if (!isValid(d)) return;
+      items.push({
+        id: `deadline-${c.id}`,
+        companyId: c.id,
+        companyName: c.name,
+        label: ACTION_TYPE_LABELS[c.nextActionType ?? 'other'] ?? 'アクション',
+        date: c.nextActionDate,
+        time: c.nextActionTime,
+        tags: c.tags,
+      });
+    });
+
     items.sort((a, b) => {
       const dc = a.date.localeCompare(b.date);
       if (dc !== 0) return dc;
@@ -84,7 +100,7 @@ export default function Home() {
     });
 
     return items;
-  }, [scheduledActions, interviews, companyMap, today]);
+  }, [scheduledActions, interviews, companies, companyMap, today]);
 
   const todayItems = todoItems.filter((i) => i.date === today);
   const thisWeekItems = todoItems.filter((i) => i.date > today && i.date <= weekEnd);

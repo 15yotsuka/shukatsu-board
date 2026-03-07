@@ -6,7 +6,7 @@ import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
-import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS } from '@/lib/types';
+import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, type ActionType } from '@/lib/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -20,8 +20,12 @@ export default function CalendarPage() {
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
 
+  const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
   const selectedDeadlineCompanies = selectedDate
-    ? companies.filter((c) => c.nextDeadline === format(selectedDate, 'yyyy-MM-dd'))
+    ? companies.filter((c) => c.nextDeadline === selectedDateStr)
+    : [];
+  const selectedActionCompanies = selectedDate
+    ? companies.filter((c) => c.nextActionDate === selectedDateStr && c.nextActionDate !== c.nextDeadline)
     : [];
 
   const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
@@ -134,7 +138,34 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && selectedDeadlineCompanies.length === 0 && (
+      {selectedDate && selectedActionCompanies.length > 0 && (
+        <div className="bg-card rounded-xl overflow-hidden">
+          <div className="px-4 pt-4 pb-2">
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+              {format(selectedDate, 'M月d日（E）', { locale: ja })}のアクション
+            </h3>
+          </div>
+          <div className="divide-y divide-[var(--color-border)]">
+            {selectedActionCompanies.map((company) => (
+              <div key={company.id} className="flex items-center gap-3 px-4 py-3">
+                <span
+                  className="w-2 h-2 rounded-full flex-none"
+                  style={{ backgroundColor: ACTION_TYPE_COLORS[company.nextActionType ?? ('other' as ActionType)] }}
+                />
+                <div>
+                  <p className="text-[15px] font-medium text-[var(--color-text)]">{company.name}</p>
+                  <p className="text-[13px] text-[var(--color-text-secondary)]">
+                    {ACTION_TYPE_LABELS[company.nextActionType ?? ('other' as ActionType)]}
+                    {company.nextActionTime && ` ${company.nextActionTime}`}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && selectedDeadlineCompanies.length === 0 && selectedActionCompanies.length === 0 && (
         <div className="bg-card rounded-xl p-4">
           <p className="text-[14px] text-[var(--color-text-secondary)] text-center">
             {format(selectedDate, 'M月d日', { locale: ja })}の予定はありません

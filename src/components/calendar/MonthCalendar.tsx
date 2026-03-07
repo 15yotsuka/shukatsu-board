@@ -59,7 +59,7 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
 
   const hasDeadlineOnDate = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return companies.some((c) => c.nextDeadline === dateStr);
+    return companies.some((c) => c.nextDeadline === dateStr || c.nextActionDate === dateStr);
   };
 
   return (
