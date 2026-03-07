@@ -30,13 +30,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-type SortKey = 'deadline_asc' | 'deadline_desc' | 'status_asc' | 'status_desc' | 'priority_asc' | 'name_asc' | 'manual';
+type SortField = 'deadline' | 'status' | 'priority' | 'manual';
+type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
   'エントリー': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
   '面接中': ['1次面接', '2次面接', '最終面接'],
 };
-
 
 const PRIORITY_ORDER = ['S', '早期', 'リク面', '持ち駒', '結果待ち'];
 
@@ -73,28 +73,6 @@ const getNextStepLabel = (company: Company): string | null => {
   return actionLabel ? `${dateStr}${timeStr} ${actionLabel}` : `${dateStr}${timeStr}`;
 };
 
-function CompactProgressDots({ company, statusName }: { company: Company; statusName: string }) {
-  const milestones = getMilestones(company);
-  const total = milestones.length;
-  const currentIdx = getMilestoneIndex(statusName, milestones);
-  return (
-    <div className="flex gap-1.5 items-center mt-1.5">
-      {milestones.map((_, i) => {
-        const progress = total <= 1 ? 0 : i / (total - 1);
-        const colorClass =
-          i <= currentIdx
-            ? progress > 0.7
-              ? 'bg-red-500'
-              : progress > 0.4
-              ? 'bg-orange-500'
-              : 'bg-blue-500'
-            : 'bg-zinc-300 dark:bg-zinc-600';
-        return <div key={i} className={`w-2 h-2 rounded-full flex-none ${colorClass}`} />;
-      })}
-    </div>
-  );
-}
-
 interface TaskCardProps {
   company: Company;
   statusName: string;
@@ -108,6 +86,7 @@ interface TaskCardProps {
   onOpenDetail: () => void;
   onPass: () => void;
   onReject: () => void;
+  onAdvance: () => void;
 }
 
 function TaskCard({
@@ -122,6 +101,7 @@ function TaskCard({
   onOpenDetail,
   onPass,
   onReject,
+  onAdvance,
 }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: company.id,
@@ -188,10 +168,18 @@ function TaskCard({
               {hasDeadlineNow && ' ・結果は？'}
             </p>
           )}
-
-          {/* Row 4: compact progress dots */}
-          <CompactProgressDots company={company} statusName={statusName} />
         </div>
+
+        {/* Quick advance button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onAdvance(); }}
+          className="flex-none p-1.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] ios-tap active:bg-[var(--color-primary)]/20"
+          aria-label="次のステータスに進む"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
 
         <motion.div
           animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -276,6 +264,13 @@ function TaskCard({
   );
 }
 
+const SORT_BUTTONS: { field: SortField; label: string }[] = [
+  { field: 'deadline', label: '締切日' },
+  { field: 'status', label: 'ステータス' },
+  { field: 'priority', label: '優先度' },
+  { field: 'manual', label: '手動' },
+];
+
 function TasksContent() {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
@@ -285,7 +280,8 @@ function TasksContent() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>('deadline_asc');
+  const [sortField, setSortField] = useState<SortField>('deadline');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -312,6 +308,15 @@ function TasksContent() {
     return { current, total };
   };
 
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const handlePass = (company: Company) => {
     const trackCols = [...statusColumns].sort((a, b) => a.order - b.order);
     const currentIdx = trackCols.findIndex((s) => s.id === company.statusId);
@@ -335,34 +340,41 @@ function TasksContent() {
     setExpandedId(null);
   };
 
+  const handleAdvanceStatus = (company: Company) => {
+    const sortedCols = [...statusColumns].sort((a, b) => a.order - b.order);
+    const currentIdx = sortedCols.findIndex((col) => col.id === company.statusId);
+    const currentName = sortedCols[currentIdx]?.name;
+    if (currentName === '内定' || currentName === 'お見送り') return;
+    const nextColumn = sortedCols[currentIdx + 1];
+    if (!nextColumn) return;
+    updateCompany(company.id, { statusId: nextColumn.id });
+    showToast(`『${company.name}』を【${nextColumn.name}】に更新しました。`);
+  };
+
   const sortedAll = useMemo(() => {
     const cols = [...statusColumns].sort((a, b) => a.order - b.order);
-    if (sortKey === 'manual') return companies;
+    if (sortField === 'manual') return companies;
     return [...companies].sort((a, b) => {
-      if (sortKey === 'deadline_asc' || sortKey === 'deadline_desc') {
-        const dir = sortKey === 'deadline_asc' ? 1 : -1;
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      if (sortField === 'deadline') {
         if (!a.nextActionDate && !b.nextActionDate) return 0;
         if (!a.nextActionDate) return dir;
         if (!b.nextActionDate) return -dir;
         return a.nextActionDate.localeCompare(b.nextActionDate) * dir;
       }
-      if (sortKey === 'status_asc' || sortKey === 'status_desc') {
-        const dir = sortKey === 'status_asc' ? 1 : -1;
+      if (sortField === 'status') {
         const aIdx = cols.findIndex((c) => c.id === a.statusId);
         const bIdx = cols.findIndex((c) => c.id === b.statusId);
         return (aIdx - bIdx) * dir;
       }
-      if (sortKey === 'priority_asc') {
+      if (sortField === 'priority') {
         const aIdx = a.priority ? PRIORITY_ORDER.indexOf(a.priority) : PRIORITY_ORDER.length;
         const bIdx = b.priority ? PRIORITY_ORDER.indexOf(b.priority) : PRIORITY_ORDER.length;
-        return aIdx - bIdx;
-      }
-      if (sortKey === 'name_asc') {
-        return a.name.localeCompare(b.name, 'ja');
+        return (aIdx - bIdx) * dir;
       }
       return 0;
     });
-  }, [companies, sortKey, statusColumns]);
+  }, [companies, sortField, sortOrder, statusColumns]);
 
   const filtered = filter
     ? sortedAll.filter((c) => {
@@ -376,7 +388,7 @@ function TasksContent() {
   const archived = filtered.filter((c) => getStatusName(c.statusId).includes('お見送り'));
 
   const handleDragEnd = (event: DragEndEvent) => {
-    if (sortKey !== 'manual') return;
+    if (sortField !== 'manual') return;
     const { active: dragActive, over } = event;
     if (!over || dragActive.id === over.id) return;
     const activeIdx = active.findIndex((c) => c.id === String(dragActive.id));
@@ -389,24 +401,31 @@ function TasksContent() {
   return (
     <div className="pb-24 px-4 pt-4">
       {/* Header row */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h1 className="text-[22px] font-bold text-[var(--color-text)]">企業一覧</h1>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[13px] text-[var(--color-text-secondary)]">↕</span>
-          <select
-            value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="text-[13px] font-semibold bg-[var(--color-border)] text-[var(--color-text-secondary)] border-0 rounded-full px-3 py-1.5 outline-none ios-tap"
-          >
-            <option value="deadline_asc">締切日が近い順</option>
-            <option value="deadline_desc">締切日が遠い順</option>
-            <option value="status_asc">ステータス順↑</option>
-            <option value="status_desc">ステータス順↓</option>
-            <option value="priority_asc">優先度順</option>
-            <option value="name_asc">企業名順</option>
-            <option value="manual">手動</option>
-          </select>
-        </div>
+      </div>
+
+      {/* Sort buttons */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
+        {SORT_BUTTONS.map(({ field, label }) => {
+          const isActive = sortField === field;
+          return (
+            <button
+              key={field}
+              onClick={() => handleSort(field)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-semibold ios-tap transition-all ${
+                isActive
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+              }`}
+            >
+              {label}
+              {isActive && field !== 'manual' && (
+                <span className="text-[11px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {filter && (
@@ -452,7 +471,7 @@ function TasksContent() {
                       company={c}
                       statusName={statusName}
                       isExpanded={expandedId === c.id}
-                      isDraggable={sortKey === 'manual'}
+                      isDraggable={sortField === 'manual'}
                       hasDeadlineNow={hasDeadlineNow}
                       milestones={milestones}
                       milestoneIdx={milestoneIdx}
@@ -461,6 +480,7 @@ function TasksContent() {
                       onOpenDetail={() => setSelectedCompany(c)}
                       onPass={() => handlePass(c)}
                       onReject={() => handleReject(c)}
+                      onAdvance={() => handleAdvanceStatus(c)}
                     />
                   );
                 })}

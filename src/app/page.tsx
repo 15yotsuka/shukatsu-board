@@ -5,8 +5,8 @@ import { useAppStore } from '@/store/useAppStore';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
-import { ACTION_TYPE_LABELS } from '@/lib/types';
-import type { Company } from '@/lib/types';
+import { ACTION_TYPE_LABELS, PRIORITY_CONFIG } from '@/lib/types';
+import type { Company, CompanyPriority } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -17,6 +17,7 @@ interface TodoItem {
   label: string;
   date: string;
   time?: string;
+  priority?: CompanyPriority;
 }
 
 export default function Home() {
@@ -31,8 +32,8 @@ export default function Home() {
   const weekEnd = format(addDays(new Date(), 7), 'yyyy-MM-dd');
 
   const companyMap = useMemo(() => {
-    const map = new Map<string, string>();
-    companies.forEach((c) => map.set(c.id, c.name));
+    const map = new Map<string, { name: string; priority?: CompanyPriority }>();
+    companies.forEach((c) => map.set(c.id, { name: c.name, priority: c.priority }));
     return map;
   }, [companies]);
 
@@ -42,13 +43,15 @@ export default function Home() {
     scheduledActions
       .filter((a) => a.date >= today)
       .forEach((a) => {
+        const aData = companyMap.get(a.companyId);
         items.push({
           id: `action-${a.id}`,
           companyId: a.companyId,
-          companyName: companyMap.get(a.companyId) ?? '不明',
+          companyName: aData?.name ?? '不明',
           label: ACTION_TYPE_LABELS[a.type] ?? a.type,
           date: a.date,
           time: a.time,
+          priority: aData?.priority,
         });
       });
 
@@ -61,13 +64,15 @@ export default function Home() {
         const dt = parseISO(i.datetime);
         const dateStr = format(dt, 'yyyy-MM-dd');
         const timeStr = format(dt, 'HH:mm');
+        const iData = companyMap.get(i.companyId);
         items.push({
           id: `interview-${i.id}`,
           companyId: i.companyId,
-          companyName: companyMap.get(i.companyId) ?? '不明',
+          companyName: iData?.name ?? '不明',
           label: i.type || '面接',
           date: dateStr,
           time: timeStr !== '00:00' ? timeStr : undefined,
+          priority: iData?.priority,
         });
       });
 
@@ -111,7 +116,14 @@ export default function Home() {
         className="w-full flex items-center gap-3 px-4 py-3 bg-card rounded-2xl shadow-sm border border-[var(--color-border)] text-left ios-tap active:scale-[0.98] transition-transform"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{item.companyName}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{item.companyName}</p>
+            {item.priority && PRIORITY_CONFIG[item.priority] && (
+              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${PRIORITY_CONFIG[item.priority].className}`}>
+                {PRIORITY_CONFIG[item.priority].label}
+              </span>
+            )}
+          </div>
           <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
             {item.label}
             {item.time && ` ${item.time}`}
