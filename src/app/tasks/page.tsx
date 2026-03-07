@@ -35,30 +35,20 @@ type SortField = 'deadline' | 'status' | 'priority' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
-  'エントリー': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
-  '面接中': ['1次面接', '2次面接', '最終面接'],
   'active': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中'],
+  'entry': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
+  'interview': ['1次面接', '2次面接', '最終面接'],
+  'intern': ['インターン選考中'],
   'offer': ['内定'],
   'rejected': ['お見送り'],
 };
 
-const FILTER_LABELS: Record<string, string> = {
-  'active': '進行中',
-  'offer': '内定',
-  'rejected': 'お見送り',
-};
-
-const FILTER_OPTIONS: { value: string; label: string; group?: string }[] = [
+const FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'すべて' },
-  { value: 'active', label: '進行中（すべて）' },
-  { value: '未エントリー', label: '未エントリー', group: '段階別' },
-  { value: 'ES作成中', label: 'ES作成中', group: '段階別' },
-  { value: 'ES提出済', label: 'ES提出済', group: '段階別' },
-  { value: 'Webテスト受検済', label: 'Webテスト受検済', group: '段階別' },
-  { value: '1次面接', label: '1次面接', group: '段階別' },
-  { value: '2次面接', label: '2次面接', group: '段階別' },
-  { value: '最終面接', label: '最終面接', group: '段階別' },
-  { value: 'インターン選考中', label: 'インターン選考中', group: '段階別' },
+  { value: 'active', label: '進行中' },
+  { value: 'entry', label: 'エントリー' },
+  { value: 'interview', label: '面接中' },
+  { value: 'intern', label: 'インターン' },
   { value: 'offer', label: '内定' },
   { value: 'rejected', label: 'お見送り' },
 ];
@@ -406,7 +396,7 @@ function TasksContent() {
         >
           {FILTER_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.group ? `  ${opt.label}` : opt.label}
+              {opt.label}
             </option>
           ))}
         </select>
