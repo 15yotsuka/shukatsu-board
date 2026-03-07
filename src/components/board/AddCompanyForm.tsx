@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
-import { PRIORITY_CONFIG, type CompanyPriority } from '@/lib/types';
+import { PRIORITY_CONFIG, SELECTION_TYPE_LABELS, type CompanyPriority, type SelectionType } from '@/lib/types';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -22,6 +22,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [deadline, setDeadline] = useState('');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [priority, setPriority] = useState<CompanyPriority | ''>('');
+  const [selectionType, setSelectionType] = useState<SelectionType>('main');
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -40,6 +41,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       nextDeadline: deadline.trim() || undefined,
       statusId,
       priority: priority || undefined,
+      selectionType,
     });
     onClose();
   };
@@ -176,6 +178,27 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 選考タイプ */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">選考タイプ</label>
+            <div className="flex flex-col gap-1.5">
+              {(Object.entries(SELECTION_TYPE_LABELS) as [SelectionType, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectionType(key)}
+                  className={`px-3 py-2 rounded-xl text-[13px] font-semibold text-left transition-all ios-tap ${
+                    selectionType === key
+                      ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]'
+                      : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 優先度タグ */}

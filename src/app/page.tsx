@@ -6,33 +6,21 @@ import { DeadlineReminder } from '@/components/board/DeadlineReminder';
 import { HeroCardCarousel } from '@/components/board/HeroCardCarousel';
 import { MiniWeekCalendar } from '@/components/board/MiniWeekCalendar';
 
-const ENTRY_STATUSES = ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'];
-const INTERVIEW_STATUSES = ['1次面接', '2次面接', '最終面接'];
-const INTERN_STATUSES = ['インターン選考中'];
-const OFFER_STATUSES = ['内定'];
-
 export default function Home() {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
 
-  const getStatusName = (statusId: string) =>
-    statusColumns.find((s) => s.id === statusId)?.name ?? '';
+  const getCount = (statusNames: string[]) => {
+    const ids = statusColumns
+      .filter((col) => statusNames.includes(col.name))
+      .map((col) => col.id);
+    return companies.filter((c) => ids.includes(c.statusId)).length;
+  };
 
-  const entryCount = companies.filter((c) =>
-    ENTRY_STATUSES.includes(getStatusName(c.statusId))
-  ).length;
-
-  const interviewingCount = companies.filter((c) =>
-    INTERVIEW_STATUSES.includes(getStatusName(c.statusId))
-  ).length;
-
-  const internCount = companies.filter((c) =>
-    INTERN_STATUSES.includes(getStatusName(c.statusId))
-  ).length;
-
-  const offerCount = companies.filter((c) =>
-    OFFER_STATUSES.includes(getStatusName(c.statusId))
-  ).length;
+  const entryCount = getCount(['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済']);
+  const interviewingCount = getCount(['1次面接', '2次面接', '最終面接']);
+  const internCount = getCount(['インターン選考中']);
+  const offerCount = getCount(['内定']);
 
   const stats = [
     { label: 'エントリー', value: entryCount, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks?filter=エントリー' },

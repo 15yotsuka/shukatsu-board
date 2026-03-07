@@ -16,7 +16,7 @@ import {
   type ActionType,
   type SelectionType,
 } from '@/lib/types';
-import { DEFAULT_MILESTONES } from '@/lib/progressMilestones';
+import { DEFAULT_MILESTONES, getMilestoneIndex } from '@/lib/progressMilestones';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -89,6 +89,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
   const effectiveMilestones = customMilestones ?? DEFAULT_MILESTONES[selectionType];
+  const currentStatusName = statusColumns.find((s) => s.id === statusId)?.name ?? '';
+  const headerMilestoneIdx = getMilestoneIndex(currentStatusName, effectiveMilestones);
 
   const companyInterviews = interviews
     .filter((i) => i.companyId === company.id)
@@ -164,19 +166,28 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             <div className="w-10 h-1.5 bg-[var(--color-border)] rounded-full" />
           </div>
 
-          {/* Editable company name */}
-          <div className="mb-3">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setNameError(''); }}
-              className="w-full text-[20px] font-bold bg-transparent text-[var(--color-text)] outline-none"
-            />
-            {nameError && <p className="text-[var(--color-danger)] text-[12px] mt-0.5">{nameError}</p>}
+          {/* Editable company name + close button */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setNameError(''); }}
+                className="w-full text-[20px] font-bold bg-transparent text-[var(--color-text)] outline-none"
+              />
+              {nameError && <p className="text-[var(--color-danger)] text-[12px] mt-0.5">{nameError}</p>}
+            </div>
+            <button
+              onClick={onClose}
+              className="flex-none w-8 h-8 flex items-center justify-center text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full ios-tap text-[16px]"
+              aria-label="閉じる"
+            >
+              ✕
+            </button>
           </div>
 
           {/* Status + deadline row */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <select
               value={statusId}
               onChange={(e) => setStatusId(e.target.value)}
@@ -191,12 +202,61 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               const next = [...scheduledActions]
                 .filter((a) => a.date >= today)
                 .sort((a, b) => a.date.localeCompare(b.date))[0];
-              return next ? (
-                <span className="flex-none text-[13px] font-semibold text-[var(--color-danger)] bg-[var(--color-danger)]/10 rounded-full px-3 py-1">
+              if (!next) return null;
+              const isOverdue = next.date < today;
+              const daysLeft = (new Date(next.date).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24);
+              const colorClass = isOverdue
+                ? 'text-[var(--color-danger)] bg-[var(--color-danger)]/10'
+                : daysLeft <= 3
+                ? 'text-orange-500 bg-orange-500/10'
+                : 'text-[var(--color-danger)] bg-[var(--color-danger)]/10';
+              return (
+                <span className={`flex-none text-[13px] font-semibold rounded-full px-3 py-1 ${colorClass}`}>
                   {ACTION_TYPE_LABELS[next.type]} {next.date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
                 </span>
-              ) : null;
+              );
             })()}
+          </div>
+
+          {/* 選考タイプ（ヘッダー常時表示） */}
+          <div className="mb-2">
+            <select
+              value={selectionType}
+              onChange={(e) => {
+                setSelectionType(e.target.value as SelectionType);
+                setCustomMilestones(undefined);
+                setEditingMilestones(false);
+              }}
+              className="text-[13px] font-semibold bg-[var(--color-border)] text-[var(--color-text-secondary)] border-0 rounded-full px-3 py-1 outline-none ios-tap"
+            >
+              {(Object.entries(SELECTION_TYPE_LABELS) as [SelectionType, string][]).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 進捗バー（ヘッダー常時表示） */}
+          <div className="relative flex items-start justify-between w-full mb-3 px-0.5">
+            <div className="absolute left-0 right-0 h-px bg-zinc-200 dark:bg-zinc-700" style={{ top: '5px' }}>
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${effectiveMilestones.length > 1 ? (headerMilestoneIdx / (effectiveMilestones.length - 1)) * 100 : 0}%` }}
+              />
+            </div>
+            {effectiveMilestones.map((label, i) => (
+              <div key={i} className="flex flex-col items-center relative z-10 gap-1">
+                <div className={`w-2.5 h-2.5 rounded-full flex-none ${
+                  i < headerMilestoneIdx
+                    ? 'bg-blue-500'
+                    : i === headerMilestoneIdx
+                    ? 'bg-orange-500 ring-2 ring-orange-200 dark:ring-orange-900'
+                    : 'bg-zinc-200 dark:bg-zinc-700'
+                }`} />
+                <span className={`text-[8px] text-center leading-tight max-w-[32px] ${
+                  i === headerMilestoneIdx ? 'text-orange-500 font-bold' : 'text-zinc-400 dark:text-zinc-500'
+                }`}>{label}</span>
+              </div>
+            ))}
           </div>
 
           {/* Segmented control */}
