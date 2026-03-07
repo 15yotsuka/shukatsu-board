@@ -28,6 +28,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [customMilestones, setCustomMilestones] = useState<string[] | undefined>(undefined);
   const [editingMilestones, setEditingMilestones] = useState(false);
   const [newStepText, setNewStepText] = useState('');
+  const [memo, setMemo] = useState('');
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -52,6 +53,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       tags: tags.length > 0 ? tags : undefined,
       selectionType,
       customMilestones: customMilestones && customMilestones.length > 0 ? customMilestones : undefined,
+      selectionMemo: memo.trim() || undefined,
     });
     onClose();
   };
@@ -334,6 +336,18 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* メモ */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">メモ（任意）</label>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="気になる点、志望理由など"
+              rows={3}
+              className="ios-input resize-none"
+            />
           </div>
 
           <button onClick={handleSubmit} className="ios-button-primary">
