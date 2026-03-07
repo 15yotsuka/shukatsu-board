@@ -354,11 +354,13 @@ export const useAppStore = create<AppStore>()(
           companies: (state.companies ?? []).map((c: Company & { trackType?: unknown }) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { trackType, ...rest } = c as Company & { trackType?: unknown };
+            const rawType = rest.selectionType as string | undefined;
+            const remapped = rawType
+              ? (selectionTypeRemap[rawType] ?? rawType)
+              : 'main';
             return {
               ...rest,
-              selectionType: rest.selectionType
-                ? (selectionTypeRemap[rest.selectionType as string] ?? rest.selectionType)
-                : undefined,
+              selectionType: remapped,
             };
           }),
           statusColumns: (state.statusColumns ?? createAllDefaultStatuses()).map(

@@ -88,9 +88,26 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [newActionDate, setNewActionDate] = useState('');
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
-  const effectiveMilestones = customMilestones ?? DEFAULT_MILESTONES[selectionType];
+  const effectiveMilestones = (customMilestones && customMilestones.length > 0)
+    ? customMilestones
+    : (DEFAULT_MILESTONES[selectionType] ?? DEFAULT_MILESTONES['main']);
   const currentStatusName = statusColumns.find((s) => s.id === statusId)?.name ?? '';
   const headerMilestoneIdx = getMilestoneIndex(currentStatusName, effectiveMilestones);
+
+  // インターン→本選考 昇格ボタン表示条件
+  const showPromoteButton =
+    selectionType === 'intern' &&
+    headerMilestoneIdx >= effectiveMilestones.length - 1;
+
+  const handlePromoteToMain = () => {
+    updateCompany(company.id, {
+      selectionType: 'intern_to_main',
+      customMilestones: undefined,
+    });
+    setSelectionType('intern_to_main');
+    setCustomMilestones(undefined);
+    showToast(`『${name}』を本選考（インターン内包）に更新しました。`);
+  };
 
   const companyInterviews = interviews
     .filter((i) => i.companyId === company.id)
@@ -258,6 +275,22 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               </div>
             ))}
           </div>
+
+          {/* 本選考に進む（インターン→intern_to_main） */}
+          {showPromoteButton && (
+            <div className="mb-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-amber-700 dark:text-amber-400">
+                🎉 インターン参加おめでとう！
+              </span>
+              <button
+                type="button"
+                onClick={handlePromoteToMain}
+                className="text-[13px] font-bold text-[var(--color-primary)] ios-tap"
+              >
+                本選考に進む →
+              </button>
+            </div>
+          )}
 
           {/* Segmented control */}
           <div className="flex gap-0 mb-0">

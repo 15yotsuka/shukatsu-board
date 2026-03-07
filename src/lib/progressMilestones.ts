@@ -26,10 +26,11 @@ export const DEFAULT_MILESTONES: Record<SelectionType, string[]> = {
 };
 
 export function getMilestones(company: Company): string[] {
-  if (company.customMilestones && company.customMilestones.length > 0) {
+  if (company?.customMilestones && company.customMilestones.length > 0) {
     return company.customMilestones;
   }
-  return DEFAULT_MILESTONES[company.selectionType ?? 'main'];
+  const type = company?.selectionType ?? 'main';
+  return DEFAULT_MILESTONES[type] ?? DEFAULT_MILESTONES['main'];
 }
 
 export function getMilestoneIndex(statusName: string, milestones: string[]): number {
