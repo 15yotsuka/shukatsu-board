@@ -36,7 +36,22 @@ export interface Company {
   nextActionType?: ActionType;
   // 優先度タグ
   priority?: CompanyPriority;
+  // 選考タイプ（進捗バー表示用）
+  selectionType?: SelectionType;
+  // カスタム選考ステップ（未設定の場合はデフォルトを使用）
+  customMilestones?: string[];
 }
+
+// ============================
+// 選考タイプ
+// ============================
+export type SelectionType = 'intern' | 'main' | 'intern_to_main';
+
+export const SELECTION_TYPE_LABELS: Record<SelectionType, string> = {
+  intern: 'インターン選考',
+  main: '本選考',
+  intern_to_main: '本選考（インターン内包）',
+};
 
 // ============================
 // 優先度タグ

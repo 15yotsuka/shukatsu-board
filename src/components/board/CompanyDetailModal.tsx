@@ -11,9 +11,12 @@ import {
   PRIORITY_CONFIG,
   ACTION_TYPE_LABELS,
   ACTION_TYPE_COLORS,
+  SELECTION_TYPE_LABELS,
   type CompanyPriority,
   type ActionType,
+  type SelectionType,
 } from '@/lib/types';
+import { DEFAULT_MILESTONES } from '@/lib/progressMilestones';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -54,7 +57,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const statusColumns = useAppStore((s) => s.statusColumns);
   const interviews = useAppStore((s) => s.interviews);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
-  const scheduledActions = useAppStore((s) => s.scheduledActions.filter((a) => a.companyId === company.id));
+  const scheduledActions = useAppStore((s) => (s.scheduledActions ?? []).filter((a) => a.companyId === company.id));
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const showToast = useToast((s) => s.show);
@@ -77,10 +80,15 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [priority, setPriority] = useState<CompanyPriority | ''>(company.priority ?? '');
+  const [selectionType, setSelectionType] = useState<SelectionType>(company.selectionType ?? 'main');
+  const [customMilestones, setCustomMilestones] = useState<string[] | undefined>(company.customMilestones);
+  const [editingMilestones, setEditingMilestones] = useState(false);
+  const [newStepText, setNewStepText] = useState('');
   const [newActionType, setNewActionType] = useState<ActionType>('es');
   const [newActionDate, setNewActionDate] = useState('');
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
+  const effectiveMilestones = customMilestones ?? DEFAULT_MILESTONES[selectionType];
 
   const companyInterviews = interviews
     .filter((i) => i.companyId === company.id)
@@ -121,6 +129,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       myPageId: myPageId.trim() || undefined,
       myPagePassword: myPagePassword.trim() || undefined,
       priority: priority || undefined,
+      selectionType,
+      customMilestones: customMilestones && customMilestones.length > 0 ? customMilestones : undefined,
     });
     onClose();
   };
@@ -299,6 +309,131 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                           </button>
                         </div>
                       ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 選考タイプ */}
+              <div>
+                <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2 px-1">選考タイプ</label>
+                <select
+                  value={selectionType}
+                  onChange={(e) => {
+                    setSelectionType(e.target.value as SelectionType);
+                    setCustomMilestones(undefined);
+                    setEditingMilestones(false);
+                  }}
+                  className="ios-input w-full text-[14px]"
+                >
+                  {(Object.entries(SELECTION_TYPE_LABELS) as [SelectionType, string][]).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 選考ステップ */}
+              <div>
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">選考ステップ</p>
+                  <button
+                    type="button"
+                    onClick={() => setEditingMilestones(!editingMilestones)}
+                    className="text-[13px] font-semibold text-[var(--color-primary)] ios-tap min-h-[44px] px-2"
+                  >
+                    {editingMilestones ? '完了' : '編集'}
+                  </button>
+                </div>
+                {!editingMilestones ? (
+                  <div className="flex items-center gap-1 flex-wrap px-1">
+                    {effectiveMilestones.map((step, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        <span className="text-[12px] font-medium text-[var(--color-text)]">{step}</span>
+                        {i < effectiveMilestones.length - 1 && (
+                          <span className="text-[11px] text-[var(--color-text-secondary)]">→</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                    <div className="divide-y divide-[var(--color-border)]">
+                      {effectiveMilestones.map((step, i) => (
+                        <div key={i} className="flex items-center gap-1 px-3 py-2">
+                          <span className="flex-1 text-[14px] text-[var(--color-text)]">{step}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (i === 0) return;
+                              const arr = [...effectiveMilestones];
+                              [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                              setCustomMilestones(arr);
+                            }}
+                            disabled={i === 0}
+                            className="w-8 h-8 flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-30 ios-tap text-[16px]"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (i === effectiveMilestones.length - 1) return;
+                              const arr = [...effectiveMilestones];
+                              [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                              setCustomMilestones(arr);
+                            }}
+                            disabled={i === effectiveMilestones.length - 1}
+                            className="w-8 h-8 flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-30 ios-tap text-[16px]"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCustomMilestones(effectiveMilestones.filter((_, idx) => idx !== i))}
+                            className="w-8 h-8 flex items-center justify-center text-[var(--color-danger)] ios-tap text-[16px]"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {/* ステップ追加 */}
+                    <div className="flex gap-2 p-3 border-t border-[var(--color-border)]">
+                      <input
+                        type="text"
+                        value={newStepText}
+                        onChange={(e) => setNewStepText(e.target.value)}
+                        placeholder="新しいステップ名"
+                        className="ios-input flex-1 text-[13px] py-1.5"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newStepText.trim()) {
+                            setCustomMilestones([...effectiveMilestones, newStepText.trim()]);
+                            setNewStepText('');
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newStepText.trim()) return;
+                          setCustomMilestones([...effectiveMilestones, newStepText.trim()]);
+                          setNewStepText('');
+                        }}
+                        disabled={!newStepText.trim()}
+                        className="px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40 flex-none"
+                      >
+                        + 追加
+                      </button>
+                    </div>
+                    {/* デフォルトに戻す */}
+                    <div className="px-3 pb-3">
+                      <button
+                        type="button"
+                        onClick={() => setCustomMilestones(undefined)}
+                        className="w-full py-2 rounded-xl text-[13px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-border)] ios-tap"
+                      >
+                        デフォルトに戻す
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

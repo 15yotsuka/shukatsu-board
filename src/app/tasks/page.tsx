@@ -10,13 +10,27 @@ import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies } from '@/lib/sampleData';
 import type { Company } from '@/lib/types';
 import { PRIORITY_CONFIG, ACTION_TYPE_LABELS } from '@/lib/types';
-import { MILESTONES, getMilestoneIndex } from '@/lib/progressMilestones';
+import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
 import { format } from 'date-fns';
 
 const FILTER_GROUPS: Record<string, string[]> = {
   'エントリー': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
   '面接中': ['1次面接', '2次面接', '最終面接'],
+};
+
+const getStepColor = (index: number, total: number): string => {
+  const progress = total <= 1 ? 0 : index / (total - 1);
+  if (progress <= 0.4) return 'bg-blue-500';
+  if (progress <= 0.8) return 'bg-orange-500';
+  return 'bg-red-500';
+};
+
+const getStepTextColor = (index: number, total: number): string => {
+  const progress = total <= 1 ? 0 : index / (total - 1);
+  if (progress <= 0.4) return 'text-blue-500';
+  if (progress <= 0.8) return 'text-orange-500';
+  return 'text-red-500';
 };
 
 const getBadgeStyle = (statusName: string): string => {
@@ -137,7 +151,8 @@ function TasksContent() {
         <div className="space-y-2">
           {sorted.map((c) => {
             const statusName = getStatusName(c.statusId);
-            const milestoneIdx = getMilestoneIndex(statusName, c.selectionType ?? 'main_only');
+            const milestones = getMilestones(c);
+            const milestoneIdx = getMilestoneIndex(statusName, milestones);
             const { current, total } = getStatusPosition(c);
             const isExpanded = expandedId === c.id;
             const hasDeadlineNow = !!(c.nextActionDate && c.nextActionDate <= today);
@@ -207,23 +222,23 @@ function TasksContent() {
                           <div className="absolute left-0 right-0 h-0.5 bg-zinc-200 dark:bg-zinc-700 top-[5px]">
                             <div
                               className="h-full bg-blue-500 transition-all duration-300"
-                              style={{ width: `${(milestoneIdx / (MILESTONES[c.selectionType ?? 'main_only'].length - 1)) * 100}%` }}
+                              style={{ width: `${milestones.length > 1 ? (milestoneIdx / (milestones.length - 1)) * 100 : 0}%` }}
                             />
                           </div>
-                          {MILESTONES[c.selectionType ?? 'main_only'].map((label, i) => (
+                          {milestones.map((label, i) => (
                             <div key={i} className="flex flex-col items-center relative z-10 gap-1">
-                              <div className={`w-3 h-3 rounded-full flex-none ${
+                              <div className={`w-3 h-3 rounded-full flex-none transition-colors ${
                                 i < milestoneIdx
-                                  ? 'bg-blue-500'
+                                  ? getStepColor(i, milestones.length)
                                   : i === milestoneIdx
-                                  ? 'bg-orange-500 ring-2 ring-orange-200 dark:ring-orange-900'
+                                  ? getStepColor(i, milestones.length) + ' ring-2 ring-offset-1 ring-current'
                                   : 'bg-zinc-200 dark:bg-zinc-700'
                               }`} />
                               <span className={`text-[9px] text-center leading-tight max-w-[36px] ${
                                 i < milestoneIdx
-                                  ? 'text-blue-500'
+                                  ? getStepTextColor(i, milestones.length)
                                   : i === milestoneIdx
-                                  ? 'text-orange-500 font-bold'
+                                  ? getStepTextColor(i, milestones.length) + ' font-bold'
                                   : 'text-zinc-400 dark:text-zinc-500'
                               }`}>{label}</span>
                             </div>

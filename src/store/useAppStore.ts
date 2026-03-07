@@ -51,7 +51,7 @@ interface AppActions {
 
 type AppStore = AppState & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -344,12 +344,22 @@ export const useAppStore = create<AppStore>()(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const state = persistedState as any;
         // v1→v2→v3: strip trackType from companies/statusColumns, remove activeTrack
+        // v3→v4: rename selectionType values (intern_only→intern, main_only→main)
+        const selectionTypeRemap: Record<string, string> = {
+          intern_only: 'intern',
+          main_only: 'main',
+        };
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
           companies: (state.companies ?? []).map((c: Company & { trackType?: unknown }) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { trackType, ...rest } = c as Company & { trackType?: unknown };
-            return rest;
+            return {
+              ...rest,
+              selectionType: rest.selectionType
+                ? (selectionTypeRemap[rest.selectionType as string] ?? rest.selectionType)
+                : undefined,
+            };
           }),
           statusColumns: (state.statusColumns ?? createAllDefaultStatuses()).map(
             (s: StatusColumn & { trackType?: unknown }) => {
