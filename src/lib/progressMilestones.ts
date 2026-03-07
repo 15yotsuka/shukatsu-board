@@ -4,7 +4,7 @@ export const DEFAULT_MILESTONES: Record<SelectionType, string[]> = {
   intern: [
     'ES',
     'Webテスト',
-    '面接',
+    '一次面接',
     'インターン参加',
   ],
   main: [

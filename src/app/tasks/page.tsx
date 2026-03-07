@@ -8,7 +8,7 @@ import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies } from '@/lib/sampleData';
-import type { Company } from '@/lib/types';
+import type { Company, Interview } from '@/lib/types';
 import { TAG_CONFIG, ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
@@ -40,20 +40,6 @@ const FILTER_GROUPS: Record<string, string[]> = {
 
 const TAG_ORDER: Tag[] = ['優遇あり', '早期選考', 'リクルーター面談', '結果待ち', 'インターン参加済み'];
 
-const getStepColor = (index: number, total: number): string => {
-  const progress = total <= 1 ? 0 : index / (total - 1);
-  if (progress <= 0.4) return 'bg-blue-500';
-  if (progress <= 0.8) return 'bg-orange-500';
-  return 'bg-red-500';
-};
-
-const getStepTextColor = (index: number, total: number): string => {
-  const progress = total <= 1 ? 0 : index / (total - 1);
-  if (progress <= 0.4) return 'text-blue-500';
-  if (progress <= 0.8) return 'text-orange-500';
-  return 'text-red-500';
-};
-
 const getBadgeStyle = (statusName: string): string => {
   if (statusName.includes('面接')) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
   if (statusName.includes('内定')) return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
@@ -76,31 +62,24 @@ const getNextStepLabel = (company: Company): string | null => {
 interface TaskCardProps {
   company: Company;
   statusName: string;
-  isExpanded: boolean;
   isDraggable: boolean;
   hasDeadlineNow: boolean;
   milestones: string[];
   milestoneIdx: number;
-  statusPosition: { current: number; total: number };
-  onToggle: () => void;
+  interviews: Interview[];
   onOpenDetail: () => void;
-  onPass: () => void;
-  onReject: () => void;
-  onAdvance: () => void;
+  onAdvance: (e: React.MouseEvent) => void;
 }
 
 function TaskCard({
   company,
   statusName,
-  isExpanded,
   isDraggable,
   hasDeadlineNow,
   milestones,
   milestoneIdx,
-  onToggle,
+  interviews,
   onOpenDetail,
-  onPass,
-  onReject,
   onAdvance,
 }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -115,21 +94,27 @@ function TaskCard({
 
   const nextStepLabel = getNextStepLabel(company);
 
+  const upcomingInterview = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return (
+      interviews
+        .filter((i) => i.companyId === company.id && i.datetime.substring(0, 10) >= today)
+        .sort((a, b) => a.datetime.localeCompare(b.datetime))[0] ?? null
+    );
+  }, [interviews, company.id]);
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden"
+      onClick={onOpenDetail}
+      className="bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
     >
-      {/* Card header */}
-      <div
-        onClick={onToggle}
-        className="px-4 py-3.5 flex items-center gap-2 cursor-pointer transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 active:scale-[0.98]"
-      >
+      <div className="px-4 py-3.5 flex items-start gap-2">
         {/* Drag handle — manual sort only */}
         {isDraggable && (
           <button
-            className="w-6 flex-none flex items-center justify-center text-zinc-400 cursor-grab active:cursor-grabbing touch-none select-none"
+            className="w-6 flex-none flex items-center justify-center text-zinc-400 cursor-grab active:cursor-grabbing touch-none select-none mt-0.5"
             onClick={(e) => e.stopPropagation()}
             {...(listeners ?? {})}
             {...attributes}
@@ -142,7 +127,7 @@ function TaskCard({
         )}
 
         <div className="flex-1 min-w-0">
-          {/* Row 1: name + badges */}
+          {/* Row 1: name + tags + status badge */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>
             {company.tags && company.tags.map((tag) => TAG_CONFIG[tag] && (
@@ -160,7 +145,7 @@ function TaskCard({
             <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5 truncate">{company.industry}</p>
           )}
 
-          {/* Row 3: next step label */}
+          {/* Row 3: next scheduled action */}
           {nextStepLabel && (
             <p className={`text-[12px] mt-0.5 flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-secondary)]'}`}>
               <span>📅</span>
@@ -168,98 +153,45 @@ function TaskCard({
               {hasDeadlineNow && ' ・結果は？'}
             </p>
           )}
+
+          {/* Row 4: upcoming interview */}
+          {upcomingInterview && (
+            <p className="text-[12px] text-[var(--color-primary)] mt-0.5 flex items-center gap-1">
+              <span>🗓</span>
+              {format(new Date(upcomingInterview.datetime), 'M/d HH:mm')} {upcomingInterview.type}
+            </p>
+          )}
+
+          {/* Row 5: progress dots */}
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            {milestones.map((name, i) => (
+              <div
+                key={i}
+                title={name}
+                className={`rounded-full transition-all ${
+                  i < milestoneIdx
+                    ? 'w-2 h-2 bg-blue-500'
+                    : i === milestoneIdx
+                    ? 'w-2.5 h-2.5 bg-blue-400 ring-2 ring-blue-400/30'
+                    : 'w-2 h-2 bg-zinc-300 dark:bg-zinc-600'
+                }`}
+              />
+            ))}
+            <span className="text-[11px] text-[var(--color-text-secondary)] ml-1">{statusName}</span>
+          </div>
         </div>
 
         {/* Quick advance button */}
         <button
-          onClick={(e) => { e.stopPropagation(); onAdvance(); }}
-          className="flex-none p-1.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] ios-tap active:bg-[var(--color-primary)]/20"
+          onClick={onAdvance}
+          className="flex-none p-1.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] ios-tap active:bg-[var(--color-primary)]/20 mt-0.5"
           aria-label="次のステータスに進む"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
-
-        <motion.div
-          animate={{ rotate: isExpanded ? 90 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex-none"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </motion.div>
       </div>
-
-      {/* Expanded content */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-5 pb-4 pt-3 border-t border-[var(--color-border)]">
-              {/* Full progress bar with labels */}
-              <div className="relative flex items-start justify-between w-full">
-                <div className="absolute left-0 right-0 h-0.5 bg-zinc-200 dark:bg-zinc-700 top-[5px]">
-                  <div
-                    className="h-full bg-blue-500 transition-all duration-300"
-                    style={{ width: `${milestones.length > 1 ? (milestoneIdx / (milestones.length - 1)) * 100 : 0}%` }}
-                  />
-                </div>
-                {milestones.map((label, i) => (
-                  <div key={i} className="flex flex-col items-center relative z-10 gap-1">
-                    <div className={`w-3 h-3 rounded-full flex-none transition-colors ${
-                      i < milestoneIdx
-                        ? getStepColor(i, milestones.length)
-                        : i === milestoneIdx
-                        ? getStepColor(i, milestones.length) + ' ring-2 ring-offset-1 ring-current'
-                        : 'bg-zinc-200 dark:bg-zinc-700'
-                    }`} />
-                    <span className={`text-[9px] text-center leading-tight max-w-[36px] ${
-                      i < milestoneIdx
-                        ? getStepTextColor(i, milestones.length)
-                        : i === milestoneIdx
-                        ? getStepTextColor(i, milestones.length) + ' font-bold'
-                        : 'text-zinc-400 dark:text-zinc-500'
-                    }`}>{label}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 mt-4">
-                {hasDeadlineNow && (
-                  <>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onPass(); }}
-                      className="flex-1 py-2 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 text-[13px] font-semibold transition-all duration-150 active:scale-95 hover:brightness-95"
-                    >
-                      ⭕ 通過
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onReject(); }}
-                      className="flex-1 py-2 rounded-xl bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 text-[13px] font-semibold transition-all duration-150 active:scale-95 hover:brightness-95"
-                    >
-                      ❌ 見送り
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); onOpenDetail(); }}
-                  className="flex-1 py-2 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-[13px] font-semibold transition-all duration-150 active:scale-95 hover:brightness-95"
-                >
-                  詳細を開く →
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -274,12 +206,12 @@ const SORT_BUTTONS: { field: SortField; label: string }[] = [
 function TasksContent() {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
+  const interviews = useAppStore((s) => s.interviews);
   const addCompany = useAppStore((s) => s.addCompany);
   const updateCompany = useAppStore((s) => s.updateCompany);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
@@ -302,13 +234,6 @@ function TasksContent() {
     samples.forEach((c) => addCompany(c));
   };
 
-  const getStatusPosition = (company: Company) => {
-    const trackCols = [...statusColumns].sort((a, b) => a.order - b.order);
-    const total = trackCols.length;
-    const current = trackCols.findIndex((s) => s.id === company.statusId) + 1;
-    return { current, total };
-  };
-
   const handleSort = (field: SortField) => {
     if (field === sortField) {
       setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -318,49 +243,23 @@ function TasksContent() {
     }
   };
 
-  const handlePass = (company: Company) => {
-    const trackCols = [...statusColumns].sort((a, b) => a.order - b.order);
-    const currentIdx = trackCols.findIndex((s) => s.id === company.statusId);
-    if (currentIdx === -1 || currentIdx >= trackCols.length - 1) return;
-    const nextStatus = trackCols[currentIdx + 1];
-    updateCompany(company.id, {
-      statusId: nextStatus.id,
-      nextActionDate: undefined,
-      nextActionType: undefined,
-      nextDeadline: undefined,
-    });
-    showToast(`『${company.name}』を【${nextStatus.name}】に更新しました。`);
-    setExpandedId(null);
-  };
-
-  const handleReject = (company: Company) => {
-    const sayonara = statusColumns.find((s) => s.name === 'お見送り');
-    if (!sayonara) return;
-    updateCompany(company.id, { statusId: sayonara.id });
-    showToast(`『${company.name}』を【お見送り】に更新しました。`);
-    setExpandedId(null);
-  };
-
-  const handleAdvanceStatus = (company: Company) => {
-    const sortedCols = [...statusColumns].sort((a, b) => a.order - b.order);
-    const currentIdx = sortedCols.findIndex((col) => col.id === company.statusId);
-    const currentName = sortedCols[currentIdx]?.name;
-    if (currentName === '内定' || currentName === 'お見送り') return;
-
-    // For intern companies at last milestone, trigger promotion dialog
-    if (company.selectionType === 'intern') {
-      const milestones = getMilestones(company);
-      const milestoneIdx = getMilestoneIndex(currentName ?? '', milestones);
-      if (milestoneIdx >= milestones.length - 1) {
-        setPromoteToMainTarget(company);
-        return;
-      }
+  const handleAdvanceStatus = (e: React.MouseEvent, company: Company) => {
+    e.stopPropagation();
+    const milestones = getMilestones(company);
+    const currentStatus = statusColumns.find((col) => col.id === company.statusId);
+    if (currentStatus?.name === '内定' || currentStatus?.name === 'お見送り') return;
+    if (company.selectionType === 'intern' && currentStatus?.name === 'インターン参加') {
+      setPromoteToMainTarget(company);
+      return;
     }
-
-    const nextColumn = sortedCols[currentIdx + 1];
+    const currentIdx = milestones.findIndex((m) => m === currentStatus?.name);
+    const nextMilestoneName = milestones[currentIdx + 1];
+    if (!nextMilestoneName) return;
+    const nextColumn = statusColumns.find((col) => col.name === nextMilestoneName);
     if (!nextColumn) return;
-    updateCompany(company.id, { statusId: nextColumn.id });
-    showToast(`『${company.name}』を【${nextColumn.name}】に更新しました。`);
+    if (window.confirm(`「${currentStatus?.name}」→「${nextMilestoneName}」に進めますか？`)) {
+      updateCompany(company.id, { statusId: nextColumn.id });
+    }
   };
 
   const sortedAll = useMemo(() => {
@@ -477,7 +376,6 @@ function TasksContent() {
                   const statusName = getStatusName(c.statusId);
                   const milestones = getMilestones(c);
                   const milestoneIdx = getMilestoneIndex(statusName, milestones);
-                  const statusPosition = getStatusPosition(c);
                   const hasDeadlineNow = !!(c.nextActionDate && c.nextActionDate <= today);
 
                   return (
@@ -485,17 +383,13 @@ function TasksContent() {
                       key={c.id}
                       company={c}
                       statusName={statusName}
-                      isExpanded={expandedId === c.id}
                       isDraggable={sortField === 'manual'}
                       hasDeadlineNow={hasDeadlineNow}
                       milestones={milestones}
                       milestoneIdx={milestoneIdx}
-                      statusPosition={statusPosition}
-                      onToggle={() => setExpandedId(expandedId === c.id ? null : c.id)}
+                      interviews={interviews}
                       onOpenDetail={() => setSelectedCompany(c)}
-                      onPass={() => handlePass(c)}
-                      onReject={() => handleReject(c)}
-                      onAdvance={() => handleAdvanceStatus(c)}
+                      onAdvance={(e) => handleAdvanceStatus(e, c)}
                     />
                   );
                 })}
@@ -579,6 +473,7 @@ function TasksContent() {
           </div>
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {selectedCompany && (
           <ErrorBoundary

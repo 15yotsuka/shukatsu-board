@@ -19,9 +19,18 @@ function addHour(time: string): string {
   return `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+const INTERVIEW_TYPE_TO_STATUS: Partial<Record<string, string>> = {
+  '一次面接': '1次面接',
+  '二次面接': '2次面接',
+  '最終面接': '最終面接',
+};
+
 export function InterviewForm({ companyId, interview, onClose }: InterviewFormProps) {
   const addInterview = useAppStore((s) => s.addInterview);
   const updateInterview = useAppStore((s) => s.updateInterview);
+  const companies = useAppStore((s) => s.companies);
+  const statusColumns = useAppStore((s) => s.statusColumns);
+  const updateCompany = useAppStore((s) => s.updateCompany);
 
   const [date, setDate] = useState(
     interview ? interview.datetime.split('T')[0] : ''
@@ -41,16 +50,32 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
     }
   };
 
+  const autoAdvanceStatus = (interviewType: string) => {
+    const targetStatusName = INTERVIEW_TYPE_TO_STATUS[interviewType];
+    if (!targetStatusName) return;
+    const company = companies.find((c) => c.id === companyId);
+    if (!company) return;
+    const sortedCols = [...statusColumns].sort((a, b) => a.order - b.order);
+    const currentOrder = sortedCols.findIndex((col) => col.id === company.statusId);
+    const targetCol = statusColumns.find((col) => col.name === targetStatusName);
+    if (!targetCol) return;
+    const targetOrder = sortedCols.findIndex((col) => col.id === targetCol.id);
+    if (targetOrder > currentOrder) {
+      updateCompany(companyId, { statusId: targetCol.id });
+    }
+  };
+
   const handleSubmit = () => {
     if (!date || !time || !type.trim()) return;
 
     const datetime = `${date}T${time}:00`;
+    const trimmedType = type.trim();
 
     if (interview) {
       updateInterview(interview.id, {
         datetime,
         endTime: endTime || undefined,
-        type: type.trim(),
+        type: trimmedType,
         location: location.trim() || undefined,
         memo: memo.trim() || undefined,
       });
@@ -59,10 +84,11 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
         companyId,
         datetime,
         endTime: endTime || undefined,
-        type: type.trim(),
+        type: trimmedType,
         location: location.trim() || undefined,
         memo: memo.trim() || undefined,
       });
+      autoAdvanceStatus(trimmedType);
     }
     onClose();
   };
