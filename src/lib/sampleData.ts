@@ -76,7 +76,7 @@ export function createSampleCompanies(
       statusId: getStatus('Webテスト'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 4), 'yyyy-MM-dd'),
-      nextActionType: 'webtest' as ActionType,
+      nextActionType: 'interview' as ActionType,
     },
     {
       name: '博報堂',
@@ -92,7 +92,7 @@ export function createSampleCompanies(
       industry: 'コンサルティング',
       statusId: getStatus('1次面接'),
       selectionType: 'main' as SelectionType,
-      nextActionDate: format(addDays(now, 7), 'yyyy-MM-dd'),
+      nextActionDate: format(now, 'yyyy-MM-dd'),
       nextActionType: 'interview' as ActionType,
     },
     {
@@ -194,17 +194,9 @@ export interface SampleInterview {
 
 export const SAMPLE_INTERVIEWS: SampleInterview[] = [
   {
-    companyName: 'ソニーグループ',
-    type: '一次面接',
-    date: format(now, 'yyyy-MM-dd'),
-    startTime: '10:00',
-    endTime: '11:00',
-    location: 'オンライン',
-  },
-  {
     companyName: 'アクセンチュア',
     type: '一次面接',
-    date: format(addDays(now, 7), 'yyyy-MM-dd'),
+    date: format(now, 'yyyy-MM-dd'),
     startTime: '14:00',
     endTime: '15:00',
     location: 'オンライン',
