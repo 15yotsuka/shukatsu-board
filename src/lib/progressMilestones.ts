@@ -15,14 +15,6 @@ export const DEFAULT_MILESTONES: Record<SelectionType, string[]> = {
     '最終面接',
     '内定',
   ],
-  intern_to_main: [
-    'ES',
-    'Webテスト',
-    '面接',
-    'インターン',
-    '最終面接',
-    '内定',
-  ],
 };
 
 export function getMilestones(company: Company): string[] {

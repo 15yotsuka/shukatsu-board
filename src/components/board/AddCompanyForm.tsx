@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
-import { PRIORITY_CONFIG, SELECTION_TYPE_LABELS, type CompanyPriority, type SelectionType } from '@/lib/types';
+import { TAG_CONFIG, SELECTION_TYPE_LABELS, type Tag, type SelectionType } from '@/lib/types';
 import { DEFAULT_MILESTONES } from '@/lib/progressMilestones';
 
 interface AddCompanyFormProps {
@@ -22,7 +22,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [url, setUrl] = useState('');
   const [deadline, setDeadline] = useState('');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
-  const [priority, setPriority] = useState<CompanyPriority | ''>('');
+  const [tags, setTags] = useState<Tag[]>([]);
   const [selectionType, setSelectionType] = useState<SelectionType>('main');
   const [customMilestones, setCustomMilestones] = useState<string[] | undefined>(undefined);
   const [editingMilestones, setEditingMilestones] = useState(false);
@@ -48,7 +48,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       url: url.trim() || undefined,
       nextDeadline: deadline.trim() || undefined,
       statusId,
-      priority: priority || undefined,
+      tags: tags.length > 0 ? tags : undefined,
       selectionType,
       customMilestones: customMilestones && customMilestones.length > 0 ? customMilestones : undefined,
     });
@@ -311,17 +311,17 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             )}
           </div>
 
-          {/* 優先度タグ */}
+          {/* タグ */}
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">優先度タグ</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">タグ</label>
             <div className="flex flex-wrap gap-2">
-              {(Object.entries(PRIORITY_CONFIG) as [CompanyPriority, typeof PRIORITY_CONFIG[CompanyPriority]][]).map(([key, config]) => (
+              {(Object.entries(TAG_CONFIG) as [Tag, typeof TAG_CONFIG[Tag]][]).map(([key, config]) => (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setPriority(priority === key ? '' : key)}
+                  onClick={() => setTags((prev) => prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key])}
                   className={`px-3 py-1 rounded-full text-[13px] font-semibold transition-all ios-tap ${
-                    priority === key
+                    tags.includes(key)
                       ? config.className + ' ring-2 ring-current'
                       : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
                   }`}

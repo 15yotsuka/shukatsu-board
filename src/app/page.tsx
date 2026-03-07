@@ -5,8 +5,8 @@ import { useAppStore } from '@/store/useAppStore';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
-import { ACTION_TYPE_LABELS, PRIORITY_CONFIG } from '@/lib/types';
-import type { Company, CompanyPriority } from '@/lib/types';
+import { ACTION_TYPE_LABELS, TAG_CONFIG } from '@/lib/types';
+import type { Company, Tag } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -17,7 +17,7 @@ interface TodoItem {
   label: string;
   date: string;
   time?: string;
-  priority?: CompanyPriority;
+  tags?: Tag[];
 }
 
 export default function Home() {
@@ -32,8 +32,8 @@ export default function Home() {
   const weekEnd = format(addDays(new Date(), 7), 'yyyy-MM-dd');
 
   const companyMap = useMemo(() => {
-    const map = new Map<string, { name: string; priority?: CompanyPriority }>();
-    companies.forEach((c) => map.set(c.id, { name: c.name, priority: c.priority }));
+    const map = new Map<string, { name: string; tags?: Tag[] }>();
+    companies.forEach((c) => map.set(c.id, { name: c.name, tags: c.tags }));
     return map;
   }, [companies]);
 
@@ -51,7 +51,7 @@ export default function Home() {
           label: ACTION_TYPE_LABELS[a.type] ?? a.type,
           date: a.date,
           time: a.time,
-          priority: aData?.priority,
+          tags: aData?.tags,
         });
       });
 
@@ -72,7 +72,7 @@ export default function Home() {
           label: i.type || '面接',
           date: dateStr,
           time: timeStr !== '00:00' ? timeStr : undefined,
-          priority: iData?.priority,
+          tags: iData?.tags,
         });
       });
 
@@ -118,11 +118,11 @@ export default function Home() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{item.companyName}</p>
-            {item.priority && PRIORITY_CONFIG[item.priority] && (
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${PRIORITY_CONFIG[item.priority].className}`}>
-                {PRIORITY_CONFIG[item.priority].label}
+            {item.tags && item.tags.map((tag) => TAG_CONFIG[tag] && (
+              <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${TAG_CONFIG[tag].className}`}>
+                {TAG_CONFIG[tag].label}
               </span>
-            )}
+            ))}
           </div>
           <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
             {item.label}

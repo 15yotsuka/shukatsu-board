@@ -35,8 +35,8 @@ export interface Company {
   nextActionDate?: string;
   nextActionType?: ActionType;
   nextActionTime?: string;
-  // 優先度タグ
-  priority?: CompanyPriority;
+  // タグ（複数選択可）
+  tags?: Tag[];
   // 選考タイプ（進捗バー表示用）
   selectionType?: SelectionType;
   // カスタム選考ステップ（未設定の場合はデフォルトを使用）
@@ -46,34 +46,43 @@ export interface Company {
 // ============================
 // 選考タイプ
 // ============================
-export type SelectionType = 'intern' | 'main' | 'intern_to_main';
+export type SelectionType = 'intern' | 'main';
 
 export const SELECTION_TYPE_LABELS: Record<SelectionType, string> = {
   intern: 'インターン選考',
   main: '本選考',
-  intern_to_main: '本選考（インターン内包）',
 };
 
 // ============================
-// 優先度タグ
+// タグ（複数選択可）
 // ============================
-export type CompanyPriority = 'S' | '早期' | 'リク面' | '持ち駒' | '結果待ち';
+export type Tag = '優遇あり' | '早期選考' | 'リクルーター面談' | '結果待ち' | 'インターン参加済み';
 
-export const PRIORITY_CONFIG: Record<CompanyPriority, { label: string; className: string }> = {
-  S: { label: 'Sランク', className: 'bg-red-500/10 text-red-500' },
-  早期: { label: '早期選考', className: 'bg-blue-500/10 text-blue-500' },
-  リク面: { label: 'リク面あり', className: 'bg-purple-500/10 text-purple-500' },
-  持ち駒: { label: '持ち駒', className: 'bg-zinc-500/10 text-zinc-400' },
-  結果待ち: { label: '結果待ち', className: 'bg-amber-500/10 text-amber-500' },
+export const TAG_CONFIG: Record<Tag, { label: string; className: string }> = {
+  '優遇あり':         { label: '優遇あり',  className: 'bg-red-500/10 text-red-500' },
+  '早期選考':         { label: '早期選考',  className: 'bg-blue-500/10 text-blue-500' },
+  'リクルーター面談': { label: 'リク面',    className: 'bg-purple-500/10 text-purple-500' },
+  '結果待ち':         { label: '結果待ち',  className: 'bg-amber-500/10 text-amber-500' },
+  'インターン参加済み': { label: 'インターン済', className: 'bg-green-500/10 text-green-500' },
 };
 
 // ============================
 // 面接（Phase 2）
 // ============================
+export const INTERVIEW_TYPES = [
+  '一次面接', '二次面接', '三次面接', '最終面接',
+  'インターン面接', 'OB面談', 'リクルーター面談', 'グループ面接', 'その他',
+] as const;
+export type InterviewType = typeof INTERVIEW_TYPES[number];
+
+export const INTERVIEW_LOCATIONS = ['オンライン', '本社', '支社', '別会場'] as const;
+export type InterviewLocation = typeof INTERVIEW_LOCATIONS[number];
+
 export interface Interview {
   id: string;
   companyId: string;
   datetime: string;
+  endTime?: string; // "HH:mm"
   type: string;
   location?: string;
   memo?: string;

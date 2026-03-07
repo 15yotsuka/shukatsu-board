@@ -8,6 +8,7 @@ import type {
   Interview,
   ESEntry,
   ScheduledAction,
+  Tag,
 } from '@/lib/types';
 import { createAllDefaultStatuses } from '@/lib/defaults';
 
@@ -54,7 +55,7 @@ interface AppActions {
 
 type AppStore = AppState & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 4;
+const CURRENT_SCHEMA_VERSION = 5;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -365,22 +366,38 @@ export const useAppStore = create<AppStore>()(
         const state = persistedState as any;
         // v1→v2→v3: strip trackType from companies/statusColumns, remove activeTrack
         // v3→v4: rename selectionType values (intern_only→intern, main_only→main)
+        // v4→v5: remove intern_to_main selectionType; convert old priority → tags[]
         const selectionTypeRemap: Record<string, string> = {
           intern_only: 'intern',
           main_only: 'main',
+          intern_to_main: 'main',
+        };
+        const priorityToTagRemap: Record<string, Tag> = {
+          S: '優遇あり',
+          '早期': '早期選考',
+          'リク面': 'リクルーター面談',
+          '結果待ち': '結果待ち',
+          // '持ち駒' intentionally dropped
         };
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
-          companies: (state.companies ?? []).map((c: Company & { trackType?: unknown }) => {
+          companies: (state.companies ?? []).map((c: Company & { trackType?: unknown; priority?: string }) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { trackType, ...rest } = c as Company & { trackType?: unknown };
+            const { trackType, priority: oldPriority, ...rest } = c as Company & { trackType?: unknown; priority?: string };
             const rawType = rest.selectionType as string | undefined;
             const remapped = rawType
               ? (selectionTypeRemap[rawType] ?? rawType)
               : 'main';
+            // Convert old single priority → tags[] (only if no tags yet)
+            let tags = rest.tags as Tag[] | undefined;
+            if (!tags && oldPriority) {
+              const converted = priorityToTagRemap[oldPriority];
+              if (converted) tags = [converted];
+            }
             return {
               ...rest,
               selectionType: remapped,
+              ...(tags ? { tags } : {}),
             };
           }),
           statusColumns: (state.statusColumns ?? createAllDefaultStatuses()).map(

@@ -2,12 +2,21 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { INTERVIEW_TYPES } from '@/lib/types';
 import type { Interview } from '@/lib/types';
 
 interface InterviewFormProps {
   companyId: string;
   interview?: Interview;
   onClose: () => void;
+}
+
+const LOCATION_PRESETS = ['オンライン', '本社', '支社', '別会場'];
+
+function addHour(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const endH = (h + 1) % 24;
+  return `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
 export function InterviewForm({ companyId, interview, onClose }: InterviewFormProps) {
@@ -20,9 +29,17 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
   const [time, setTime] = useState(
     interview ? interview.datetime.split('T')[1]?.substring(0, 5) ?? '' : ''
   );
+  const [endTime, setEndTime] = useState(interview?.endTime ?? '');
   const [type, setType] = useState(interview?.type ?? '');
   const [location, setLocation] = useState(interview?.location ?? '');
   const [memo, setMemo] = useState(interview?.memo ?? '');
+
+  const handleStartTimeChange = (t: string) => {
+    setTime(t);
+    if (t && !endTime) {
+      setEndTime(addHour(t));
+    }
+  };
 
   const handleSubmit = () => {
     if (!date || !time || !type.trim()) return;
@@ -32,6 +49,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
     if (interview) {
       updateInterview(interview.id, {
         datetime,
+        endTime: endTime || undefined,
         type: type.trim(),
         location: location.trim() || undefined,
         memo: memo.trim() || undefined,
@@ -40,6 +58,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
       addInterview({
         companyId,
         datetime,
+        endTime: endTime || undefined,
         type: type.trim(),
         location: location.trim() || undefined,
         memo: memo.trim() || undefined,
@@ -64,8 +83,9 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
         </div>
 
         <div className="p-4 space-y-4">
-          <div className="flex gap-3">
-            <div className="flex-1">
+          {/* 日付 + 開始時間 + 終了時間 */}
+          <div className="flex gap-2">
+            <div className="flex-[2]">
               <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">日付</label>
               <input
                 type="date"
@@ -75,46 +95,68 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
               />
             </div>
             <div className="flex-1">
-              <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">時間</label>
+              <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">開始</label>
               <input
                 type="time"
                 value={time}
-                onChange={(e) => setTime(e.target.value)}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
+                className="ios-input"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">終了</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
                 className="ios-input"
               />
             </div>
           </div>
 
+          {/* 面接種別 */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">面接種別</label>
-            <input
-              type="text"
-              value={type}
+            <select
+              value={INTERVIEW_TYPES.includes(type as typeof INTERVIEW_TYPES[number]) ? type : 'その他'}
               onChange={(e) => setType(e.target.value)}
               className="ios-input"
-              placeholder="例: 一次面接"
+            >
+              {INTERVIEW_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 場所 */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">場所</label>
+            <div className="flex gap-1.5 flex-wrap mb-2">
+              {LOCATION_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setLocation(location === preset ? '' : preset)}
+                  className={`px-3 py-1.5 rounded-full text-[13px] font-semibold ios-tap transition-all ${
+                    location === preset
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="ios-input"
+              placeholder="その他の場所を入力"
             />
           </div>
 
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">場所</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="ios-input flex-1"
-                placeholder="例: 本社 or オンライン"
-              />
-              <button
-                onClick={() => setLocation('オンライン')}
-                className="px-4 text-[var(--color-primary)] text-[15px] font-medium ios-tap whitespace-nowrap"
-              >
-                オンライン
-              </button>
-            </div>
-          </div>
-
+          {/* メモ */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">メモ</label>
             <textarea

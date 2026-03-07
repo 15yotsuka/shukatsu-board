@@ -9,7 +9,7 @@ import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies } from '@/lib/sampleData';
 import type { Company } from '@/lib/types';
-import { PRIORITY_CONFIG, ACTION_TYPE_LABELS } from '@/lib/types';
+import { TAG_CONFIG, ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
@@ -38,7 +38,7 @@ const FILTER_GROUPS: Record<string, string[]> = {
   '面接中': ['1次面接', '2次面接', '最終面接'],
 };
 
-const PRIORITY_ORDER = ['S', '早期', 'リク面', '持ち駒', '結果待ち'];
+const TAG_ORDER: Tag[] = ['優遇あり', '早期選考', 'リクルーター面談', '結果待ち', 'インターン参加済み'];
 
 const getStepColor = (index: number, total: number): string => {
   const progress = total <= 1 ? 0 : index / (total - 1);
@@ -145,11 +145,11 @@ function TaskCard({
           {/* Row 1: name + badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>
-            {company.priority && PRIORITY_CONFIG[company.priority] && (
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${PRIORITY_CONFIG[company.priority].className}`}>
-                {PRIORITY_CONFIG[company.priority].label}
+            {company.tags && company.tags.map((tag) => TAG_CONFIG[tag] && (
+              <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${TAG_CONFIG[tag].className}`}>
+                {TAG_CONFIG[tag].label}
               </span>
-            )}
+            ))}
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
               {statusName}
             </span>
@@ -280,6 +280,7 @@ function TasksContent() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const searchParams = useSearchParams();
@@ -345,6 +346,17 @@ function TasksContent() {
     const currentIdx = sortedCols.findIndex((col) => col.id === company.statusId);
     const currentName = sortedCols[currentIdx]?.name;
     if (currentName === '内定' || currentName === 'お見送り') return;
+
+    // For intern companies at last milestone, trigger promotion dialog
+    if (company.selectionType === 'intern') {
+      const milestones = getMilestones(company);
+      const milestoneIdx = getMilestoneIndex(currentName ?? '', milestones);
+      if (milestoneIdx >= milestones.length - 1) {
+        setPromoteToMainTarget(company);
+        return;
+      }
+    }
+
     const nextColumn = sortedCols[currentIdx + 1];
     if (!nextColumn) return;
     updateCompany(company.id, { statusId: nextColumn.id });
@@ -368,9 +380,12 @@ function TasksContent() {
         return (aIdx - bIdx) * dir;
       }
       if (sortField === 'priority') {
-        const aIdx = a.priority ? PRIORITY_ORDER.indexOf(a.priority) : PRIORITY_ORDER.length;
-        const bIdx = b.priority ? PRIORITY_ORDER.indexOf(b.priority) : PRIORITY_ORDER.length;
-        return (aIdx - bIdx) * dir;
+        const aFirst = a.tags?.[0];
+        const bFirst = b.tags?.[0];
+        const aIdx = aFirst ? TAG_ORDER.indexOf(aFirst) : TAG_ORDER.length;
+        const bIdx = bFirst ? TAG_ORDER.indexOf(bFirst) : TAG_ORDER.length;
+        if (aIdx !== bIdx) return (aIdx - bIdx) * dir;
+        return ((b.tags?.length ?? 0) - (a.tags?.length ?? 0)) * dir;
       }
       return 0;
     });
@@ -533,6 +548,36 @@ function TasksContent() {
 
       <AnimatePresence>
         {showAddForm && <AddCompanyForm onClose={() => setShowAddForm(false)} />}
+      </AnimatePresence>
+
+      {/* インターン→本選考 昇格ダイアログ */}
+      <AnimatePresence>
+        {promoteToMainTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setPromoteToMainTarget(null)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl">
+              <h3 className="text-[17px] font-bold text-[var(--color-text)] mb-2">🎉 本選考に進みますか？</h3>
+              <p className="text-[14px] text-[var(--color-text-secondary)] mb-1 font-semibold">{promoteToMainTarget.name}</p>
+              <p className="text-[13px] text-[var(--color-text-secondary)] mb-4">選考タイプを「本選考」に切り替え、「インターン参加済み」タグを追加します。</p>
+              <div className="flex gap-3">
+                <button onClick={() => setPromoteToMainTarget(null)} className="flex-1 ios-button-secondary !border !border-[var(--color-border)] !rounded-xl">後で</button>
+                <button
+                  onClick={() => {
+                    const c = promoteToMainTarget;
+                    const newTags: Tag[] = [...(c.tags ?? [])];
+                    if (!newTags.includes('インターン参加済み')) newTags.push('インターン参加済み');
+                    updateCompany(c.id, { selectionType: 'main', customMilestones: undefined, tags: newTags });
+                    showToast(`『${c.name}』を本選考に更新しました。`);
+                    setPromoteToMainTarget(null);
+                  }}
+                  className="flex-1 ios-button-primary"
+                >
+                  本選考へ進む
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
       <AnimatePresence>
         {selectedCompany && (

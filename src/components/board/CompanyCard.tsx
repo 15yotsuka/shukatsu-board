@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
 import { isAfter, startOfDay, format } from 'date-fns';
 import type { Company } from '@/lib/types';
-import { PRIORITY_CONFIG } from '@/lib/types';
+import { TAG_CONFIG } from '@/lib/types';
 
 interface CompanyCardProps {
   company: Company;
@@ -72,9 +72,9 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     >
       <div className="flex items-start justify-between gap-1.5 mb-0.5">
         <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">{company.name}</p>
-        {company.priority && PRIORITY_CONFIG[company.priority] && (
-          <span className={`flex-none text-[11px] font-bold px-2 py-0.5 rounded-full ${PRIORITY_CONFIG[company.priority].className}`}>
-            {PRIORITY_CONFIG[company.priority].label}
+        {company.tags && company.tags.length > 0 && TAG_CONFIG[company.tags[0]] && (
+          <span className={`flex-none text-[11px] font-bold px-2 py-0.5 rounded-full ${TAG_CONFIG[company.tags[0]].className}`}>
+            {TAG_CONFIG[company.tags[0]].label}
           </span>
         )}
       </div>
