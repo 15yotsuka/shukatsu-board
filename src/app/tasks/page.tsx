@@ -48,6 +48,21 @@ const FILTER_LABELS: Record<string, string> = {
   'rejected': 'お見送り',
 };
 
+const FILTER_OPTIONS: { value: string; label: string; group?: string }[] = [
+  { value: '', label: 'すべて' },
+  { value: 'active', label: '進行中（すべて）' },
+  { value: '未エントリー', label: '未エントリー', group: '段階別' },
+  { value: 'ES作成中', label: 'ES作成中', group: '段階別' },
+  { value: 'ES提出済', label: 'ES提出済', group: '段階別' },
+  { value: 'Webテスト受検済', label: 'Webテスト受検済', group: '段階別' },
+  { value: '1次面接', label: '1次面接', group: '段階別' },
+  { value: '2次面接', label: '2次面接', group: '段階別' },
+  { value: '最終面接', label: '最終面接', group: '段階別' },
+  { value: 'インターン選考中', label: 'インターン選考中', group: '段階別' },
+  { value: 'offer', label: '内定' },
+  { value: 'rejected', label: 'お見送り' },
+];
+
 const TAG_ORDER: Tag[] = ['優遇あり', '早期選考', 'リクルーター面談', '結果待ち', 'インターン参加済み'];
 
 const getBadgeStyle = (statusName: string): string => {
@@ -378,17 +393,24 @@ function TasksContent() {
         })}
       </div>
 
-      {filter && (
-        <div className="flex items-center justify-between bg-[var(--color-primary)]/10 rounded-xl px-4 py-2.5 mb-4">
-          <span className="text-[14px] font-medium text-[var(--color-primary)]">フィルタ: {FILTER_LABELS[filter] ?? filter}</span>
-          <button
-            onClick={() => router.push('/tasks')}
-            className="text-[14px] font-semibold text-[var(--color-primary)] ios-tap"
-          >
-            × 解除
-          </button>
-        </div>
-      )}
+      {/* Filter dropdown */}
+      <div className="mb-4">
+        <select
+          value={filter}
+          onChange={(e) => {
+            const v = e.target.value;
+            router.push(v ? `/tasks?filter=${encodeURIComponent(v)}` : '/tasks');
+          }}
+          className="w-full px-3 py-2 rounded-xl text-[14px] font-medium bg-card border border-[var(--color-border)] text-[var(--color-text)] appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")` }}
+        >
+          {FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.group ? `  ${opt.label}` : opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {active.length === 0 && archived.length === 0 && !filter ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
