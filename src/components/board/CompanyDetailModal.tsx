@@ -57,7 +57,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const statusColumns = useAppStore((s) => s.statusColumns);
   const interviews = useAppStore((s) => s.interviews);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
-  const scheduledActions = useAppStore((s) => (s.scheduledActions ?? []).filter((a) => a.companyId === company.id));
+  const allScheduledActions = useAppStore((s) => s.scheduledActions);
+  const scheduledActions = allScheduledActions.filter((a) => a.companyId === company.id);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const showToast = useToast((s) => s.show);
