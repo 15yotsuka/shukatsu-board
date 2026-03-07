@@ -158,23 +158,26 @@ function TaskCard({
           </button>
         </div>
 
-        {/* Row 2: dot progress bar */}
+        {/* Row 2: dot progress bar (blue=本選考, green=インターン) */}
         <div className="flex items-center gap-1">
-          {milestones.map((_, i) => (
-            i === milestoneIdx ? (
+          {milestones.map((_, i) => {
+            const isIntern = company.selectionType === 'intern';
+            const filled = isIntern ? 'bg-emerald-500' : 'bg-blue-500';
+            const ping = isIntern ? 'bg-emerald-400' : 'bg-blue-400';
+            return i === milestoneIdx ? (
               <span key={i} className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${ping} opacity-75`} />
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${filled}`} />
               </span>
             ) : (
               <span
                 key={i}
                 className={`rounded-full h-2 w-2 ${
-                  i < milestoneIdx ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-600'
+                  i < milestoneIdx ? filled : 'bg-zinc-300 dark:bg-zinc-600'
                 }`}
               />
-            )
-          ))}
+            );
+          })}
         </div>
 
         {/* Row 3: deadline + interview (conditional) */}
