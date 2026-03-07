@@ -141,7 +141,12 @@ function TaskCard({
               </svg>
             </button>
           )}
-          <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1 min-w-0">{company.name}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>
+            {company.industry && (
+              <p className="text-[11px] text-zinc-400 truncate">{company.industry}</p>
+            )}
+          </div>
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
             {statusName}
           </span>
