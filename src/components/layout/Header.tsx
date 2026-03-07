@@ -1,15 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { StatusEditor } from '@/components/status/StatusEditor';
 import { useTheme } from '@/components/layout/ThemeProvider';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'ホーム',
+  '/tasks': '企業一覧',
+  '/calendar': 'カレンダー',
+  '/es': 'ES管理',
+};
 
 export function Header() {
   const [showStatusEditor, setShowStatusEditor] = useState(false);
   const { isDark, setTheme, theme } = useTheme();
+  const pathname = usePathname();
+
+  const title = PAGE_TITLES[pathname] ?? 'ShukatsuBoard';
 
   const toggleTheme = () => {
-    // system → light → dark → light ...
     if (theme === 'system') {
       setTheme(isDark ? 'light' : 'dark');
     } else {
@@ -22,7 +32,7 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-zinc-800">
         <div className="flex items-center justify-between h-14 px-4">
           <h1 className="text-lg font-bold text-[var(--color-text)] tracking-tight">
-            ShukatsuBoard
+            {title}
           </h1>
           <div className="flex items-center gap-1">
             {/* ダーク/ライト切替 */}
@@ -32,12 +42,10 @@ export function Header() {
               aria-label={isDark ? 'ライトモード' : 'ダークモード'}
             >
               {isDark ? (
-                /* 太陽アイコン（ライトモードへ） */
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-[22px] h-[22px] text-[#FF9F0A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10A5 5 0 0012 7z" />
                 </svg>
               ) : (
-                /* 月アイコン（ダークモードへ） */
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-[22px] h-[22px] text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>

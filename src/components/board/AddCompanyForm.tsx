@@ -6,6 +6,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
 import { TAG_CONFIG, SELECTION_TYPE_LABELS, type Tag, type SelectionType } from '@/lib/types';
 import { DEFAULT_MILESTONES } from '@/lib/progressMilestones';
+import { INDUSTRIES } from '@/lib/industries';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -141,13 +142,16 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
           {/* 業界 */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">業界</label>
-            <input
-              type="text"
+            <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
               className="ios-input"
-              placeholder="例: IT・通信"
-            />
+            >
+              <option value="">業界を選択</option>
+              {INDUSTRIES.map((ind) => (
+                <option key={ind} value={ind}>{ind}</option>
+              ))}
+            </select>
           </div>
 
           {/* URL */}

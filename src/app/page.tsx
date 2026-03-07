@@ -147,7 +147,7 @@ export default function Home() {
 
   return (
     <div className="pb-28 px-4 pt-4">
-      <h1 className="text-[22px] font-bold text-[var(--color-text)] mb-4">やることリスト</h1>
+
 
       {todoItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">

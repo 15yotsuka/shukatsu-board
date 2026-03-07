@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
-import { createSampleCompanies } from '@/lib/sampleData';
+import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
 import { TAG_CONFIG, ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
@@ -30,7 +30,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-type SortField = 'deadline' | 'status' | 'priority' | 'manual';
+type SortField = 'deadline' | 'status' | 'priority' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
@@ -110,87 +110,83 @@ function TaskCard({
       onClick={onOpenDetail}
       className="bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
     >
-      <div className="px-4 py-3.5 flex items-start gap-2">
-        {/* Drag handle — manual sort only */}
-        {isDraggable && (
+      <div className="px-4 py-3 flex flex-col gap-1.5">
+        {/* Row 1: drag handle + name + status badge + advance button */}
+        <div className="flex items-center gap-2">
+          {isDraggable && (
+            <button
+              className="w-5 flex-none flex items-center justify-center text-zinc-400 cursor-grab active:cursor-grabbing touch-none select-none"
+              onClick={(e) => e.stopPropagation()}
+              {...(listeners ?? {})}
+              {...attributes}
+              aria-label="ドラッグして並び替え"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+              </svg>
+            </button>
+          )}
+          <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1 min-w-0">{company.name}</p>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
+            {statusName}
+          </span>
           <button
-            className="w-6 flex-none flex items-center justify-center text-zinc-400 cursor-grab active:cursor-grabbing touch-none select-none mt-0.5"
-            onClick={(e) => e.stopPropagation()}
-            {...(listeners ?? {})}
-            {...attributes}
-            aria-label="ドラッグして並び替え"
+            onClick={onAdvance}
+            className="flex-none text-[12px] px-2 py-1 rounded-lg bg-blue-500/20 text-blue-500 font-medium whitespace-nowrap ios-tap"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
-            </svg>
+            次の段階へ →
           </button>
+        </div>
+
+        {/* Row 2: mini progress bar (dots + lines) */}
+        <div className="flex items-center gap-0">
+          {milestones.map((name, i) => (
+            <React.Fragment key={i}>
+              <div
+                title={name}
+                className={`rounded-full flex-shrink-0 transition-all ${
+                  i < milestoneIdx
+                    ? 'w-2.5 h-2.5 bg-blue-500'
+                    : i === milestoneIdx
+                    ? 'w-3 h-3 bg-orange-400 ring-2 ring-orange-400/30'
+                    : 'w-2.5 h-2.5 bg-zinc-300 dark:bg-zinc-600'
+                }`}
+              />
+              {i < milestones.length - 1 && (
+                <div className={`h-0.5 flex-1 min-w-[8px] ${
+                  i < milestoneIdx ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-600'
+                }`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Row 3: deadline + interview (conditional) */}
+        {(nextStepLabel || upcomingInterview) && (
+          <div className="flex items-center gap-3 flex-wrap text-[12px]">
+            {nextStepLabel && (
+              <span className={`flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-secondary)]'}`}>
+                📅 {nextStepLabel}
+              </span>
+            )}
+            {upcomingInterview && (
+              <span className="flex items-center gap-1 text-[var(--color-primary)]">
+                🕐 {format(new Date(upcomingInterview.datetime), 'M/d(E) HH:mm', { locale: ja })} {upcomingInterview.type}
+              </span>
+            )}
+          </div>
         )}
 
-        <div className="flex-1 min-w-0">
-          {/* Row 1: name + tags + status badge */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>
-            {company.tags && company.tags.map((tag) => TAG_CONFIG[tag] && (
+        {/* Row 4: tags (conditional) */}
+        {company.tags && company.tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {company.tags.map((tag) => TAG_CONFIG[tag] && (
               <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${TAG_CONFIG[tag].className}`}>
                 {TAG_CONFIG[tag].label}
               </span>
             ))}
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
-              {statusName}
-            </span>
           </div>
-
-          {/* Row 2: industry */}
-          {company.industry && (
-            <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5 truncate">{company.industry}</p>
-          )}
-
-          {/* Row 3: next scheduled action */}
-          {nextStepLabel && (
-            <p className={`text-[12px] mt-0.5 flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-secondary)]'}`}>
-              <span>📅</span>
-              {nextStepLabel}
-              {hasDeadlineNow && ' ・結果は？'}
-            </p>
-          )}
-
-          {/* Row 4: upcoming interview */}
-          {upcomingInterview && (
-            <p className="text-[12px] text-[var(--color-primary)] mt-0.5 flex items-center gap-1">
-              <span>🗓</span>
-              {format(new Date(upcomingInterview.datetime), 'M/d HH:mm')} {upcomingInterview.type}
-            </p>
-          )}
-
-          {/* Row 5: progress dots */}
-          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-            {milestones.map((name, i) => (
-              <div
-                key={i}
-                title={name}
-                className={`rounded-full transition-all ${
-                  i < milestoneIdx
-                    ? 'w-2 h-2 bg-blue-500'
-                    : i === milestoneIdx
-                    ? 'w-2.5 h-2.5 bg-blue-400 ring-2 ring-blue-400/30'
-                    : 'w-2 h-2 bg-zinc-300 dark:bg-zinc-600'
-                }`}
-              />
-            ))}
-            <span className="text-[11px] text-[var(--color-text-secondary)] ml-1">{statusName}</span>
-          </div>
-        </div>
-
-        {/* Quick advance button */}
-        <button
-          onClick={onAdvance}
-          className="flex-none p-1.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] ios-tap active:bg-[var(--color-primary)]/20 mt-0.5"
-          aria-label="次のステータスに進む"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+        )}
       </div>
     </div>
   );
@@ -200,8 +196,55 @@ const SORT_BUTTONS: { field: SortField; label: string }[] = [
   { field: 'deadline', label: '締切日' },
   { field: 'status', label: 'ステータス' },
   { field: 'priority', label: '優先度' },
+  { field: 'industry', label: '業界' },
   { field: 'manual', label: '手動' },
 ];
+
+function BulkImportModal({ statusColumns, onClose }: { statusColumns: { id: string; name: string }[]; onClose: () => void }) {
+  const addCompany = useAppStore((s) => s.addCompany);
+  const [selectedStatusId, setSelectedStatusId] = useState(statusColumns[0]?.id ?? '');
+  const [bulkText, setBulkText] = useState('');
+
+  const handleImport = () => {
+    const names = bulkText.split('\n').map((s) => s.trim()).filter((s) => s.length > 0);
+    if (names.length === 0) return;
+    names.forEach((name) => addCompany({ name, statusId: selectedStatusId }));
+    onClose();
+  };
+
+  const previewCount = bulkText.split('\n').filter((s) => s.trim().length > 0).length;
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-card w-full max-w-lg rounded-t-2xl md:rounded-2xl p-5 pb-8 space-y-4 shadow-2xl">
+        <div className="flex justify-center mb-1 md:hidden">
+          <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
+        </div>
+        <h3 className="text-[17px] font-bold text-[var(--color-text)]">企業を一括追加</h3>
+        <div>
+          <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期ステータス</label>
+          <select value={selectedStatusId} onChange={(e) => setSelectedStatusId(e.target.value)} className="ios-input">
+            {statusColumns.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">企業名（1行に1社）</label>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder={'株式会社A\n株式会社B\n株式会社C'}
+            className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 text-[15px] text-[var(--color-text)] min-h-[140px] outline-none resize-none"
+            autoFocus
+          />
+          {previewCount > 0 && <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{previewCount}社を追加します</p>}
+        </div>
+        <button onClick={handleImport} disabled={previewCount === 0} className="ios-button-primary disabled:opacity-40">{previewCount}社を追加する</button>
+        <button onClick={onClose} className="ios-button-secondary">キャンセル</button>
+      </div>
+    </div>
+  );
+}
 
 function TasksContent() {
   const companies = useAppStore((s) => s.companies);
@@ -210,7 +253,9 @@ function TasksContent() {
   const addCompany = useAppStore((s) => s.addCompany);
   const updateCompany = useAppStore((s) => s.updateCompany);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
+  const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
   const [sortField, setSortField] = useState<SortField>('deadline');
@@ -229,9 +274,30 @@ function TasksContent() {
   const getStatusName = (statusId: string) =>
     statusColumns.find((s) => s.id === statusId)?.name ?? '';
 
+  const trackStatuses = useMemo(() => [...statusColumns].sort((a, b) => a.order - b.order), [statusColumns]);
+
+  const addInterview = useAppStore((s) => s.addInterview);
+
   const handleSeed = () => {
     const samples = createSampleCompanies(statusColumns);
-    samples.forEach((c) => addCompany(c));
+    const addedCompanies: { name: string; id?: string }[] = [];
+    samples.forEach((c) => {
+      addCompany(c);
+      addedCompanies.push({ name: c.name });
+    });
+    // Get freshly added companies to link interviews
+    const freshCompanies = useAppStore.getState().companies;
+    SAMPLE_INTERVIEWS.forEach((si) => {
+      const target = freshCompanies.find((c) => c.name === si.companyName);
+      if (!target) return;
+      addInterview({
+        companyId: target.id,
+        datetime: `${si.date}T${si.startTime}:00`,
+        endTime: si.endTime,
+        type: si.type,
+        location: si.location,
+      });
+    });
   };
 
   const handleSort = (field: SortField) => {
@@ -262,6 +328,11 @@ function TasksContent() {
     }
   };
 
+  const handleBulkDelete = () => {
+    if (!window.confirm(`全企業（${companies.length}社）を削除しますか？\nこの操作は取り消せません。`)) return;
+    deleteAllCompanies();
+  };
+
   const sortedAll = useMemo(() => {
     const cols = [...statusColumns].sort((a, b) => a.order - b.order);
     if (sortField === 'manual') return companies;
@@ -285,6 +356,14 @@ function TasksContent() {
         const bIdx = bFirst ? TAG_ORDER.indexOf(bFirst) : TAG_ORDER.length;
         if (aIdx !== bIdx) return (aIdx - bIdx) * dir;
         return ((b.tags?.length ?? 0) - (a.tags?.length ?? 0)) * dir;
+      }
+      if (sortField === 'industry') {
+        const aInd = a.industry ?? '';
+        const bInd = b.industry ?? '';
+        if (!aInd && !bInd) return 0;
+        if (!aInd) return dir;
+        if (!bInd) return -dir;
+        return aInd.localeCompare(bInd, 'ja') * dir;
       }
       return 0;
     });
@@ -314,9 +393,24 @@ function TasksContent() {
 
   return (
     <div className="pb-24 px-4 pt-4">
-      {/* Header row */}
+      {/* Header row with bulk action buttons */}
       <div className="flex items-center justify-between mb-3">
-        <h1 className="text-[22px] font-bold text-[var(--color-text)]">企業一覧</h1>
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={() => setShowBulkAdd(true)}
+            className="text-[13px] px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-500 font-medium ios-tap"
+          >
+            + 一括追加
+          </button>
+          {companies.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="text-[13px] px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-medium ios-tap"
+            >
+              一括削除
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Sort buttons */}
@@ -397,7 +491,6 @@ function TasksContent() {
             </SortableContext>
           </DndContext>
 
-          {/* アーカイブ（お見送り）セクション */}
           {archived.length > 0 && (
             <div className="mt-6">
               <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide px-1 mb-2">
@@ -414,9 +507,6 @@ function TasksContent() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">{c.name}</p>
-                        {c.industry && (
-                          <p className="text-[12px] text-[var(--color-text-secondary)] truncate">{c.industry}</p>
-                        )}
                       </div>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
                         {statusName}
@@ -443,6 +533,8 @@ function TasksContent() {
       <AnimatePresence>
         {showAddForm && <AddCompanyForm onClose={() => setShowAddForm(false)} />}
       </AnimatePresence>
+
+      {showBulkAdd && <BulkImportModal statusColumns={trackStatuses} onClose={() => setShowBulkAdd(false)} />}
 
       {/* インターン→本選考 昇格ダイアログ */}
       <AnimatePresence>

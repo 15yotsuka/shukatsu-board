@@ -1,11 +1,7 @@
-import type { Company } from '@/lib/types';
+import type { Company, ActionType, SelectionType } from '@/lib/types';
+import { format, addDays } from 'date-fns';
 
-const today = new Date();
-const d = (days: number) => {
-  const dt = new Date(today);
-  dt.setDate(dt.getDate() + days);
-  return dt.toISOString().slice(0, 10);
-};
+const now = new Date();
 
 export function createSampleCompanies(
   statusColumns: { id: string; name: string }[]
@@ -20,19 +16,51 @@ export function createSampleCompanies(
     sorted.find((s) => s.name.includes(name))?.id ?? sorted[0]?.id ?? '';
 
   const first = sorted[0]?.id ?? '';
-  const interview = getStatus('面接');
-  const offer = getStatus('内定');
 
   return [
-    { name: 'トヨタ自動車株式会社', industry: '自動車', jobType: '総合職', statusId: first, nextDeadline: d(3) },
-    { name: 'ソニーグループ株式会社', industry: '電機・電子', jobType: 'エンジニア', statusId: interview, nextDeadline: d(7) },
-    { name: 'アクセンチュア株式会社', industry: 'コンサル', jobType: 'コンサルタント', statusId: getStatus('ES') },
-    { name: '株式会社NTTデータ', industry: 'IT・SI', jobType: 'SE', statusId: first, nextDeadline: d(5) },
-    { name: '三菱商事株式会社', industry: '総合商社', jobType: '総合職', statusId: first },
-    { name: '楽天グループ株式会社', industry: 'IT・EC', jobType: 'エンジニア', statusId: interview, nextDeadline: d(10) },
-    { name: '株式会社リクルートホールディングス', industry: '人材・メディア', jobType: '総合職', statusId: interview },
-    { name: '野村證券株式会社', industry: '証券', jobType: '総合職', statusId: first, nextDeadline: d(14) },
-    { name: '任天堂株式会社', industry: 'ゲーム', jobType: 'エンジニア', statusId: offer },
-    { name: 'デロイト トーマツ コンサルティング合同会社', industry: 'コンサル', jobType: 'コンサルタント', statusId: interview },
-  ] as Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'orderInColumn'>[];
+    {
+      name: '株式会社サンプルA',
+      industry: 'IT・通信',
+      statusId: first,
+      selectionType: 'main' as SelectionType,
+      nextActionDate: format(addDays(now, 3), 'yyyy-MM-dd'),
+      nextActionType: 'es' as ActionType,
+    },
+    {
+      name: '株式会社サンプルB',
+      industry: 'コンサルティング',
+      statusId: getStatus('1次面接'),
+      selectionType: 'main' as SelectionType,
+      nextActionDate: format(addDays(now, 7), 'yyyy-MM-dd'),
+      nextActionType: 'interview' as ActionType,
+    },
+    {
+      name: '株式会社サンプルC',
+      industry: 'メーカー（電機・電子）',
+      statusId: getStatus('ES'),
+      selectionType: 'intern' as SelectionType,
+      nextActionDate: format(addDays(now, 5), 'yyyy-MM-dd'),
+      nextActionType: 'webtest' as ActionType,
+    },
+  ];
 }
+
+export interface SampleInterview {
+  companyName: string;
+  type: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+}
+
+export const SAMPLE_INTERVIEWS: SampleInterview[] = [
+  {
+    companyName: '株式会社サンプルB',
+    type: '一次面接',
+    date: format(addDays(now, 7), 'yyyy-MM-dd'),
+    startTime: '14:00',
+    endTime: '15:00',
+    location: 'オンライン',
+  },
+];
