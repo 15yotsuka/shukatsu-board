@@ -34,39 +34,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      const { errorMessage, errorStack, componentStack } = this.state;
-      const fullText = `ERROR: ${errorMessage}\n\nSTACK:\n${errorStack}\n\nCOMPONENT STACK:\n${componentStack}`;
-
       return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/40"
+        <div className="flex flex-col items-center justify-center p-8 gap-4">
+          <p className="text-zinc-400 text-sm">企業データの読み込みに失敗しました。</p>
+          <button
             onClick={() => this.setState({ hasError: false, errorMessage: '', errorStack: '', componentStack: '' })}
-          />
-          <div className="relative bg-card rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
-              <p className="text-[15px] font-bold text-[var(--color-danger)]">🔴 クラッシュ詳細（コピーして報告）</p>
-              <button
-                onClick={() => this.setState({ hasError: false, errorMessage: '', errorStack: '', componentStack: '' })}
-                className="w-7 h-7 flex items-center justify-center text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full text-[14px]"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <pre
-                className="text-[11px] text-[var(--color-text)] whitespace-pre-wrap break-all leading-relaxed font-mono bg-[var(--color-border)] rounded-xl p-3 select-all"
-                style={{ userSelect: 'all' }}
-              >
-                {fullText}
-              </pre>
-            </div>
-            <div className="px-4 py-3 border-t border-[var(--color-border)]">
-              <p className="text-[11px] text-[var(--color-text-secondary)] text-center">
-                上のテキストを長押し → 全選択 → コピーして送ってください
-              </p>
-            </div>
-          </div>
+            className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm"
+          >
+            閉じる
+          </button>
         </div>
       );
     }
