@@ -1,17 +1,19 @@
 import type { Company, SelectionType } from './types';
 
+// Milestone names must match status column names exactly so handleAdvanceStatus
+// can look up the next status column by name.
 export const DEFAULT_MILESTONES: Record<SelectionType, string[]> = {
   intern: [
-    'ES',
-    'Webテスト',
-    '一次面接',
-    'インターン参加',
+    'ES提出済',
+    'Webテスト受検済',
+    '1次面接',
+    'インターン選考中',
   ],
   main: [
-    'ES',
-    'Webテスト',
-    '一次面接',
-    '二次面接',
+    'ES提出済',
+    'Webテスト受検済',
+    '1次面接',
+    '2次面接',
     '最終面接',
     '内定',
   ],

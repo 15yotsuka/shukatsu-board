@@ -34,6 +34,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
       return (
         <div className="flex flex-col items-center justify-center p-8 gap-4">
           <p className="text-zinc-400 text-sm">企業データの読み込みに失敗しました。</p>
