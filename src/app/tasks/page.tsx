@@ -35,7 +35,7 @@ type SortField = 'deadline' | 'status' | 'priority' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
-  'active': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中'],
+  'active': ['ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中'],
   'entry': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
   'interview': ['1次面接', '2次面接', '最終面接'],
   'intern': ['インターン選考中'],
