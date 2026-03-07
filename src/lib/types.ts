@@ -34,6 +34,7 @@ export interface Company {
   // 直近の予定アクション（ソート・カルーセル用）
   nextActionDate?: string;
   nextActionType?: ActionType;
+  nextActionTime?: string;
   // 優先度タグ
   priority?: CompanyPriority;
   // 選考タイプ（進捗バー表示用）
@@ -131,6 +132,7 @@ export interface ScheduledAction {
   companyId: string;
   type: ActionType;
   date: string; // "2026-03-15"
+  time?: string; // "HH:mm"
   note?: string;
 }
 

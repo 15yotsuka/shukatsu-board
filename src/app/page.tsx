@@ -1,14 +1,89 @@
 'use client';
 
-import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { DeadlineReminder } from '@/components/board/DeadlineReminder';
-import { HeroCardCarousel } from '@/components/board/HeroCardCarousel';
-import { MiniWeekCalendar } from '@/components/board/MiniWeekCalendar';
+import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
+import { ErrorBoundary } from '@/components/board/ErrorBoundary';
+import { AnimatePresence } from 'framer-motion';
+import { ACTION_TYPE_LABELS } from '@/lib/types';
+import type { Company } from '@/lib/types';
+import { format, parseISO, isValid, addDays } from 'date-fns';
+import { ja } from 'date-fns/locale';
+
+interface TodoItem {
+  id: string;
+  companyId: string;
+  companyName: string;
+  label: string;
+  date: string;
+  time?: string;
+}
 
 export default function Home() {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
+  const scheduledActions = useAppStore((s) => s.scheduledActions);
+  const interviews = useAppStore((s) => s.interviews);
+
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const weekEnd = format(addDays(new Date(), 7), 'yyyy-MM-dd');
+
+  const companyMap = useMemo(() => {
+    const map = new Map<string, string>();
+    companies.forEach((c) => map.set(c.id, c.name));
+    return map;
+  }, [companies]);
+
+  const todoItems = useMemo((): TodoItem[] => {
+    const items: TodoItem[] = [];
+
+    scheduledActions
+      .filter((a) => a.date >= today)
+      .forEach((a) => {
+        items.push({
+          id: `action-${a.id}`,
+          companyId: a.companyId,
+          companyName: companyMap.get(a.companyId) ?? '不明',
+          label: ACTION_TYPE_LABELS[a.type] ?? a.type,
+          date: a.date,
+          time: a.time,
+        });
+      });
+
+    interviews
+      .filter((i) => {
+        const dt = parseISO(i.datetime);
+        return isValid(dt) && format(dt, 'yyyy-MM-dd') >= today;
+      })
+      .forEach((i) => {
+        const dt = parseISO(i.datetime);
+        const dateStr = format(dt, 'yyyy-MM-dd');
+        const timeStr = format(dt, 'HH:mm');
+        items.push({
+          id: `interview-${i.id}`,
+          companyId: i.companyId,
+          companyName: companyMap.get(i.companyId) ?? '不明',
+          label: i.type || '面接',
+          date: dateStr,
+          time: timeStr !== '00:00' ? timeStr : undefined,
+        });
+      });
+
+    items.sort((a, b) => {
+      const dc = a.date.localeCompare(b.date);
+      if (dc !== 0) return dc;
+      if (a.time && b.time) return a.time.localeCompare(b.time);
+      return a.time ? -1 : b.time ? 1 : 0;
+    });
+
+    return items;
+  }, [scheduledActions, interviews, companyMap, today]);
+
+  const todayItems = todoItems.filter((i) => i.date === today);
+  const thisWeekItems = todoItems.filter((i) => i.date > today && i.date <= weekEnd);
+  const laterItems = todoItems.filter((i) => i.date > weekEnd);
 
   const getCount = (statusNames: string[]) => {
     const ids = statusColumns
@@ -17,47 +92,99 @@ export default function Home() {
     return companies.filter((c) => ids.includes(c.statusId)).length;
   };
 
-  const entryCount = getCount(['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済']);
-  const interviewingCount = getCount(['1次面接', '2次面接', '最終面接']);
-  const internCount = getCount(['インターン選考中']);
+  const activeCount = getCount(['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中']);
   const offerCount = getCount(['内定']);
+  const sayonaraCount = getCount(['お見送り']);
 
-  const stats = [
-    { label: 'エントリー', value: entryCount, unit: '社', color: 'text-[var(--color-text)]', href: '/tasks?filter=エントリー' },
-    { label: '面接中', value: interviewingCount, unit: '社', color: 'text-[var(--color-primary)]', href: '/tasks?filter=面接中' },
-    { label: 'インターン', value: internCount, unit: '社', color: 'text-[var(--color-success)]', href: '/tasks?filter=インターン選考中' },
-    { label: '内定', value: offerCount, unit: '社', color: 'text-[var(--color-warning)]', href: '/tasks?filter=内定' },
-  ];
+  const handleItemClick = (companyId: string) => {
+    const c = companies.find((co) => co.id === companyId);
+    if (c) setSelectedCompany(c);
+  };
+
+  const renderTodoItem = (item: TodoItem) => {
+    const d = parseISO(item.date);
+    const dateStr = isValid(d) ? format(d, 'M/d(E)', { locale: ja }) : item.date;
+    return (
+      <button
+        key={item.id}
+        onClick={() => handleItemClick(item.companyId)}
+        className="w-full flex items-center gap-3 px-4 py-3 bg-card rounded-2xl shadow-sm border border-[var(--color-border)] text-left ios-tap active:scale-[0.98] transition-transform"
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{item.companyName}</p>
+          <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
+            {item.label}
+            {item.time && ` ${item.time}`}
+          </p>
+        </div>
+        <span className="flex-none text-[13px] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">{dateStr}</span>
+      </button>
+    );
+  };
+
+  const renderSection = (title: string, items: TodoItem[], emptyText?: string) => (
+    <div key={title} className="mb-5">
+      <h2 className="text-[13px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider px-1 mb-2">{title}</h2>
+      {items.length === 0 && emptyText ? (
+        <p className="text-[13px] text-[var(--color-text-secondary)] px-1 py-1">{emptyText}</p>
+      ) : (
+        <div className="space-y-2">{items.map(renderTodoItem)}</div>
+      )}
+    </div>
+  );
 
   return (
-    <div className="pb-24">
-      <DeadlineReminder />
-      <HeroCardCarousel />
+    <div className="pb-28 px-4 pt-4">
+      <h1 className="text-[22px] font-bold text-[var(--color-text)] mb-4">やることリスト</h1>
 
-      <div className="px-5 mt-6">
-        <div className="flex items-center justify-between mb-4 px-1">
-          <h2 className="text-[14px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
-            現在の進捗
-          </h2>
+      {todoItems.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-[16px] font-semibold text-[var(--color-text)] mb-1">予定はありません</p>
+          <p className="text-[13px] text-[var(--color-text-secondary)]">企業ページから予定アクションを追加してください</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat) => (
-            <Link
-              key={stat.label}
-              href={stat.href}
-              className="bg-card dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-[var(--color-border)] block cursor-pointer active:scale-95 transition-transform duration-100 hover:brightness-95 select-none"
-            >
-              <p className="text-xs text-[var(--color-text-secondary)] mb-1">{stat.label}</p>
-              <div className="flex items-baseline gap-1">
-                <span className={`text-3xl font-bold ${stat.color}`}>{stat.value}</span>
-                <span className="text-xs text-[var(--color-text-secondary)]">{stat.unit}</span>
-              </div>
-            </Link>
-          ))}
+      ) : (
+        <>
+          {renderSection('今日', todayItems, 'なし')}
+          {renderSection('今週', thisWeekItems, 'なし')}
+          {laterItems.length > 0 && renderSection('それ以降', laterItems)}
+        </>
+      )}
+
+      {/* Stat chips */}
+      <div className="fixed bottom-[5.5rem] left-0 right-0 flex justify-center pointer-events-none">
+        <div className="flex gap-2 pointer-events-auto">
+          <span className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm">
+            進行中 {activeCount}社
+          </span>
+          <span className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm">
+            内定 {offerCount}社
+          </span>
+          <span className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm">
+            見送り {sayonaraCount}社
+          </span>
         </div>
       </div>
 
-      <MiniWeekCalendar />
+      <AnimatePresence>
+        {selectedCompany && (
+          <ErrorBoundary
+            fallback={
+              <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                <div className="bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl text-center">
+                  <p className="text-[17px] font-bold text-[var(--color-text)] mb-2">表示エラー</p>
+                  <p className="text-[14px] text-[var(--color-text-secondary)] mb-4">企業データの読み込みに失敗しました。</p>
+                  <button onClick={() => setSelectedCompany(null)} className="ios-button-primary">閉じる</button>
+                </div>
+              </div>
+            }
+          >
+            <CompanyDetailModal
+              company={selectedCompany}
+              onClose={() => setSelectedCompany(null)}
+            />
+          </ErrorBoundary>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

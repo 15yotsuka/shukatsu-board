@@ -8,11 +8,12 @@ import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies } from '@/lib/sampleData';
-import type { Company, SelectionType } from '@/lib/types';
+import type { Company } from '@/lib/types';
 import { PRIORITY_CONFIG, ACTION_TYPE_LABELS } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import {
   DndContext,
   closestCenter,
@@ -29,18 +30,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-type SortKey = 'deadline' | 'status' | 'priority' | 'manual';
+type SortKey = 'deadline_asc' | 'deadline_desc' | 'status_asc' | 'status_desc' | 'priority_asc' | 'name_asc' | 'manual';
 
 const FILTER_GROUPS: Record<string, string[]> = {
   'エントリー': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
   '面接中': ['1次面接', '2次面接', '最終面接'],
 };
 
-const SELECTION_TYPE_SHORT: Record<SelectionType, string> = {
-  intern: 'インターン',
-  main: '本選考',
-  intern_to_main: 'インターン→本選考',
-};
 
 const PRIORITY_ORDER = ['S', '早期', 'リク面', '持ち駒', '結果待ち'];
 
@@ -71,9 +67,10 @@ const getNextStepLabel = (company: Company): string | null => {
   if (!company.nextActionDate) return null;
   const date = parseISO(company.nextActionDate);
   if (!isValid(date)) return null;
-  const dateStr = format(date, 'M/d');
+  const dateStr = format(date, 'M/d(E)', { locale: ja });
+  const timeStr = company.nextActionTime ? ` ${company.nextActionTime}` : '';
   const actionLabel = company.nextActionType ? ACTION_TYPE_LABELS[company.nextActionType] : null;
-  return actionLabel ? `${dateStr}までに${actionLabel}` : dateStr;
+  return actionLabel ? `${dateStr}${timeStr} ${actionLabel}` : `${dateStr}${timeStr}`;
 };
 
 function CompactProgressDots({ company, statusName }: { company: Company; statusName: string }) {
@@ -137,7 +134,6 @@ function TaskCard({
   };
 
   const nextStepLabel = getNextStepLabel(company);
-  const selectionShort = company.selectionType ? SELECTION_TYPE_SHORT[company.selectionType] : null;
 
   return (
     <div
@@ -172,11 +168,6 @@ function TaskCard({
             {company.priority && PRIORITY_CONFIG[company.priority] && (
               <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${PRIORITY_CONFIG[company.priority].className}`}>
                 {PRIORITY_CONFIG[company.priority].label}
-              </span>
-            )}
-            {selectionShort && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 flex-none">
-                {selectionShort}
               </span>
             )}
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
@@ -294,7 +285,7 @@ function TasksContent() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>('deadline');
+  const [sortKey, setSortKey] = useState<SortKey>('deadline_asc');
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -348,20 +339,26 @@ function TasksContent() {
     const cols = [...statusColumns].sort((a, b) => a.order - b.order);
     if (sortKey === 'manual') return companies;
     return [...companies].sort((a, b) => {
-      if (sortKey === 'deadline') {
-        if (!a.nextActionDate) return 1;
-        if (!b.nextActionDate) return -1;
-        return a.nextActionDate.localeCompare(b.nextActionDate);
+      if (sortKey === 'deadline_asc' || sortKey === 'deadline_desc') {
+        const dir = sortKey === 'deadline_asc' ? 1 : -1;
+        if (!a.nextActionDate && !b.nextActionDate) return 0;
+        if (!a.nextActionDate) return dir;
+        if (!b.nextActionDate) return -dir;
+        return a.nextActionDate.localeCompare(b.nextActionDate) * dir;
       }
-      if (sortKey === 'status') {
+      if (sortKey === 'status_asc' || sortKey === 'status_desc') {
+        const dir = sortKey === 'status_asc' ? 1 : -1;
         const aIdx = cols.findIndex((c) => c.id === a.statusId);
         const bIdx = cols.findIndex((c) => c.id === b.statusId);
-        return aIdx - bIdx;
+        return (aIdx - bIdx) * dir;
       }
-      if (sortKey === 'priority') {
+      if (sortKey === 'priority_asc') {
         const aIdx = a.priority ? PRIORITY_ORDER.indexOf(a.priority) : PRIORITY_ORDER.length;
         const bIdx = b.priority ? PRIORITY_ORDER.indexOf(b.priority) : PRIORITY_ORDER.length;
         return aIdx - bIdx;
+      }
+      if (sortKey === 'name_asc') {
+        return a.name.localeCompare(b.name, 'ja');
       }
       return 0;
     });
@@ -401,9 +398,12 @@ function TasksContent() {
             onChange={(e) => setSortKey(e.target.value as SortKey)}
             className="text-[13px] font-semibold bg-[var(--color-border)] text-[var(--color-text-secondary)] border-0 rounded-full px-3 py-1.5 outline-none ios-tap"
           >
-            <option value="deadline">締切日が近い順</option>
-            <option value="status">ステータス順</option>
-            <option value="priority">優先度順</option>
+            <option value="deadline_asc">締切日が近い順</option>
+            <option value="deadline_desc">締切日が遠い順</option>
+            <option value="status_asc">ステータス順↑</option>
+            <option value="status_desc">ステータス順↓</option>
+            <option value="priority_asc">優先度順</option>
+            <option value="name_asc">企業名順</option>
             <option value="manual">手動</option>
           </select>
         </div>

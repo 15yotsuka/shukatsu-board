@@ -300,6 +300,7 @@ export const useAppStore = create<AppStore>()(
                     ...c,
                     nextActionDate: nextAction?.date,
                     nextActionType: nextAction?.type,
+                    nextActionTime: nextAction?.time,
                     nextDeadline: nextAction?.date,
                     updatedAt: new Date().toISOString(),
                   }
@@ -334,6 +335,7 @@ export const useAppStore = create<AppStore>()(
                     ...c,
                     nextActionDate: nextAction?.date,
                     nextActionType: nextAction?.type,
+                    nextActionTime: nextAction?.time,
                     nextDeadline: nextAction?.date,
                     updatedAt: new Date().toISOString(),
                   }

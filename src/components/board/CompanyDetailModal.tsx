@@ -87,6 +87,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [newStepText, setNewStepText] = useState('');
   const [newActionType, setNewActionType] = useState<ActionType>('es');
   const [newActionDate, setNewActionDate] = useState('');
+  const [newActionTime, setNewActionTime] = useState('');
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
   const effectiveMilestones = (customMilestones && customMilestones.length > 0)
@@ -346,30 +347,44 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">予定アクション</h3>
                 </div>
                 {/* 追加フォーム */}
-                <div className="flex gap-2 mb-3">
-                  <select
-                    value={newActionType}
-                    onChange={(e) => setNewActionType(e.target.value as ActionType)}
-                    className="ios-input flex-none w-auto text-[13px] py-2"
-                  >
-                    {(Object.entries(ACTION_TYPE_LABELS) as [ActionType, string][]).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="date"
-                    value={newActionDate}
-                    onChange={(e) => setNewActionDate(e.target.value)}
-                    className="ios-input flex-1 text-[13px] py-2"
-                  />
+                <div className="space-y-2 mb-3">
+                  <div className="flex gap-2">
+                    <select
+                      value={newActionType}
+                      onChange={(e) => setNewActionType(e.target.value as ActionType)}
+                      className="ios-input flex-none w-auto text-[13px] py-2"
+                    >
+                      {(Object.entries(ACTION_TYPE_LABELS) as [ActionType, string][]).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={newActionDate}
+                      onChange={(e) => setNewActionDate(e.target.value)}
+                      className="ios-input flex-1 text-[13px] py-2"
+                    />
+                    <input
+                      type="time"
+                      value={newActionTime}
+                      onChange={(e) => setNewActionTime(e.target.value)}
+                      className="ios-input w-[7rem] flex-none text-[13px] py-2"
+                    />
+                  </div>
                   <button
                     onClick={() => {
                       if (!newActionDate) return;
-                      addScheduledAction({ companyId: company.id, type: newActionType, date: newActionDate });
+                      addScheduledAction({
+                        companyId: company.id,
+                        type: newActionType,
+                        date: newActionDate,
+                        time: newActionTime || undefined,
+                      });
                       setNewActionDate('');
+                      setNewActionTime('');
                     }}
                     disabled={!newActionDate}
-                    className="px-3 py-2 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40 flex-none"
+                    className="w-full px-3 py-2 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40"
                   >
                     + 追加
                   </button>
@@ -390,7 +405,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                               {ACTION_TYPE_LABELS[action.type]}
                             </span>
                             <span className="text-[13px] text-[var(--color-text-secondary)]">
-                              {(() => { const d = parseISO(action.date); return isValid(d) ? format(d, 'M/d (E)', { locale: ja }) : action.date; })()}
+                              {(() => { const d = parseISO(action.date); return isValid(d) ? format(d, 'M/d(E)', { locale: ja }) : action.date; })()}
+                              {action.time && ` ${action.time}`}
                             </span>
                           </div>
                           <button
