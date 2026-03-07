@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
+import { BulkImportModal } from '@/components/board/BulkImportModal';
 import type { StatusColumn } from '@/lib/types';
 
 interface StatusEditorProps {
@@ -36,7 +37,6 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
   const [newStatusName, setNewStatusName] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [showBulkImport, setShowBulkImport] = useState(false);
-  const [bulkText, setBulkText] = useState('');
   const importRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -260,9 +260,7 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
           {showBulkImport && (
             <BulkImportModal
               statusColumns={trackStatuses}
-              onClose={() => { setShowBulkImport(false); setBulkText(''); }}
-              bulkText={bulkText}
-              setBulkText={setBulkText}
+              onClose={() => setShowBulkImport(false)}
             />
           )}
         </div>
@@ -362,77 +360,3 @@ function SortableStatusItem({
   );
 }
 
-interface BulkImportModalProps {
-  statusColumns: { id: string; name: string }[];
-  onClose: () => void;
-  bulkText: string;
-  setBulkText: (v: string) => void;
-}
-
-function BulkImportModal({ statusColumns, onClose, bulkText, setBulkText }: BulkImportModalProps) {
-  const addCompany = useAppStore((s) => s.addCompany);
-  const [selectedStatusId, setSelectedStatusId] = useState(statusColumns[0]?.id ?? '');
-
-  const handleImport = () => {
-    const names = bulkText
-      .split('\n')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-    if (names.length === 0) return;
-    names.forEach((name) => {
-      addCompany({ name, statusId: selectedStatusId });
-    });
-    onClose();
-  };
-
-  const previewCount = bulkText.split('\n').filter((s) => s.trim().length > 0).length;
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card w-full max-w-lg rounded-t-2xl md:rounded-2xl p-5 pb-8 space-y-4 shadow-2xl">
-        <div className="flex justify-center mb-1 md:hidden">
-          <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
-        </div>
-        <h3 className="text-[17px] font-bold text-[var(--color-text)]">企業を一括追加</h3>
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-            初期ステータス
-          </label>
-          <select
-            value={selectedStatusId}
-            onChange={(e) => setSelectedStatusId(e.target.value)}
-            className="ios-input"
-          >
-            {statusColumns.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-            企業名（1行に1社）
-          </label>
-          <textarea
-            value={bulkText}
-            onChange={(e) => setBulkText(e.target.value)}
-            placeholder={'株式会社A\n株式会社B\n株式会社C'}
-            className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 text-[15px] text-[var(--color-text)] min-h-[140px] outline-none resize-none"
-            autoFocus
-          />
-          {previewCount > 0 && (
-            <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{previewCount}社を追加します</p>
-          )}
-        </div>
-        <button
-          onClick={handleImport}
-          disabled={previewCount === 0}
-          className="ios-button-primary disabled:opacity-40"
-        >
-          {previewCount}社を追加する
-        </button>
-        <button onClick={onClose} className="ios-button-secondary">キャンセル</button>
-      </div>
-    </div>
-  );
-}

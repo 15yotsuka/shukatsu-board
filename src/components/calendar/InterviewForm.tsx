@@ -28,9 +28,6 @@ const INTERVIEW_TYPE_TO_STATUS: Partial<Record<string, string>> = {
 export function InterviewForm({ companyId, interview, onClose }: InterviewFormProps) {
   const addInterview = useAppStore((s) => s.addInterview);
   const updateInterview = useAppStore((s) => s.updateInterview);
-  const companies = useAppStore((s) => s.companies);
-  const statusColumns = useAppStore((s) => s.statusColumns);
-  const updateCompany = useAppStore((s) => s.updateCompany);
 
   const [date, setDate] = useState(
     interview ? interview.datetime.split('T')[0] : ''
@@ -53,6 +50,7 @@ export function InterviewForm({ companyId, interview, onClose }: InterviewFormPr
   const autoAdvanceStatus = (interviewType: string) => {
     const targetStatusName = INTERVIEW_TYPE_TO_STATUS[interviewType];
     if (!targetStatusName) return;
+    const { companies, statusColumns, updateCompany } = useAppStore.getState();
     const company = companies.find((c) => c.id === companyId);
     if (!company) return;
     const sortedCols = [...statusColumns].sort((a, b) => a.order - b.order);
