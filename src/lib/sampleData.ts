@@ -19,15 +19,15 @@ export function createSampleCompanies(
 
   return [
     {
-      name: '株式会社サンプルA',
-      industry: 'IT・通信',
+      name: 'ソニーグループ',
+      industry: 'メーカー（電機・電子）',
       statusId: first,
       selectionType: 'main' as SelectionType,
       nextActionDate: format(now, 'yyyy-MM-dd'),
       nextActionType: 'es' as ActionType,
     },
     {
-      name: '株式会社サンプルB',
+      name: 'アクセンチュア',
       industry: 'コンサルティング',
       statusId: getStatus('1次面接'),
       selectionType: 'main' as SelectionType,
@@ -35,7 +35,7 @@ export function createSampleCompanies(
       nextActionType: 'interview' as ActionType,
     },
     {
-      name: '株式会社サンプルC',
+      name: '日立製作所',
       industry: 'メーカー（電機・電子）',
       statusId: getStatus('ES提出済'),
       selectionType: 'intern' as SelectionType,
@@ -43,7 +43,7 @@ export function createSampleCompanies(
       nextActionType: 'webtest' as ActionType,
     },
     {
-      name: '株式会社サンプルD',
+      name: '三菱UFJ銀行',
       industry: '金融（銀行）',
       statusId: getStatus('ES作成中'),
       selectionType: 'main' as SelectionType,
@@ -51,7 +51,7 @@ export function createSampleCompanies(
       nextActionType: 'es' as ActionType,
     },
     {
-      name: '株式会社サンプルE',
+      name: '三井物産',
       industry: '商社（総合）',
       statusId: getStatus('最終面接'),
       selectionType: 'main' as SelectionType,
@@ -59,7 +59,7 @@ export function createSampleCompanies(
       nextActionType: 'final' as ActionType,
     },
     {
-      name: '株式会社サンプルF',
+      name: '電通',
       industry: '広告・メディア',
       statusId: getStatus('Webテスト'),
       selectionType: 'main' as SelectionType,
@@ -67,8 +67,8 @@ export function createSampleCompanies(
       nextActionType: 'webtest' as ActionType,
     },
     {
-      name: '株式会社サンプルG',
-      industry: 'エンタメ・ゲーム',
+      name: 'サイバーエージェント',
+      industry: 'IT・通信',
       statusId: getStatus('2次面接'),
       selectionType: 'intern' as SelectionType,
       nextActionDate: format(addDays(now, 14), 'yyyy-MM-dd'),
@@ -88,7 +88,7 @@ export interface SampleInterview {
 
 export const SAMPLE_INTERVIEWS: SampleInterview[] = [
   {
-    companyName: '株式会社サンプルA',
+    companyName: 'ソニーグループ',
     type: '一次面接',
     date: format(now, 'yyyy-MM-dd'),
     startTime: '10:00',
@@ -96,7 +96,7 @@ export const SAMPLE_INTERVIEWS: SampleInterview[] = [
     location: 'オンライン',
   },
   {
-    companyName: '株式会社サンプルB',
+    companyName: 'アクセンチュア',
     type: '一次面接',
     date: format(addDays(now, 7), 'yyyy-MM-dd'),
     startTime: '14:00',
@@ -104,7 +104,7 @@ export const SAMPLE_INTERVIEWS: SampleInterview[] = [
     location: 'オンライン',
   },
   {
-    companyName: '株式会社サンプルE',
+    companyName: '三井物産',
     type: '最終面接',
     date: format(addDays(now, 10), 'yyyy-MM-dd'),
     startTime: '13:00',
@@ -112,11 +112,11 @@ export const SAMPLE_INTERVIEWS: SampleInterview[] = [
     location: '本社',
   },
   {
-    companyName: '株式会社サンプルG',
+    companyName: 'サイバーエージェント',
     type: '二次面接',
     date: format(addDays(now, 14), 'yyyy-MM-dd'),
     startTime: '15:00',
     endTime: '16:00',
-    location: '支社',
+    location: '渋谷本社',
   },
 ];
