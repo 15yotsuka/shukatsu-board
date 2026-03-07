@@ -10,8 +10,8 @@ import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
-import { TAG_CONFIG, ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
-import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
+import { ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
+import { getMilestones } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -74,8 +74,6 @@ interface TaskCardProps {
   statusName: string;
   isDraggable: boolean;
   hasDeadlineNow: boolean;
-  milestones: string[];
-  milestoneIdx: number;
   interviews: Interview[];
   onOpenDetail: () => void;
   onAdvance: (e: React.MouseEvent) => void;
@@ -86,8 +84,6 @@ function TaskCard({
   statusName,
   isDraggable,
   hasDeadlineNow,
-  milestones,
-  milestoneIdx,
   interviews,
   onOpenDetail,
   onAdvance,
@@ -148,27 +144,13 @@ function TaskCard({
           </button>
         </div>
 
-        {/* Row 2: mini progress bar (dots + lines) */}
-        <div className="flex items-center gap-0">
-          {milestones.map((name, i) => (
-            <React.Fragment key={i}>
-              <div
-                title={name}
-                className={`rounded-full flex-shrink-0 transition-all ${
-                  i < milestoneIdx
-                    ? 'w-2.5 h-2.5 bg-blue-500'
-                    : i === milestoneIdx
-                    ? 'w-3 h-3 bg-orange-400 ring-2 ring-orange-400/30'
-                    : 'w-2.5 h-2.5 bg-zinc-300 dark:bg-zinc-600'
-                }`}
-              />
-              {i < milestones.length - 1 && (
-                <div className={`h-0.5 flex-1 min-w-[8px] ${
-                  i < milestoneIdx ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-600'
-                }`} />
-              )}
-            </React.Fragment>
-          ))}
+        {/* Row 2: pulsing dot + status name */}
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
+          </span>
+          <span className="text-xs text-zinc-400">{statusName}</span>
         </div>
 
         {/* Row 3: deadline + interview (conditional) */}
@@ -193,16 +175,6 @@ function TaskCard({
           </div>
         )}
 
-        {/* Row 4: tags (conditional) */}
-        {company.tags && company.tags.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            {company.tags.map((tag) => TAG_CONFIG[tag] && (
-              <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${TAG_CONFIG[tag].className}`}>
-                {TAG_CONFIG[tag].label}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -438,8 +410,6 @@ function TasksContent() {
               <div className="space-y-2">
                 {active.map((c) => {
                   const statusName = getStatusName(c.statusId);
-                  const milestones = getMilestones(c);
-                  const milestoneIdx = getMilestoneIndex(statusName, milestones);
                   const hasDeadlineNow = !!(c.nextActionDate && c.nextActionDate <= today);
 
                   return (
@@ -449,8 +419,6 @@ function TasksContent() {
                       statusName={statusName}
                       isDraggable={sortField === 'manual'}
                       hasDeadlineNow={hasDeadlineNow}
-                      milestones={milestones}
-                      milestoneIdx={milestoneIdx}
                       interviews={interviews}
                       onOpenDetail={() => setSelectedCompany(c)}
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
