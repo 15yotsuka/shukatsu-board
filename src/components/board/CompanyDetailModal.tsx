@@ -17,7 +17,7 @@ import {
   type SelectionType,
 } from '@/lib/types';
 import { DEFAULT_MILESTONES, getMilestoneIndex } from '@/lib/progressMilestones';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 interface MemoData {
@@ -389,7 +389,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                               {ACTION_TYPE_LABELS[action.type]}
                             </span>
                             <span className="text-[13px] text-[var(--color-text-secondary)]">
-                              {format(parseISO(action.date), 'M/d (E)', { locale: ja })}
+                              {(() => { const d = parseISO(action.date); return isValid(d) ? format(d, 'M/d (E)', { locale: ja }) : action.date; })()}
                             </span>
                           </div>
                           <button

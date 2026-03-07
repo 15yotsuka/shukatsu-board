@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useAppStore } from '@/store/useAppStore';
-import { parseISO, startOfDay, addDays, isWithinInterval, format } from 'date-fns';
+import { parseISO, startOfDay, addDays, isWithinInterval, format, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 type HeroMode = 'deadline' | 'interview' | 'custom';
@@ -35,8 +35,10 @@ export function HeroCardCarousel() {
   const deadlineItems = companies
     .filter((c) => {
       if (!c.nextDeadline) return false;
-      const d = startOfDay(parseISO(c.nextDeadline));
-      return isWithinInterval(d, { start: today, end: limit });
+      const d = parseISO(c.nextDeadline);
+      if (!isValid(d)) return false;
+      const dayStart = startOfDay(d);
+      return isWithinInterval(dayStart, { start: today, end: limit });
     })
     .sort((a, b) => a.nextDeadline!.localeCompare(b.nextDeadline!));
 
@@ -116,7 +118,8 @@ export function HeroCardCarousel() {
           <div className="flex gap-3 pr-4">
             {mode === 'deadline' &&
               deadlineItems.map((c) => {
-                const dateLabel = format(parseISO(c.nextDeadline!), 'M/d (E)', { locale: ja });
+                const parsed = parseISO(c.nextDeadline!);
+                const dateLabel = isValid(parsed) ? format(parsed, 'M/d (E)', { locale: ja }) : c.nextDeadline!;
                 return (
                   <div
                     key={c.id}
@@ -142,7 +145,7 @@ export function HeroCardCarousel() {
                   <p className="text-[17px] font-bold text-white mb-2">{getCompanyName(i.companyId)}</p>
                   <p className="text-[14px] font-medium text-white/80 mb-1">{i.type}</p>
                   <p className="text-[13px] font-semibold text-white">
-                    {format(new Date(i.datetime), 'M/d (E) HH:mm', { locale: ja })}
+                    {(() => { const d = new Date(i.datetime); return isValid(d) ? format(d, 'M/d (E) HH:mm', { locale: ja }) : i.datetime; })()}
                   </p>
                 </div>
               ))}
