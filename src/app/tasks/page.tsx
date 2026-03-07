@@ -11,7 +11,7 @@ import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
-import { getMilestones } from '@/lib/progressMilestones';
+import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -79,6 +79,8 @@ interface TaskCardProps {
   statusName: string;
   isDraggable: boolean;
   hasDeadlineNow: boolean;
+  milestones: string[];
+  milestoneIdx: number;
   interviews: Interview[];
   onOpenDetail: () => void;
   onAdvance: (e: React.MouseEvent) => void;
@@ -89,6 +91,8 @@ function TaskCard({
   statusName,
   isDraggable,
   hasDeadlineNow,
+  milestones,
+  milestoneIdx,
   interviews,
   onOpenDetail,
   onAdvance,
@@ -149,13 +153,23 @@ function TaskCard({
           </button>
         </div>
 
-        {/* Row 2: pulsing dot + status name */}
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
-          </span>
-          <span className="text-xs text-zinc-400">{statusName}</span>
+        {/* Row 2: dot progress bar */}
+        <div className="flex items-center gap-1">
+          {milestones.map((_, i) => (
+            i === milestoneIdx ? (
+              <span key={i} className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              </span>
+            ) : (
+              <span
+                key={i}
+                className={`rounded-full h-2 w-2 ${
+                  i < milestoneIdx ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-600'
+                }`}
+              />
+            )
+          ))}
         </div>
 
         {/* Row 3: deadline + interview (conditional) */}
@@ -422,6 +436,8 @@ function TasksContent() {
               <div className="space-y-2">
                 {active.map((c) => {
                   const statusName = getStatusName(c.statusId);
+                  const ms = getMilestones(c);
+                  const msIdx = getMilestoneIndex(statusName, ms);
                   const hasDeadlineNow = !!(c.nextActionDate && c.nextActionDate <= today);
 
                   return (
@@ -431,6 +447,8 @@ function TasksContent() {
                       statusName={statusName}
                       isDraggable={sortField === 'manual'}
                       hasDeadlineNow={hasDeadlineNow}
+                      milestones={ms}
+                      milestoneIdx={msIdx}
                       interviews={interviews}
                       onOpenDetail={() => setSelectedCompany(c)}
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
