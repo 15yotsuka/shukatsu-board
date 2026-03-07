@@ -40,6 +40,9 @@ interface AppActions {
   deleteESEntry: (id: string) => void;
   reorderESEntries: (companyId: string, orderedIds: string[]) => void;
 
+  // Reorder companies (manual sort)
+  reorderCompanies: (orderedIds: string[]) => void;
+
   // ScheduledAction CRUD
   addScheduledAction: (action: Omit<ScheduledAction, 'id'>) => void;
   updateScheduledAction: (id: string, updates: Partial<ScheduledAction>) => void;
@@ -263,6 +266,21 @@ export const useAppStore = create<AppStore>()(
             return newOrder >= 0 ? { ...e, order: newOrder } : e;
           }),
         }));
+      },
+
+      // Reorder companies (manual sort)
+      reorderCompanies: (orderedIds) => {
+        set((state) => {
+          const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
+          return {
+            companies: [...state.companies].sort((a, b) => {
+              const aIdx = orderMap.has(a.id) ? orderMap.get(a.id)! : Infinity;
+              const bIdx = orderMap.has(b.id) ? orderMap.get(b.id)! : Infinity;
+              if (aIdx === Infinity && bIdx === Infinity) return 0;
+              return aIdx - bIdx;
+            }),
+          };
+        });
       },
 
       // ScheduledAction CRUD
