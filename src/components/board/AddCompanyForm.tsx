@@ -186,13 +186,18 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                     key={i}
                     type="button"
                     onPointerDown={(e) => { e.preventDefault(); setDeadline(d.deadline); }}
-                    className={`text-[12px] px-2.5 py-1 rounded-full font-medium ios-tap transition-colors ${
+                    className={`max-w-[200px] truncate text-[12px] px-2.5 py-1 rounded-full font-medium ios-tap transition-colors ${
                       deadline === d.deadline
                         ? 'bg-[var(--color-primary)] text-white'
                         : 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
                     }`}
                   >
-                    {d.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')} {d.label}
+                    {(() => {
+                      const date = d.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3');
+                      const mainText = d.label !== d.type ? d.label : d.type;
+                      const jobType = d.job_type ? ` ${d.job_type}` : '';
+                      return `${date} ${mainText}${jobType}`;
+                    })()}
                   </button>
                 ))}
               </div>
