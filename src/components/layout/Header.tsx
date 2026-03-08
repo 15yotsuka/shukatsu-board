@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { StatusEditor } from '@/components/status/StatusEditor';
+import { SettingsModal } from '@/components/settings/SettingsModal';
 import { useTheme } from '@/components/layout/ThemeProvider';
 
 const PAGE_TITLES: Record<string, string> = {
@@ -66,7 +66,7 @@ export function Header() {
         </div>
       </header>
       {showStatusEditor && (
-        <StatusEditor onClose={() => setShowStatusEditor(false)} />
+        <SettingsModal onClose={() => setShowStatusEditor(false)} />
       )}
     </>
   );

@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useShallow } from 'zustand/shallow';
 import { useAppStore } from '@/store/useAppStore';
 import { isAfter, isBefore, startOfDay, format, parseISO, isValid } from 'date-fns';
 import type { Company } from '@/lib/types';
@@ -16,6 +17,7 @@ interface CompanyCardProps {
 
 export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const interviews = useAppStore((s) => s.interviews);
+  const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const { deadlines } = useDeadlines();
   const {
     attributes,
@@ -85,16 +87,16 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     >
       <div className="flex items-start justify-between gap-1.5 mb-0.5">
         <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">{company.name}</p>
-        {company.tags && company.tags.length > 0 && TAG_CONFIG[company.tags[0]] && (
+        {displaySettings.showTag && company.tags && company.tags.length > 0 && TAG_CONFIG[company.tags[0]] && (
           <span className={`flex-none text-[11px] font-bold px-2 py-0.5 rounded-full ${TAG_CONFIG[company.tags[0]].className}`}>
             {TAG_CONFIG[company.tags[0]].label}
           </span>
         )}
       </div>
-      {company.industry && (
+      {displaySettings.showIndustry && company.industry && (
         <p className="text-[13px] text-[var(--color-text-secondary)] mt-1 truncate">{company.industry}</p>
       )}
-      {nextInterview && (
+      {displaySettings.showNextInterview && nextInterview && (
         <div className="flex items-center gap-1 mt-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -104,8 +106,10 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
           </span>
         </div>
       )}
-      <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{updatedDate}</p>
-      {companyDeadline && (() => {
+      {displaySettings.showUpdatedDate && (
+        <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{updatedDate}</p>
+      )}
+      {displaySettings.showDeadlineBadge && companyDeadline && (() => {
         const daysUntil = Math.round(
           (new Date(companyDeadline.deadline).getTime() -
             new Date(todayStr).getTime()) /

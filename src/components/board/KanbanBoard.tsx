@@ -13,6 +13,7 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core';
 import { AnimatePresence } from 'framer-motion';
+import { useShallow } from 'zustand/shallow';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
 import { StatusColumn } from './StatusColumn';
@@ -22,6 +23,7 @@ export function KanbanBoard() {
   const statusColumns = useAppStore((s) => s.statusColumns);
   const companies = useAppStore((s) => s.companies);
   const moveCompany = useAppStore((s) => s.moveCompany);
+  const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
 
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -182,7 +184,7 @@ export function KanbanBoard() {
           {activeCompany ? (
             <div className="bg-card rounded-xl shadow-lg border border-[var(--color-primary)]/20 p-3.5 w-[280px] opacity-90 rotate-3 scale-105">
               <p className="text-[15px] font-semibold text-[var(--color-text)]">{activeCompany.name}</p>
-              {activeCompany.industry && (
+              {displaySettings.showIndustry && activeCompany.industry && (
                 <p className="text-[13px] text-[var(--color-text-secondary)] mt-1">{activeCompany.industry}</p>
               )}
             </div>

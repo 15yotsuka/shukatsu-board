@@ -12,6 +12,42 @@ import type {
 } from '@/lib/types';
 import { createAllDefaultStatuses } from '@/lib/defaults';
 
+export interface DisplaySettings {
+  showTag: boolean;
+  showIndustry: boolean;
+  showNextInterview: boolean;
+  showUpdatedDate: boolean;
+  showDeadlineBadge: boolean;
+}
+
+export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
+  showTag: true,
+  showIndustry: true,
+  showNextInterview: true,
+  showUpdatedDate: true,
+  showDeadlineBadge: true,
+};
+
+export interface NotificationSettings {
+  enabled: boolean;
+  timing: {
+    sameDay: boolean;
+    oneDayBefore: boolean;
+    threeDaysBefore: boolean;
+    sevenDaysBefore: boolean;
+  };
+}
+
+export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  enabled: false,
+  timing: {
+    sameDay: true,
+    oneDayBefore: true,
+    threeDaysBefore: true,
+    sevenDaysBefore: true,
+  },
+};
+
 interface AppActions {
   // Company CRUD
   addCompany: (
@@ -49,13 +85,23 @@ interface AppActions {
   updateScheduledAction: (id: string, updates: Partial<ScheduledAction>) => void;
   deleteScheduledAction: (id: string) => void;
 
+  // Display settings
+  updateDisplaySetting: <K extends keyof DisplaySettings>(key: K, value: boolean) => void;
+
+  // Notification settings
+  updateNotificationEnabled: (value: boolean) => void;
+  updateNotificationTiming: <K extends keyof NotificationSettings['timing']>(key: K, value: boolean) => void;
+
   // Backup / Restore
   loadBackup: (data: Partial<AppState>) => void;
 }
 
-type AppStore = AppState & AppActions;
+type AppStore = AppState & {
+  displaySettings: DisplaySettings;
+  notificationSettings: NotificationSettings;
+} & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 7;
+const CURRENT_SCHEMA_VERSION = 8;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -67,6 +113,8 @@ export const useAppStore = create<AppStore>()(
       interviews: [],
       esEntries: [],
       scheduledActions: [],
+      displaySettings: DEFAULT_DISPLAY_SETTINGS,
+      notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
 
       // Company CRUD
       addCompany: (company) => {
@@ -346,6 +394,29 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
+      // Display settings
+      updateDisplaySetting: (key, value) => {
+        set((state) => ({
+          displaySettings: { ...state.displaySettings, [key]: value },
+        }));
+      },
+
+      // Notification settings
+      updateNotificationEnabled: (value) => {
+        set((state) => ({
+          notificationSettings: { ...state.notificationSettings, enabled: value },
+        }));
+      },
+
+      updateNotificationTiming: (key, value) => {
+        set((state) => ({
+          notificationSettings: {
+            ...state.notificationSettings,
+            timing: { ...state.notificationSettings.timing, [key]: value },
+          },
+        }));
+      },
+
       // Backup / Restore
       loadBackup: (data) => {
         set({
@@ -410,6 +481,10 @@ export const useAppStore = create<AppStore>()(
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
           scheduledActions: state.scheduledActions ?? [],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          displaySettings: (state as any).displaySettings ?? DEFAULT_DISPLAY_SETTINGS,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
         } as AppState;
       },
     }
