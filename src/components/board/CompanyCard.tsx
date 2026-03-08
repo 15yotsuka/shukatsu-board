@@ -15,6 +15,7 @@ interface CompanyCardProps {
 
 export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const interviews = useAppStore((s) => s.interviews);
+  const deadlines = useAppStore((s) => s.deadlines);
   const {
     attributes,
     listeners,
@@ -38,6 +39,18 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   });
 
   const today = startOfDay(new Date());
+  const todayStr = format(today, 'yyyy-MM-dd');
+
+  const companyDeadlines = deadlines.filter((d) => d.companyName === company.name);
+  const nearestFuture = companyDeadlines
+    .filter((d) => d.deadlineDate >= todayStr)
+    .sort((a, b) => a.deadlineDate.localeCompare(b.deadlineDate))[0] ?? null;
+  const nearestPast = !nearestFuture
+    ? companyDeadlines
+        .filter((d) => d.deadlineDate < todayStr)
+        .sort((a, b) => b.deadlineDate.localeCompare(a.deadlineDate))[0] ?? null
+    : null;
+  const displayDeadline = nearestFuture ?? nearestPast ?? null;
   const nextInterview = interviews
     .filter(
       (i) =>
@@ -92,6 +105,28 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         </div>
       )}
       <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{updatedDate}</p>
+      {displayDeadline && (() => {
+        const isPast = displayDeadline.deadlineDate < todayStr;
+        const daysUntil = isPast
+          ? -1
+          : Math.round(
+              (new Date(displayDeadline.deadlineDate).getTime() -
+                new Date(todayStr).getTime()) /
+                (1000 * 60 * 60 * 24)
+            );
+        const badgeClass = isPast
+          ? 'bg-red-100 text-red-700'
+          : daysUntil <= 3
+          ? 'bg-orange-100 text-orange-700'
+          : 'bg-gray-100 text-gray-600';
+        const p = displayDeadline.deadlineDate.split('-');
+        const mmdd = p[1] && p[2] ? `${parseInt(p[1])}/${parseInt(p[2])}` : displayDeadline.deadlineDate;
+        return (
+          <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}`}>
+            📅 {mmdd} {displayDeadline.deadlineType}
+          </div>
+        );
+      })()}
     </div>
   );
 }

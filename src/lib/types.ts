@@ -113,6 +113,7 @@ export interface AppState {
   interviews: Interview[];
   esEntries: ESEntry[];
   scheduledActions: ScheduledAction[];
+  deadlines: DeadlineEntry[];
 }
 
 // ============================
@@ -142,6 +143,17 @@ export interface ScheduledAction {
   type: ActionType;
   date: string; // "2026-03-15"
   time?: string; // "HH:mm"
+  note?: string;
+}
+
+// ============================
+// 締切情報
+// ============================
+export interface DeadlineEntry {
+  id: string;
+  companyName: string;
+  deadlineType: string;
+  deadlineDate: string;
   note?: string;
 }
 
