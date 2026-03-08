@@ -1,0 +1,505 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { nanoid } from 'nanoid';
+import type {
+  AppState,
+  Company,
+  StatusColumn,
+  Interview,
+  ESEntry,
+  ScheduledAction,
+  Tag,
+} from '@/lib/types';
+import { createAllDefaultStatuses } from '@/lib/defaults';
+import type { GradYear } from '@/lib/gradYears';
+
+export interface DisplaySettings {
+  showTag: boolean;
+  showIndustry: boolean;
+  showNextInterview: boolean;
+  showUpdatedDate: boolean;
+  showDeadlineBadge: boolean;
+}
+
+export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
+  showTag: true,
+  showIndustry: true,
+  showNextInterview: true,
+  showUpdatedDate: true,
+  showDeadlineBadge: true,
+};
+
+export interface NotificationSettings {
+  enabled: boolean;
+  timing: {
+    sameDay: boolean;
+    oneDayBefore: boolean;
+    threeDaysBefore: boolean;
+    sevenDaysBefore: boolean;
+  };
+}
+
+export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  enabled: false,
+  timing: {
+    sameDay: true,
+    oneDayBefore: true,
+    threeDaysBefore: true,
+    sevenDaysBefore: true,
+  },
+};
+
+interface AppActions {
+  // Company CRUD
+  addCompany: (
+    company: Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'orderInColumn'>
+  ) => void;
+  updateCompany: (id: string, updates: Partial<Omit<Company, 'id'>>) => void;
+  deleteCompany: (id: string) => void;
+  deleteAllCompanies: () => void;
+  moveCompany: (companyId: string, newStatusId: string, newOrder: number) => void;
+
+  // Status CRUD
+  addStatus: (name: string) => void;
+  updateStatus: (id: string, name: string) => void;
+  deleteStatus: (id: string) => boolean;
+  reorderStatuses: (orderedIds: string[]) => void;
+
+  // Interview CRUD (Phase 2)
+  addInterview: (
+    interview: Omit<Interview, 'id' | 'createdAt'>
+  ) => void;
+  updateInterview: (id: string, updates: Partial<Omit<Interview, 'id'>>) => void;
+  deleteInterview: (id: string) => void;
+
+  // ES CRUD (Phase 3)
+  addESEntry: (entry: Omit<ESEntry, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateESEntry: (id: string, updates: Partial<Omit<ESEntry, 'id'>>) => void;
+  deleteESEntry: (id: string) => void;
+  reorderESEntries: (companyId: string, orderedIds: string[]) => void;
+
+  // Reorder companies (manual sort)
+  reorderCompanies: (orderedIds: string[]) => void;
+
+  // ScheduledAction CRUD
+  addScheduledAction: (action: Omit<ScheduledAction, 'id'>) => void;
+  updateScheduledAction: (id: string, updates: Partial<ScheduledAction>) => void;
+  deleteScheduledAction: (id: string) => void;
+
+  // Display settings
+  updateDisplaySetting: <K extends keyof DisplaySettings>(key: K, value: boolean) => void;
+
+  // Notification settings
+  updateNotificationEnabled: (value: boolean) => void;
+  updateNotificationTiming: <K extends keyof NotificationSettings['timing']>(key: K, value: boolean) => void;
+
+  // Grad year
+  setGradYear: (year: GradYear) => void;
+
+  // Backup / Restore
+  loadBackup: (data: Partial<AppState>) => void;
+}
+
+type AppStore = AppState & {
+  displaySettings: DisplaySettings;
+  notificationSettings: NotificationSettings;
+  gradYear: GradYear | null;
+} & AppActions;
+
+const CURRENT_SCHEMA_VERSION = 9;
+
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      companies: [],
+      statusColumns: createAllDefaultStatuses(),
+      interviews: [],
+      esEntries: [],
+      scheduledActions: [],
+      displaySettings: DEFAULT_DISPLAY_SETTINGS,
+      notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
+      gradYear: null,
+
+      // Company CRUD
+      addCompany: (company) => {
+        const now = new Date().toISOString();
+        const state = get();
+        const companiesInColumn = state.companies.filter(
+          (c) => c.statusId === company.statusId
+        );
+        const newCompany: Company = {
+          ...company,
+          id: nanoid(),
+          orderInColumn: companiesInColumn.length,
+          createdAt: now,
+          updatedAt: now,
+        };
+        set({ companies: [...state.companies, newCompany] });
+      },
+
+      updateCompany: (id, updates) => {
+        set((state) => ({
+          companies: state.companies.map((c) =>
+            c.id === id
+              ? { ...c, ...updates, updatedAt: new Date().toISOString() }
+              : c
+          ),
+        }));
+      },
+
+      deleteCompany: (id) => {
+        set((state) => ({
+          companies: state.companies.filter((c) => c.id !== id),
+          interviews: state.interviews.filter((i) => i.companyId !== id),
+          esEntries: state.esEntries.filter((e) => e.companyId !== id),
+          scheduledActions: state.scheduledActions.filter((a) => a.companyId !== id),
+        }));
+      },
+
+      deleteAllCompanies: () => {
+        set({ companies: [], interviews: [], esEntries: [], scheduledActions: [] });
+      },
+
+      moveCompany: (companyId, newStatusId, newOrder) => {
+        set((state) => {
+          const company = state.companies.find((c) => c.id === companyId);
+          if (!company) return state;
+
+          const oldStatusId = company.statusId;
+          let updatedCompanies = state.companies.map((c) => {
+            if (c.id === companyId) {
+              return {
+                ...c,
+                statusId: newStatusId,
+                orderInColumn: newOrder,
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return c;
+          });
+
+          // Reorder companies in the old column (if different)
+          if (oldStatusId !== newStatusId) {
+            const oldColumnCompanies = updatedCompanies
+              .filter((c) => c.statusId === oldStatusId && c.id !== companyId)
+              .sort((a, b) => a.orderInColumn - b.orderInColumn);
+            updatedCompanies = updatedCompanies.map((c) => {
+              if (c.statusId === oldStatusId && c.id !== companyId) {
+                const idx = oldColumnCompanies.findIndex((oc) => oc.id === c.id);
+                return { ...c, orderInColumn: idx };
+              }
+              return c;
+            });
+          }
+
+          // Reorder companies in the new column
+          const newColumnCompanies = updatedCompanies
+            .filter((c) => c.statusId === newStatusId)
+            .sort((a, b) => {
+              if (a.id === companyId) return newOrder - b.orderInColumn;
+              if (b.id === companyId) return a.orderInColumn - newOrder;
+              return a.orderInColumn - b.orderInColumn;
+            });
+
+          updatedCompanies = updatedCompanies.map((c) => {
+            if (c.statusId === newStatusId) {
+              const idx = newColumnCompanies.findIndex((nc) => nc.id === c.id);
+              return { ...c, orderInColumn: idx >= 0 ? idx : c.orderInColumn };
+            }
+            return c;
+          });
+
+          return { companies: updatedCompanies };
+        });
+      },
+
+      // Status CRUD
+      addStatus: (name) => {
+        const state = get();
+        const newStatus: StatusColumn = {
+          id: nanoid(),
+          name,
+          order: state.statusColumns.length,
+        };
+        set({ statusColumns: [...state.statusColumns, newStatus] });
+      },
+
+      updateStatus: (id, name) => {
+        set((state) => ({
+          statusColumns: state.statusColumns.map((s) =>
+            s.id === id ? { ...s, name } : s
+          ),
+        }));
+      },
+
+      deleteStatus: (id) => {
+        const state = get();
+        const companiesInStatus = state.companies.filter(
+          (c) => c.statusId === id
+        );
+        if (companiesInStatus.length > 0) {
+          return false;
+        }
+        set({
+          statusColumns: state.statusColumns.filter((s) => s.id !== id),
+        });
+        return true;
+      },
+
+      reorderStatuses: (orderedIds) => {
+        set((state) => ({
+          statusColumns: state.statusColumns.map((s) => {
+            const newOrder = orderedIds.indexOf(s.id);
+            return newOrder >= 0 ? { ...s, order: newOrder } : s;
+          }),
+        }));
+      },
+
+      // Interview CRUD
+      addInterview: (interview) => {
+        const newInterview: Interview = {
+          ...interview,
+          id: nanoid(),
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          interviews: [...state.interviews, newInterview],
+        }));
+      },
+
+      updateInterview: (id, updates) => {
+        set((state) => ({
+          interviews: state.interviews.map((i) =>
+            i.id === id ? { ...i, ...updates } : i
+          ),
+        }));
+      },
+
+      deleteInterview: (id) => {
+        set((state) => ({
+          interviews: state.interviews.filter((i) => i.id !== id),
+        }));
+      },
+
+      // ES CRUD
+      addESEntry: (entry) => {
+        const now = new Date().toISOString();
+        const newEntry: ESEntry = {
+          ...entry,
+          id: nanoid(),
+          createdAt: now,
+          updatedAt: now,
+        };
+        set((state) => ({
+          esEntries: [...state.esEntries, newEntry],
+        }));
+      },
+
+      updateESEntry: (id, updates) => {
+        set((state) => ({
+          esEntries: state.esEntries.map((e) =>
+            e.id === id
+              ? { ...e, ...updates, updatedAt: new Date().toISOString() }
+              : e
+          ),
+        }));
+      },
+
+      deleteESEntry: (id) => {
+        set((state) => ({
+          esEntries: state.esEntries.filter((e) => e.id !== id),
+        }));
+      },
+
+      reorderESEntries: (companyId, orderedIds) => {
+        set((state) => ({
+          esEntries: state.esEntries.map((e) => {
+            if (e.companyId !== companyId) return e;
+            const newOrder = orderedIds.indexOf(e.id);
+            return newOrder >= 0 ? { ...e, order: newOrder } : e;
+          }),
+        }));
+      },
+
+      // Reorder companies (manual sort)
+      reorderCompanies: (orderedIds) => {
+        set((state) => {
+          const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
+          return {
+            companies: [...state.companies].sort((a, b) => {
+              const aIdx = orderMap.has(a.id) ? orderMap.get(a.id)! : Infinity;
+              const bIdx = orderMap.has(b.id) ? orderMap.get(b.id)! : Infinity;
+              if (aIdx === Infinity && bIdx === Infinity) return 0;
+              return aIdx - bIdx;
+            }),
+          };
+        });
+      },
+
+      // ScheduledAction CRUD
+      addScheduledAction: (action) => {
+        const newAction: ScheduledAction = { ...action, id: nanoid() };
+        set((state) => {
+          const newActions = [...state.scheduledActions, newAction];
+          const today = new Date().toISOString().slice(0, 10);
+          const nextAction = newActions
+            .filter((a) => a.companyId === action.companyId && a.date >= today)
+            .sort((a, b) => a.date.localeCompare(b.date))[0];
+          return {
+            scheduledActions: newActions,
+            companies: state.companies.map((c) =>
+              c.id === action.companyId
+                ? {
+                    ...c,
+                    nextActionDate: nextAction?.date,
+                    nextActionType: nextAction?.type,
+                    nextActionTime: nextAction?.time,
+                    nextDeadline: nextAction?.date,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : c
+            ),
+          };
+        });
+      },
+
+      updateScheduledAction: (id, updates) => {
+        set((state) => ({
+          scheduledActions: state.scheduledActions.map((a) =>
+            a.id === id ? { ...a, ...updates } : a
+          ),
+        }));
+      },
+
+      deleteScheduledAction: (id) => {
+        set((state) => {
+          const removed = state.scheduledActions.find((a) => a.id === id);
+          const newActions = state.scheduledActions.filter((a) => a.id !== id);
+          if (!removed) return { scheduledActions: newActions };
+          const today = new Date().toISOString().slice(0, 10);
+          const nextAction = newActions
+            .filter((a) => a.companyId === removed.companyId && a.date >= today)
+            .sort((a, b) => a.date.localeCompare(b.date))[0];
+          return {
+            scheduledActions: newActions,
+            companies: state.companies.map((c) =>
+              c.id === removed.companyId
+                ? {
+                    ...c,
+                    nextActionDate: nextAction?.date,
+                    nextActionType: nextAction?.type,
+                    nextActionTime: nextAction?.time,
+                    nextDeadline: nextAction?.date,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : c
+            ),
+          };
+        });
+      },
+
+      // Display settings
+      updateDisplaySetting: (key, value) => {
+        set((state) => ({
+          displaySettings: { ...state.displaySettings, [key]: value },
+        }));
+      },
+
+      // Notification settings
+      updateNotificationEnabled: (value) => {
+        set((state) => ({
+          notificationSettings: { ...state.notificationSettings, enabled: value },
+        }));
+      },
+
+      updateNotificationTiming: (key, value) => {
+        set((state) => ({
+          notificationSettings: {
+            ...state.notificationSettings,
+            timing: { ...state.notificationSettings.timing, [key]: value },
+          },
+        }));
+      },
+
+      // Grad year
+      setGradYear: (year) => {
+        set({ gradYear: year });
+      },
+
+      // Backup / Restore
+      loadBackup: (data) => {
+        set({
+          schemaVersion: data.schemaVersion ?? CURRENT_SCHEMA_VERSION,
+          companies: data.companies ?? [],
+          statusColumns: data.statusColumns ?? createAllDefaultStatuses(),
+          interviews: data.interviews ?? [],
+          esEntries: data.esEntries ?? [],
+          scheduledActions: (data as AppState).scheduledActions ?? [],
+        });
+      },
+    }),
+    {
+      name: 'shukatsu-board-data',
+      version: CURRENT_SCHEMA_VERSION,
+      migrate: (persistedState, version) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const state = persistedState as any;
+        // v1→v2→v3: strip trackType from companies/statusColumns, remove activeTrack
+        // v3→v4: rename selectionType values (intern_only→intern, main_only→main)
+        // v4→v5: remove intern_to_main selectionType; convert old priority → tags[]
+        const selectionTypeRemap: Record<string, string> = {
+          intern_only: 'intern',
+          main_only: 'main',
+          intern_to_main: 'main',
+        };
+        const priorityToTagRemap: Record<string, Tag> = {
+          S: '優遇あり',
+          '早期': '早期選考',
+          'リク面': 'リクルーター面談',
+          '結果待ち': '結果待ち',
+          // '持ち駒' intentionally dropped
+        };
+        return {
+          schemaVersion: CURRENT_SCHEMA_VERSION,
+          companies: (state.companies ?? []).map((c: Company & { trackType?: unknown; priority?: string }) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { trackType, priority: oldPriority, ...rest } = c as Company & { trackType?: unknown; priority?: string };
+            const rawType = rest.selectionType as string | undefined;
+            const remapped = rawType
+              ? (selectionTypeRemap[rawType] ?? rawType)
+              : 'main';
+            // Convert old single priority → tags[] (only if no tags yet)
+            let tags = rest.tags as Tag[] | undefined;
+            if (!tags && oldPriority) {
+              const converted = priorityToTagRemap[oldPriority];
+              if (converted) tags = [converted];
+            }
+            return {
+              ...rest,
+              selectionType: remapped,
+              ...(tags ? { tags } : {}),
+            };
+          }),
+          statusColumns: (state.statusColumns ?? createAllDefaultStatuses()).map(
+            (s: StatusColumn & { trackType?: unknown }) => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { trackType, ...rest } = s as StatusColumn & { trackType?: unknown };
+              return rest;
+            }
+          ),
+          interviews: state.interviews ?? [],
+          esEntries: state.esEntries ?? [],
+          scheduledActions: state.scheduledActions ?? [],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          displaySettings: (state as any).displaySettings ?? DEFAULT_DISPLAY_SETTINGS,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          gradYear: (state as any).gradYear ?? null,
+        } as AppState;
+      },
+    }
+  )
+);
