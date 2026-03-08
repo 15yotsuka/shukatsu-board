@@ -146,7 +146,7 @@ export interface ScheduledAction {
 }
 
 // ============================
-// 締切情報（fetch方式 / public/deadlines.csv）
+// 締切情報（fetch方式 / public/deadlines-{gradYear}.csv）
 // ============================
 export interface DeadlineEntry {
   company_name: string;

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ToastDisplay } from "@/components/layout/ToastDisplay";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { DeadlineProvider } from "@/contexts/DeadlineContext";
+import GradYearSelectModal from "@/components/onboarding/GradYearSelectModal";
 
 export const metadata: Metadata = {
   title: "ShukatsuBoard - 就活管理ツール",
@@ -37,6 +38,7 @@ export default function RootLayout({
             </main>
             <BottomNav />
             <ToastDisplay />
+            <GradYearSelectModal />
           </DeadlineProvider>
         </ThemeProvider>
       </body>

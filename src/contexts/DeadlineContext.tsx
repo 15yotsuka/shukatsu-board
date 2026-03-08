@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { DeadlineEntry } from '@/lib/types';
+import { useAppStore } from '@/store/useAppStore';
+import { getDeadlineCSVPath } from '@/lib/gradYears';
 
 interface DeadlineContextType {
   deadlines: DeadlineEntry[];
@@ -37,12 +39,25 @@ function parseCSV(text: string): DeadlineEntry[] {
 }
 
 export function DeadlineProvider({ children }: { children: ReactNode }) {
+  const gradYear = useAppStore((state) => state.gradYear);
   const [deadlines, setDeadlines] = useState<DeadlineEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/deadlines.csv')
+    if (gradYear === null) {
+      setDeadlines([]);
+      setLoading(false);
+      return;
+    }
+
+    setDeadlines([]);
+    setLoading(true);
+    setError(null);
+
+    const csvPath = getDeadlineCSVPath(gradYear);
+
+    fetch(csvPath)
       .then((res) => {
         if (!res.ok) throw new Error('データを取得できませんでした');
         return res.text();
@@ -56,7 +71,7 @@ export function DeadlineProvider({ children }: { children: ReactNode }) {
         setError(err.message || 'データを取得できませんでした');
         setLoading(false);
       });
-  }, []);
+  }, [gradYear]);
 
   return (
     <DeadlineContext.Provider value={{ deadlines, loading, error }}>

@@ -11,6 +11,7 @@ import type {
   Tag,
 } from '@/lib/types';
 import { createAllDefaultStatuses } from '@/lib/defaults';
+import type { GradYear } from '@/lib/gradYears';
 
 export interface DisplaySettings {
   showTag: boolean;
@@ -92,6 +93,9 @@ interface AppActions {
   updateNotificationEnabled: (value: boolean) => void;
   updateNotificationTiming: <K extends keyof NotificationSettings['timing']>(key: K, value: boolean) => void;
 
+  // Grad year
+  setGradYear: (year: GradYear) => void;
+
   // Backup / Restore
   loadBackup: (data: Partial<AppState>) => void;
 }
@@ -99,9 +103,10 @@ interface AppActions {
 type AppStore = AppState & {
   displaySettings: DisplaySettings;
   notificationSettings: NotificationSettings;
+  gradYear: GradYear | null;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 8;
+const CURRENT_SCHEMA_VERSION = 9;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -115,6 +120,7 @@ export const useAppStore = create<AppStore>()(
       scheduledActions: [],
       displaySettings: DEFAULT_DISPLAY_SETTINGS,
       notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
+      gradYear: null,
 
       // Company CRUD
       addCompany: (company) => {
@@ -417,6 +423,11 @@ export const useAppStore = create<AppStore>()(
         }));
       },
 
+      // Grad year
+      setGradYear: (year) => {
+        set({ gradYear: year });
+      },
+
       // Backup / Restore
       loadBackup: (data) => {
         set({
@@ -485,6 +496,8 @@ export const useAppStore = create<AppStore>()(
           displaySettings: (state as any).displaySettings ?? DEFAULT_DISPLAY_SETTINGS,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          gradYear: (state as any).gradYear ?? null,
         } as AppState;
       },
     }

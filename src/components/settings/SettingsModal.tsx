@@ -21,6 +21,7 @@ import { useAppStore } from '@/store/useAppStore';
 import type { DisplaySettings, NotificationSettings } from '@/store/useAppStore';
 import { BulkImportModal } from '@/components/board/BulkImportModal';
 import type { StatusColumn } from '@/lib/types';
+import { GRAD_YEARS, GRAD_YEAR_LABELS, type GradYear } from '@/lib/gradYears';
 
 type Tab = 'status' | 'display' | 'notification' | 'data';
 
@@ -256,9 +257,32 @@ const DISPLAY_ITEMS: { key: keyof DisplaySettings; label: string }[] = [
 function DisplayTab() {
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const updateDisplaySetting = useAppStore((s) => s.updateDisplaySetting);
+  const gradYear = useAppStore((s) => s.gradYear);
+  const setGradYear = useAppStore((s) => s.setGradYear);
 
   return (
     <div className="space-y-4">
+      {/* 卒業年度 */}
+      <div className="bg-card rounded-xl overflow-hidden">
+        <div className="px-4 py-2 border-b border-[var(--color-border)]">
+          <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">卒業年度</span>
+        </div>
+        <div className="px-4 py-3">
+          <select
+            value={gradYear ?? ''}
+            onChange={(e) => setGradYear(Number(e.target.value) as GradYear)}
+            className="ios-input w-full"
+          >
+            {GRAD_YEARS.map((year) => (
+              <option key={year} value={year}>
+                {GRAD_YEAR_LABELS[year as GradYear]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* カード表示設定 */}
       <div className="text-[13px] text-[var(--color-text-secondary)] px-1">
         カードに表示する項目を選択してください。企業名は常に表示されます。
       </div>
