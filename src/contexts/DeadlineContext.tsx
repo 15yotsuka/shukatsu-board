@@ -31,6 +31,7 @@ function parseCSV(text: string): DeadlineEntry[] {
       deadline: (cols[2] || '').trim(),
       label: (cols[3] || '').trim(),
       job_type: (cols[4] || '').trim(),
+      industry: (cols[5] || '').trim(),
     };
   }).filter((entry) => entry.company_name && entry.deadline);
 }

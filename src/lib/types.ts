@@ -154,6 +154,7 @@ export interface DeadlineEntry {
   deadline: string; // YYYY-MM-DD
   label: string;
   job_type: string;
+  industry: string;
 }
 
 // ============================
