@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
 import { TAG_CONFIG, SELECTION_TYPE_LABELS, type Tag, type SelectionType } from '@/lib/types';
 import { DEFAULT_MILESTONES } from '@/lib/progressMilestones';
 import { INDUSTRIES } from '@/lib/industries';
+import { useDeadlines } from '@/contexts/DeadlineContext';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -32,6 +33,19 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const { deadlines } = useDeadlines();
+
+  const deadlineSuggestions = useMemo(() => {
+    if (!name.trim()) return [];
+    const lower = name.trim().toLowerCase();
+    return deadlines
+      .filter((d) =>
+        d.company_name.toLowerCase().includes(lower) ||
+        lower.includes(d.company_name.toLowerCase())
+      )
+      .slice(0, 5);
+  }, [name, deadlines]);
 
   const effectiveMilestones = (customMilestones && customMilestones.length > 0)
     ? customMilestones
@@ -156,18 +170,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             </select>
           </div>
 
-          {/* URL */}
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">URL</label>
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="ios-input"
-              placeholder="https://..."
-            />
-          </div>
-
           {/* 締切日 */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">締切日</label>
@@ -177,6 +179,24 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
               onChange={(e) => setDeadline(e.target.value)}
               className="ios-input"
             />
+            {deadlineSuggestions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {deadlineSuggestions.map((d, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onPointerDown={(e) => { e.preventDefault(); setDeadline(d.deadline); }}
+                    className={`text-[12px] px-2.5 py-1 rounded-full font-medium ios-tap transition-colors ${
+                      deadline === d.deadline
+                        ? 'bg-[var(--color-primary)] text-white'
+                        : 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    }`}
+                  >
+                    {d.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')} {d.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 初期ステータス */}
@@ -336,6 +356,18 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* URL */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">URL</label>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="ios-input"
+              placeholder="https://..."
+            />
           </div>
 
           {/* メモ */}
