@@ -143,8 +143,6 @@ export default function DeadlineTab() {
 
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
-      <h2 className="text-[17px] font-bold text-[var(--color-text)]">締切</h2>
-
       {/* フィルター・ソートUI */}
       <div className="flex gap-2">
         <select

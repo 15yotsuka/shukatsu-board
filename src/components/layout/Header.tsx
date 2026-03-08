@@ -9,7 +9,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/': 'ホーム',
   '/tasks': '企業一覧',
   '/calendar': 'カレンダー',
-  '/es': 'ES管理',
+  '/deadline': '締切',
 };
 
 export function Header() {
