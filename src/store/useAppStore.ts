@@ -9,7 +9,6 @@ import type {
   ESEntry,
   ScheduledAction,
   Tag,
-  DeadlineEntry,
 } from '@/lib/types';
 import { createAllDefaultStatuses } from '@/lib/defaults';
 
@@ -50,18 +49,13 @@ interface AppActions {
   updateScheduledAction: (id: string, updates: Partial<ScheduledAction>) => void;
   deleteScheduledAction: (id: string) => void;
 
-  // Deadline CRUD
-  importDeadlines: (entries: DeadlineEntry[]) => void;
-  addDeadline: (entry: DeadlineEntry) => void;
-  deleteDeadline: (id: string) => void;
-
   // Backup / Restore
   loadBackup: (data: Partial<AppState>) => void;
 }
 
 type AppStore = AppState & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 6;
+const CURRENT_SCHEMA_VERSION = 7;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -73,7 +67,6 @@ export const useAppStore = create<AppStore>()(
       interviews: [],
       esEntries: [],
       scheduledActions: [],
-      deadlines: [],
 
       // Company CRUD
       addCompany: (company) => {
@@ -353,23 +346,6 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      // Deadline CRUD
-      importDeadlines: (entries) => {
-        set({ deadlines: entries });
-      },
-
-      addDeadline: (entry) => {
-        set((state) => ({
-          deadlines: [...state.deadlines, entry],
-        }));
-      },
-
-      deleteDeadline: (id) => {
-        set((state) => ({
-          deadlines: state.deadlines.filter((d) => d.id !== id),
-        }));
-      },
-
       // Backup / Restore
       loadBackup: (data) => {
         set({
@@ -379,7 +355,6 @@ export const useAppStore = create<AppStore>()(
           interviews: data.interviews ?? [],
           esEntries: data.esEntries ?? [],
           scheduledActions: (data as AppState).scheduledActions ?? [],
-          deadlines: data.deadlines ?? [],
         });
       },
     }),
@@ -435,7 +410,6 @@ export const useAppStore = create<AppStore>()(
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
           scheduledActions: state.scheduledActions ?? [],
-          deadlines: state.deadlines ?? [],
         } as AppState;
       },
     }

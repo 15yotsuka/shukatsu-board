@@ -113,7 +113,6 @@ export interface AppState {
   interviews: Interview[];
   esEntries: ESEntry[];
   scheduledActions: ScheduledAction[];
-  deadlines: DeadlineEntry[];
 }
 
 // ============================
@@ -147,14 +146,14 @@ export interface ScheduledAction {
 }
 
 // ============================
-// 締切情報
+// 締切情報（fetch方式 / public/deadlines.csv）
 // ============================
 export interface DeadlineEntry {
-  id: string;
-  companyName: string;
-  deadlineType: string;
-  deadlineDate: string;
-  note?: string;
+  company_name: string;
+  type: string;
+  deadline: string; // YYYY-MM-DD
+  label: string;
+  job_type: string;
 }
 
 // ============================

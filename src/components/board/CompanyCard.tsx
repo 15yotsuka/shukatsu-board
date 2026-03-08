@@ -1,12 +1,13 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
-import { isAfter, startOfDay, format } from 'date-fns';
+import { isAfter, isBefore, startOfDay, format, parseISO, isValid } from 'date-fns';
 import type { Company } from '@/lib/types';
 import { TAG_CONFIG } from '@/lib/types';
+import { useDeadlines } from '@/contexts/DeadlineContext';
 
 interface CompanyCardProps {
   company: Company;
@@ -15,7 +16,7 @@ interface CompanyCardProps {
 
 export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const interviews = useAppStore((s) => s.interviews);
-  const deadlines = useAppStore((s) => s.deadlines);
+  const { deadlines } = useDeadlines();
   const {
     attributes,
     listeners,
@@ -41,16 +42,15 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const today = startOfDay(new Date());
   const todayStr = format(today, 'yyyy-MM-dd');
 
-  const companyDeadlines = deadlines.filter((d) => d.companyName === company.name);
-  const nearestFuture = companyDeadlines
-    .filter((d) => d.deadlineDate >= todayStr)
-    .sort((a, b) => a.deadlineDate.localeCompare(b.deadlineDate))[0] ?? null;
-  const nearestPast = !nearestFuture
-    ? companyDeadlines
-        .filter((d) => d.deadlineDate < todayStr)
-        .sort((a, b) => b.deadlineDate.localeCompare(a.deadlineDate))[0] ?? null
-    : null;
-  const displayDeadline = nearestFuture ?? nearestPast ?? null;
+  const companyDeadline = useMemo(() => {
+    const _today = startOfDay(new Date());
+    return deadlines
+      .filter((d) => {
+        const date = parseISO(d.deadline);
+        return isValid(date) && d.company_name === company.name && !isBefore(startOfDay(date), _today);
+      })
+      .sort((a, b) => a.deadline.localeCompare(b.deadline))[0] || null;
+  }, [deadlines, company.name]);
   const nextInterview = interviews
     .filter(
       (i) =>
@@ -105,25 +105,20 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         </div>
       )}
       <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{updatedDate}</p>
-      {displayDeadline && (() => {
-        const isPast = displayDeadline.deadlineDate < todayStr;
-        const daysUntil = isPast
-          ? -1
-          : Math.round(
-              (new Date(displayDeadline.deadlineDate).getTime() -
-                new Date(todayStr).getTime()) /
-                (1000 * 60 * 60 * 24)
-            );
-        const badgeClass = isPast
-          ? 'bg-red-100 text-red-700'
-          : daysUntil <= 3
+      {companyDeadline && (() => {
+        const daysUntil = Math.round(
+          (new Date(companyDeadline.deadline).getTime() -
+            new Date(todayStr).getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+        const badgeClass = daysUntil <= 3
           ? 'bg-orange-100 text-orange-700'
           : 'bg-gray-100 text-gray-600';
-        const p = displayDeadline.deadlineDate.split('-');
-        const mmdd = p[1] && p[2] ? `${parseInt(p[1])}/${parseInt(p[2])}` : displayDeadline.deadlineDate;
+        const p = companyDeadline.deadline.split('-');
+        const mmdd = p[1] && p[2] ? `${parseInt(p[1])}/${parseInt(p[2])}` : companyDeadline.deadline;
         return (
           <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}`}>
-            📅 {mmdd} {displayDeadline.deadlineType}
+            📅 {mmdd} {companyDeadline.type}
           </div>
         );
       })()}
