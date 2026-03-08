@@ -46,7 +46,6 @@ export default function CalendarPage() {
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
       <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} />
-      <UpcomingList />
 
       {selectedDate && selectedInterviews.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
@@ -198,6 +197,8 @@ export default function CalendarPage() {
           </p>
         </div>
       )}
+
+      <UpcomingList />
 
       {/* 面接追加フローティングボタン */}
       <button
