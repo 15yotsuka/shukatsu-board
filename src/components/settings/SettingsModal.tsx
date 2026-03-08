@@ -516,6 +516,17 @@ function DataTab({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
+      <div className="text-center">
+        <a
+          href="/privacy-policy.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[13px] text-[var(--color-text-secondary)] underline"
+        >
+          プライバシーポリシー
+        </a>
+      </div>
+
       <button onClick={onClose} className="ios-button-secondary w-full">
         完了
       </button>
