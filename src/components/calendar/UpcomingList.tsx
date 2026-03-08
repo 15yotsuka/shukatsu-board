@@ -7,12 +7,18 @@ import { ja } from 'date-fns/locale';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS } from '@/lib/types';
 import type { Company } from '@/lib/types';
+import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
 
 type UnifiedItem =
   | { kind: 'interview'; sortKey: string; companyId: string; label: string; sub: string; color: string }
   | { kind: 'action'; sortKey: string; companyId: string; label: string; sub: string; color: string };
 
-export function UpcomingList() {
+interface UpcomingListProps {
+  activeFilters?: Set<FilterKind>;
+}
+
+export function UpcomingList({ activeFilters }: UpcomingListProps) {
+  const filters = activeFilters ?? new Set(ALL_FILTERS);
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const companies = useAppStore((s) => s.companies);
@@ -24,19 +30,29 @@ export function UpcomingList() {
   const getCompanyName = (id: string) => companies.find((c) => c.id === id)?.name ?? '不明な企業';
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 
-  const interviewItems: UnifiedItem[] = interviews
-    .filter((i) => isAfter(new Date(i.datetime), today) || format(new Date(i.datetime), 'yyyy-MM-dd') === todayStr)
-    .map((i) => ({
-      kind: 'interview' as const,
-      sortKey: i.datetime,
-      companyId: i.companyId,
-      label: `${i.type} - ${getCompanyName(i.companyId)}`,
-      sub: format(new Date(i.datetime), 'M/d（E）HH:mm', { locale: ja }),
-      color: ACTION_TYPE_COLORS.interview,
-    }));
+  const toFilterKind = (type: string | undefined): FilterKind => {
+    if (type === 'es') return 'es';
+    if (type === 'webtest') return 'webtest';
+    if (type === 'final') return 'final';
+    if (type === 'interview') return 'interview';
+    return 'other';
+  };
+
+  const interviewItems: UnifiedItem[] = filters.has('interview')
+    ? interviews
+        .filter((i) => isAfter(new Date(i.datetime), today) || format(new Date(i.datetime), 'yyyy-MM-dd') === todayStr)
+        .map((i) => ({
+          kind: 'interview' as const,
+          sortKey: i.datetime,
+          companyId: i.companyId,
+          label: `${i.type} - ${getCompanyName(i.companyId)}`,
+          sub: format(new Date(i.datetime), 'M/d（E）HH:mm', { locale: ja }),
+          color: ACTION_TYPE_COLORS.interview,
+        }))
+    : [];
 
   const actionItems: UnifiedItem[] = scheduledActions
-    .filter((a) => a.date >= todayStr)
+    .filter((a) => a.date >= todayStr && filters.has(toFilterKind(a.type)))
     .map((a) => ({
       kind: 'action' as const,
       sortKey: a.date,
@@ -46,16 +62,18 @@ export function UpcomingList() {
       color: ACTION_TYPE_COLORS[a.type],
     }));
 
-  const deadlineItems: UnifiedItem[] = companies
-    .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr)
-    .map((c) => ({
-      kind: 'action' as const,
-      sortKey: c.nextDeadline! + 'T00:00:00',
-      companyId: c.id,
-      label: `締切 - ${c.name}`,
-      sub: format(parseISO(c.nextDeadline!), 'M/d（E）', { locale: ja }),
-      color: '#FF3B30',
-    }));
+  const deadlineItems: UnifiedItem[] = filters.has('deadline')
+    ? companies
+        .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr)
+        .map((c) => ({
+          kind: 'action' as const,
+          sortKey: c.nextDeadline! + 'T00:00:00',
+          companyId: c.id,
+          label: `締切 - ${c.name}`,
+          sub: format(parseISO(c.nextDeadline!), 'M/d（E）', { locale: ja }),
+          color: '#FF3B30',
+        }))
+    : [];
 
   const unified = [...interviewItems, ...actionItems, ...deadlineItems]
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey))

@@ -19,22 +19,26 @@ import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_COLORS } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
+import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
 
 const DEADLINE_DOT_COLOR = '#FF3B30';
 
 interface MonthCalendarProps {
   onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
   selectedDate?: Date | null;
+  activeFilters?: Set<FilterKind>;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
-export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps) {
+export function MonthCalendar({ onDateSelect, selectedDate, activeFilters }: MonthCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const companies = useAppStore((s) => s.companies);
   const { deadlines } = useDeadlines();
+
+  const filters = activeFilters ?? new Set(ALL_FILTERS);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -59,10 +63,12 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
     return scheduledActions.filter((a) => a.date === dateStr);
   };
 
-  const hasDeadlineOnDate = (date: Date): boolean => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return companies.some((c) => c.nextDeadline === dateStr || c.nextActionDate === dateStr) ||
-      deadlines.some((d) => d.deadline === dateStr);
+  const toFilterKind = (type: string | undefined): FilterKind => {
+    if (type === 'es') return 'es';
+    if (type === 'webtest') return 'webtest';
+    if (type === 'final') return 'final';
+    if (type === 'interview') return 'interview';
+    return 'other';
   };
 
   return (
@@ -106,18 +112,27 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
       {/* Days grid */}
       <div className="grid grid-cols-7">
         {days.map((d) => {
+          const dateStr = format(d, 'yyyy-MM-dd');
           const dateInterviews = getInterviewsForDate(d);
           const dateActions = getActionsForDate(d);
           const isCurrentMonth = isSameMonth(d, currentMonth);
           const todayCell = isToday(d);
           const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
 
-          const hasDeadline = hasDeadlineOnDate(d);
-          const dots: string[] = [
-            ...(hasDeadline ? [DEADLINE_DOT_COLOR] : []),
-            ...(dateInterviews.length > 0 ? ['#FF9500'] : []),
-            ...dateActions.slice(0, 1).map((a) => ACTION_TYPE_COLORS[a.type]),
-          ].slice(0, 3);
+          const dots: string[] = [];
+
+          const hasDeadline =
+            filters.has('deadline') &&
+            (companies.some((c) => c.nextDeadline === dateStr || c.nextActionDate === dateStr) ||
+              deadlines.some((dd) => dd.deadline === dateStr));
+          if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
+
+          if (filters.has('interview') && dateInterviews.length > 0) dots.push('#FF9500');
+
+          const filteredActions = dateActions.filter((a) => filters.has(toFilterKind(a.type)));
+          if (filteredActions.length > 0) dots.push(ACTION_TYPE_COLORS[filteredActions[0].type]);
+
+          const finalDots = dots.slice(0, 3);
 
           return (
             <button
@@ -133,9 +148,9 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
                 }`}
             >
               <span>{format(d, 'd')}</span>
-              {dots.length > 0 && (
+              {finalDots.length > 0 && (
                 <div className="absolute bottom-0.5 flex gap-0.5">
-                  {dots.map((color, i) => (
+                  {finalDots.map((color, i) => (
                     <span
                       key={i}
                       className="w-1.5 h-1.5 rounded-full"

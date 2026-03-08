@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
+import { FilterChips, ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, type ActionType } from '@/lib/types';
@@ -17,6 +18,7 @@ export default function CalendarPage() {
   const [selectedActions, setSelectedActions] = useState<ScheduledAction[]>([]);
   const [showAddInterview, setShowAddInterview] = useState(false);
   const [addInterviewCompanyId, setAddInterviewCompanyId] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Set<FilterKind>>(new Set(ALL_FILTERS));
   const companies = useAppStore((s) => s.companies);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
@@ -43,11 +45,27 @@ export default function CalendarPage() {
     return companies.find((c) => c.id === companyId)?.name ?? '不明な企業';
   };
 
+  const toFilterKind = (type: string | undefined): FilterKind => {
+    if (type === 'es') return 'es';
+    if (type === 'webtest') return 'webtest';
+    if (type === 'final') return 'final';
+    if (type === 'interview') return 'interview';
+    return 'other';
+  };
+
+  const hasAnyVisible =
+    (activeFilters.has('interview') && selectedInterviews.length > 0) ||
+    (selectedActions.some(a => activeFilters.has(toFilterKind(a.type)))) ||
+    (activeFilters.has('deadline') && selectedDeadlineCompanies.length > 0) ||
+    (selectedActionCompanies.some(c => activeFilters.has(toFilterKind(c.nextActionType)))) ||
+    (activeFilters.has('deadline') && selectedCsvDeadlines.length > 0);
+
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
-      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} />
+      <FilterChips active={activeFilters} onChange={setActiveFilters} />
+      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} />
 
-      {selectedDate && selectedInterviews.length > 0 && (
+      {selectedDate && activeFilters.has('interview') && selectedInterviews.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
           <div className="px-4 pt-4 pb-2">
             <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
@@ -86,7 +104,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedActions.length > 0 && (
+      {selectedDate && selectedActions.filter(a => activeFilters.has(toFilterKind(a.type))).length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
           <div className="px-4 pt-4 pb-2">
             <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
@@ -94,7 +112,7 @@ export default function CalendarPage() {
             </h3>
           </div>
           <div className="divide-y divide-[var(--color-border)]">
-            {selectedActions.map((action) => (
+            {selectedActions.filter(a => activeFilters.has(toFilterKind(a.type))).map((action) => (
               <div key={action.id} className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-2">
                   <span
@@ -124,7 +142,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedDeadlineCompanies.length > 0 && (
+      {selectedDate && activeFilters.has('deadline') && selectedDeadlineCompanies.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
           <div className="px-4 pt-4 pb-2">
             <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
@@ -142,7 +160,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedActionCompanies.length > 0 && (
+      {selectedDate && selectedActionCompanies.filter(c => activeFilters.has(toFilterKind(c.nextActionType))).length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
           <div className="px-4 pt-4 pb-2">
             <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
@@ -150,7 +168,7 @@ export default function CalendarPage() {
             </h3>
           </div>
           <div className="divide-y divide-[var(--color-border)]">
-            {selectedActionCompanies.map((company) => (
+            {selectedActionCompanies.filter(c => activeFilters.has(toFilterKind(c.nextActionType))).map((company) => (
               <div key={company.id} className="flex items-center gap-3 px-4 py-3">
                 <span
                   className="w-2 h-2 rounded-full flex-none"
@@ -169,7 +187,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedCsvDeadlines.length > 0 && (
+      {selectedDate && activeFilters.has('deadline') && selectedCsvDeadlines.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
           <div className="px-4 pt-4 pb-2">
             <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
@@ -190,7 +208,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && selectedDeadlineCompanies.length === 0 && selectedActionCompanies.length === 0 && selectedCsvDeadlines.length === 0 && (
+      {selectedDate && !hasAnyVisible && (
         <div className="bg-card rounded-xl p-4">
           <p className="text-[14px] text-[var(--color-text-secondary)] text-center">
             {format(selectedDate, 'M月d日', { locale: ja })}の予定はありません
@@ -198,7 +216,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <UpcomingList />
+      <UpcomingList activeFilters={activeFilters} />
 
       {/* 面接追加フローティングボタン */}
       <button
