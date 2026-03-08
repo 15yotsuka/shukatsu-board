@@ -21,7 +21,7 @@ export function createSampleCompanies(
     // 未エントリー
     {
       name: 'ソニーグループ',
-      industry: 'メーカー（電機・電子）',
+      industry: 'メーカー',
       statusId: first,
       selectionType: 'main' as SelectionType,
       nextActionDate: format(now, 'yyyy-MM-dd'),
@@ -29,7 +29,7 @@ export function createSampleCompanies(
     },
     {
       name: 'トヨタ自動車',
-      industry: '自動車',
+      industry: 'メーカー',
       statusId: first,
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 6), 'yyyy-MM-dd'),
@@ -38,7 +38,7 @@ export function createSampleCompanies(
     // ES作成中
     {
       name: '三菱UFJ銀行',
-      industry: '金融（銀行）',
+      industry: '金融',
       statusId: getStatus('ES作成中'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 3), 'yyyy-MM-dd'),
@@ -46,7 +46,7 @@ export function createSampleCompanies(
     },
     {
       name: '野村證券',
-      industry: '金融（証券）',
+      industry: '金融',
       statusId: getStatus('ES作成中'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 5), 'yyyy-MM-dd'),
@@ -55,7 +55,7 @@ export function createSampleCompanies(
     // ES提出済
     {
       name: '日立製作所',
-      industry: 'メーカー（電機・電子）',
+      industry: 'メーカー',
       statusId: getStatus('ES提出済'),
       selectionType: 'intern' as SelectionType,
       nextActionDate: format(addDays(now, 5), 'yyyy-MM-dd'),
@@ -63,7 +63,7 @@ export function createSampleCompanies(
     },
     {
       name: '味の素',
-      industry: 'メーカー（食品・消費財）',
+      industry: 'メーカー',
       statusId: getStatus('ES提出済'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 8), 'yyyy-MM-dd'),
@@ -72,7 +72,7 @@ export function createSampleCompanies(
     // Webテスト受検済
     {
       name: '電通',
-      industry: '広告・メディア',
+      industry: 'マスコミ・広告・エンタメ',
       statusId: getStatus('Webテスト'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 4), 'yyyy-MM-dd'),
@@ -80,7 +80,7 @@ export function createSampleCompanies(
     },
     {
       name: '博報堂',
-      industry: '広告・メディア',
+      industry: 'マスコミ・広告・エンタメ',
       statusId: getStatus('Webテスト'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 9), 'yyyy-MM-dd'),
@@ -89,7 +89,7 @@ export function createSampleCompanies(
     // 1次面接
     {
       name: 'アクセンチュア',
-      industry: 'コンサルティング',
+      industry: 'コンサル',
       statusId: getStatus('1次面接'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(now, 'yyyy-MM-dd'),
@@ -97,7 +97,7 @@ export function createSampleCompanies(
     },
     {
       name: 'デロイトトーマツ',
-      industry: 'コンサルティング',
+      industry: 'コンサル',
       statusId: getStatus('1次面接'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 11), 'yyyy-MM-dd'),
@@ -123,7 +123,7 @@ export function createSampleCompanies(
     // 最終面接
     {
       name: '三井物産',
-      industry: '商社（総合）',
+      industry: '商社',
       statusId: getStatus('最終面接'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 10), 'yyyy-MM-dd'),
@@ -131,7 +131,7 @@ export function createSampleCompanies(
     },
     {
       name: '伊藤忠商事',
-      industry: '商社（総合）',
+      industry: '商社',
       statusId: getStatus('最終面接'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 13), 'yyyy-MM-dd'),
@@ -148,7 +148,7 @@ export function createSampleCompanies(
     },
     {
       name: '三菱商事',
-      industry: '商社（総合）',
+      industry: '商社',
       statusId: getStatus('インターン'),
       selectionType: 'intern' as SelectionType,
       nextActionDate: format(addDays(now, 11), 'yyyy-MM-dd'),
@@ -163,20 +163,20 @@ export function createSampleCompanies(
     },
     {
       name: '東京海上日動',
-      industry: '金融（保険）',
+      industry: '金融',
       statusId: getStatus('内定'),
       selectionType: 'main' as SelectionType,
     },
     // お見送り
     {
       name: 'キーエンス',
-      industry: 'メーカー（電機・電子）',
+      industry: 'メーカー',
       statusId: getStatus('お見送り'),
       selectionType: 'main' as SelectionType,
     },
     {
       name: '三井住友銀行',
-      industry: '金融（銀行）',
+      industry: '金融',
       statusId: getStatus('お見送り'),
       selectionType: 'main' as SelectionType,
     },
