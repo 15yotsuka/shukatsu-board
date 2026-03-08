@@ -78,7 +78,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
         </div>
 
         {/* Tab content */}
-        <div className="overflow-y-auto flex-1 p-4">
+        <div className="h-[400px] overflow-y-auto p-4">
           {activeTab === 'status' && <StatusTab onClose={onClose} />}
           {activeTab === 'display' && <DisplayTab />}
           {activeTab === 'notification' && <NotificationTab />}
@@ -517,7 +517,7 @@ function Toggle({
   return (
     <button
       onClick={() => !disabled && onChange(!value)}
-      className={`relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none ${
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none ${
         disabled
           ? 'opacity-40 cursor-not-allowed'
           : 'ios-tap'
@@ -526,8 +526,8 @@ function Toggle({
       role="switch"
     >
       <span
-        className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 ${
-          value ? 'translate-x-[22px]' : 'translate-x-0.5'
+        className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          value ? 'translate-x-[22px]' : 'translate-x-[3px]'
         }`}
       />
     </button>
