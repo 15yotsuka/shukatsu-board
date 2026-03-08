@@ -527,7 +527,7 @@ function Toggle({
     >
       <span
         className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 ${
-          value ? 'translate-x-6' : 'translate-x-0.5'
+          value ? 'translate-x-[22px]' : 'translate-x-0.5'
         }`}
       />
     </button>
