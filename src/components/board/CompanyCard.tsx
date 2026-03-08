@@ -116,8 +116,8 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
             (1000 * 60 * 60 * 24)
         );
         const badgeClass = daysUntil <= 3
-          ? 'bg-orange-100 text-orange-700'
-          : 'bg-gray-100 text-gray-600';
+          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+          : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400';
         const p = companyDeadline.deadline.split('-');
         const mmdd = p[1] && p[2] ? `${parseInt(p[1])}/${parseInt(p[2])}` : companyDeadline.deadline;
         return (

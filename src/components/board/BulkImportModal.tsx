@@ -114,7 +114,7 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                     <button
                       type="button"
                       onClick={() => removeRow(row.id)}
-                      className="w-7 h-7 flex items-center justify-center text-[var(--color-danger)] ios-tap flex-none"
+                      className="w-9 h-9 flex items-center justify-center text-[var(--color-danger)] ios-tap flex-none"
                     >
                       ×
                     </button>

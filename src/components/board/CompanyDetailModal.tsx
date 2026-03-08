@@ -217,7 +217,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             </div>
             <button
               onClick={onClose}
-              className="flex-none w-8 h-8 flex items-center justify-center text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full ios-tap text-[16px]"
+              className="flex-none w-10 h-10 flex items-center justify-center text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full ios-tap text-[16px]"
               aria-label="閉じる"
             >
               ✕
@@ -339,21 +339,34 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           {activeTab === 0 && (
             <div className="p-4 space-y-5">
 
+              {/* タグ */}
+              <div className="px-1">
+                <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">タグ</p>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(TAG_CONFIG) as [Tag, typeof TAG_CONFIG[Tag]][]).map(([key, config]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleTag(key)}
+                      className={`px-3 py-1 rounded-full text-[13px] font-semibold transition-all ios-tap ${
+                        tags.includes(key)
+                          ? config.className + ' ring-2 ring-current'
+                          : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                      }`}
+                    >
+                      {config.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* 面接予定 */}
               <div>
-                <div className="flex items-center justify-between mb-2 px-1">
+                <div className="mb-2 px-1">
                   <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">面接予定</h3>
-                  <button
-                    onClick={() => setShowInterviewForm(true)}
-                    className="text-[15px] text-[var(--color-primary)] font-medium ios-tap min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  >
-                    + 追加
-                  </button>
                 </div>
-                {companyInterviews.length === 0 ? (
-                  <p className="text-[14px] text-[var(--color-text-secondary)] text-center py-3">面接予定はありません</p>
-                ) : (
-                  <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                {companyInterviews.length > 0 && (
+                  <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5 mb-2">
                     {companyInterviews.map((interview) => (
                       <div key={interview.id} className="px-4 py-3 flex items-center justify-between">
                         <div>
@@ -381,6 +394,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     ))}
                   </div>
                 )}
+                <button
+                  onClick={() => setShowInterviewForm(true)}
+                  className="w-full py-3 border-2 border-dashed border-[var(--color-primary)]/40 rounded-xl text-[var(--color-primary)] font-medium text-[14px] hover:bg-[var(--color-primary-light)] transition-colors flex items-center justify-center gap-2 ios-tap"
+                >
+                  <span className="text-lg">+</span>
+                  面接予定を追加
+                </button>
               </div>
 
               {/* 選考ステップ */}
@@ -469,7 +489,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                             {action.time && ` ${action.time}`}
                           </span>
                         </div>
-                        <button onClick={() => deleteScheduledAction(action.id)} className="w-9 h-9 flex items-center justify-center text-[var(--color-danger)] ios-tap">
+                        <button onClick={() => deleteScheduledAction(action.id)} className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap">
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       </div>
@@ -478,26 +498,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 )}
               </div>
 
-              {/* タグ */}
-              <div className="px-1">
-                <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-2">タグ</p>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.entries(TAG_CONFIG) as [Tag, typeof TAG_CONFIG[Tag]][]).map(([key, config]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleTag(key)}
-                      className={`px-3 py-1 rounded-full text-[13px] font-semibold transition-all ios-tap ${
-                        tags.includes(key)
-                          ? config.className + ' ring-2 ring-current'
-                          : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-                      }`}
-                    >
-                      {config.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
