@@ -48,7 +48,7 @@ export default function CalendarPage() {
   const toFilterKind = (type: string | undefined): FilterKind => {
     if (type === 'es') return 'es';
     if (type === 'webtest') return 'webtest';
-    if (type === 'final') return 'final';
+    if (type === 'final') return 'interview';
     if (type === 'interview') return 'interview';
     return 'other';
   };

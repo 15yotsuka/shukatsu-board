@@ -2,13 +2,12 @@
 
 import { ACTION_TYPE_COLORS } from '@/lib/types';
 
-export type FilterKind = 'interview' | 'es' | 'webtest' | 'final' | 'deadline' | 'other';
+export type FilterKind = 'interview' | 'es' | 'webtest' | 'deadline' | 'other';
 
 export const FILTER_LABELS: Record<FilterKind, string> = {
   interview: '面接',
   es: 'ES提出',
   webtest: 'Webテスト',
-  final: '最終面接',
   deadline: '締切',
   other: 'その他',
 };
@@ -17,12 +16,11 @@ export const FILTER_COLORS: Record<FilterKind, string> = {
   interview: ACTION_TYPE_COLORS.interview,
   es: ACTION_TYPE_COLORS.es,
   webtest: ACTION_TYPE_COLORS.webtest,
-  final: ACTION_TYPE_COLORS.final,
   deadline: '#FF3B30',
   other: ACTION_TYPE_COLORS.other,
 };
 
-export const ALL_FILTERS: FilterKind[] = ['interview', 'es', 'webtest', 'final', 'deadline', 'other'];
+export const ALL_FILTERS: FilterKind[] = ['interview', 'es', 'webtest', 'deadline', 'other'];
 
 interface FilterChipsProps {
   active: Set<FilterKind>;
