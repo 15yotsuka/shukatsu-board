@@ -4,6 +4,8 @@ import React, { useState, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
+import type { DisplaySettings } from '@/store/useAppStore';
+import { useShallow } from 'zustand/shallow';
 import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { BulkImportModal } from '@/components/board/BulkImportModal';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
@@ -82,6 +84,7 @@ interface TaskCardProps {
   milestones: string[];
   milestoneIdx: number;
   interviews: Interview[];
+  displaySettings: DisplaySettings;
   onOpenDetail: () => void;
   onAdvance: (e: React.MouseEvent) => void;
 }
@@ -94,6 +97,7 @@ function TaskCard({
   milestones,
   milestoneIdx,
   interviews,
+  displaySettings,
   onOpenDetail,
   onAdvance,
 }: TaskCardProps) {
@@ -143,7 +147,7 @@ function TaskCard({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{company.name}</p>
-            {company.industry && (
+            {displaySettings.showIndustry && company.industry && (
               <p className="text-[11px] text-zinc-400 truncate">{company.industry}</p>
             )}
           </div>
@@ -188,7 +192,7 @@ function TaskCard({
                 {nextStepLabel}
               </span>
             )}
-            {upcomingInterview && (() => {
+            {displaySettings.showNextInterview && upcomingInterview && (() => {
               const dt = new Date(upcomingInterview.datetime);
               const dateStr = format(dt, 'M/d(E)', { locale: ja });
               const startTime = format(dt, 'HH:mm');
@@ -223,6 +227,7 @@ function TasksContent() {
   const updateCompany = useAppStore((s) => s.updateCompany);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
+  const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -458,6 +463,7 @@ function TasksContent() {
                       milestones={ms}
                       milestoneIdx={msIdx}
                       interviews={interviews}
+                      displaySettings={displaySettings}
                       onOpenDetail={() => setSelectedCompany(c)}
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
                     />

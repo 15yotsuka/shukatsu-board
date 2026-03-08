@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
+import { useShallow } from 'zustand/shallow';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
@@ -26,6 +27,7 @@ export default function Home() {
   const statusColumns = useAppStore((s) => s.statusColumns);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const interviews = useAppStore((s) => s.interviews);
+  const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
 
   const router = useRouter();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -136,7 +138,7 @@ export default function Home() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{item.companyName}</p>
-            {item.tags && item.tags.map((tag) => TAG_CONFIG[tag] && (
+            {displaySettings.showTag && item.tags && item.tags.map((tag) => TAG_CONFIG[tag] && (
               <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-none ${TAG_CONFIG[tag].className}`}>
                 {TAG_CONFIG[tag].label}
               </span>
