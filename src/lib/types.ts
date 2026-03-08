@@ -132,7 +132,7 @@ export const ACTION_TYPE_COLORS: Record<ActionType, string> = {
   es: '#007AFF',
   webtest: '#9B59B6',
   interview: '#FF9500',
-  final: '#FF3B30',
+  final: '#FF9500',
   other: '#8E8E93',
 };
 
