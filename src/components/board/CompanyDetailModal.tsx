@@ -16,6 +16,7 @@ import {
   type ActionType,
   type SelectionType,
 } from '@/lib/types';
+import { INDUSTRIES } from '@/lib/industries';
 import { DEFAULT_MILESTONES, getMilestoneIndex } from '@/lib/progressMilestones';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -507,7 +508,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 <div className="divide-y divide-[var(--color-border)]">
                   <div className="px-4 py-3">
                     <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">業界</label>
-                    <input type="text" value={industry} onChange={(e) => setIndustry(e.target.value)} className="ios-input" placeholder="例: IT・通信" />
+                    <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="ios-input">
+                      <option value="">業界を選択</option>
+                      {INDUSTRIES.map((ind) => (
+                        <option key={ind} value={ind}>{ind}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="px-4 py-3">
                     <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">職種</label>

@@ -18,6 +18,7 @@ import { ja } from 'date-fns/locale';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_COLORS } from '@/lib/types';
+import { useDeadlines } from '@/contexts/DeadlineContext';
 
 const DEADLINE_DOT_COLOR = '#FF3B30';
 
@@ -33,6 +34,7 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const companies = useAppStore((s) => s.companies);
+  const { deadlines } = useDeadlines();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -59,7 +61,8 @@ export function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps
 
   const hasDeadlineOnDate = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return companies.some((c) => c.nextDeadline === dateStr || c.nextActionDate === dateStr);
+    return companies.some((c) => c.nextDeadline === dateStr || c.nextActionDate === dateStr) ||
+      deadlines.some((d) => d.deadline === dateStr);
   };
 
   return (

@@ -9,6 +9,7 @@ import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, type ActionType } from '@/lib/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { useDeadlines } from '@/contexts/DeadlineContext';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -19,6 +20,7 @@ export default function CalendarPage() {
   const companies = useAppStore((s) => s.companies);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
+  const { deadlines } = useDeadlines();
 
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
   const selectedDeadlineCompanies = selectedDate
@@ -26,6 +28,9 @@ export default function CalendarPage() {
     : [];
   const selectedActionCompanies = selectedDate
     ? companies.filter((c) => c.nextActionDate === selectedDateStr && c.nextActionDate !== c.nextDeadline)
+    : [];
+  const selectedCsvDeadlines = selectedDate
+    ? deadlines.filter((d) => d.deadline === selectedDateStr)
     : [];
 
   const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
@@ -165,7 +170,28 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && selectedDeadlineCompanies.length === 0 && selectedActionCompanies.length === 0 && (
+      {selectedDate && selectedCsvDeadlines.length > 0 && (
+        <div className="bg-card rounded-xl overflow-hidden">
+          <div className="px-4 pt-4 pb-2">
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+              {format(selectedDate, 'M月d日（E）', { locale: ja })}の締切（一覧）
+            </h3>
+          </div>
+          <div className="divide-y divide-[var(--color-border)]">
+            {selectedCsvDeadlines.map((d, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: '#FF3B30' }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-medium text-[var(--color-text)] truncate">{d.company_name}</p>
+                  <p className="text-[13px] text-[var(--color-text-secondary)]">{d.type}{d.label ? ` · ${d.label}` : ''}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedDate && selectedInterviews.length === 0 && selectedActions.length === 0 && selectedDeadlineCompanies.length === 0 && selectedActionCompanies.length === 0 && selectedCsvDeadlines.length === 0 && (
         <div className="bg-card rounded-xl p-4">
           <p className="text-[14px] text-[var(--color-text-secondary)] text-center">
             {format(selectedDate, 'M月d日', { locale: ja })}の予定はありません
