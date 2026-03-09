@@ -1,14 +1,17 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useShallow } from 'zustand/shallow';
 import { useAppStore } from '@/store/useAppStore';
 import { isAfter, isBefore, startOfDay, format, parseISO, isValid } from 'date-fns';
-import type { Company } from '@/lib/types';
+import type { Company, StatusColumn as StatusColumnType } from '@/lib/types';
 import { TAG_CONFIG } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
+import { getStageColor } from '@/lib/stageColors';
+import { INDUSTRIES } from '@/lib/industries';
+import { useToast } from '@/lib/useToast';
 
 interface CompanyCardProps {
   company: Company;
@@ -18,7 +21,14 @@ interface CompanyCardProps {
 export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const interviews = useAppStore((s) => s.interviews);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
+  const statusColumns = useAppStore((s) => s.statusColumns);
+  const moveCompany = useAppStore((s) => s.moveCompany);
+  const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
+  const updateCompany = useAppStore((s) => s.updateCompany);
+  const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const { deadlines } = useDeadlines();
+  const showToast = useToast((s) => s.show);
+
   const {
     attributes,
     listeners,
@@ -28,21 +38,54 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     isDragging,
   } = useSortable({ id: company.id, data: { type: 'company', company } });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  // ---- State ----
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showDismissConfirm, setShowDismissConfirm] = useState(false);
+  const [showNextStagePopup, setShowNextStagePopup] = useState(false);
+  const [nextStageDateTime, setNextStageDateTime] = useState('');
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
+  const [showInlineDateInput, setShowInlineDateInput] = useState(false);
+  const [inlineDeadlineValue, setInlineDeadlineValue] = useState('');
 
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Quick edit state
+  const [editName, setEditName] = useState(company.name);
+  const [editStatusId, setEditStatusId] = useState(company.statusId);
+  const [editDeadline, setEditDeadline] = useState(company.nextDeadline || '');
+  const [editIndustry, setEditIndustry] = useState(company.industry || '');
+
+  // ---- Refs for gesture detection ----
+  const pointerStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const didMoveRef = useRef(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
 
-  const updatedDate = new Date(company.updatedAt).toLocaleDateString('ja-JP', {
-    month: 'short',
-    day: 'numeric',
-  });
+  // Touch swipe refs
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchDirectionRef = useRef<'none' | 'horizontal' | 'vertical'>('none');
 
-  const today = startOfDay(new Date());
-  const todayStr = format(today, 'yyyy-MM-dd');
+  // ---- Derived data ----
+  const sortedStatuses = useMemo(() => {
+    return [...statusColumns].sort((a, b) => a.order - b.order);
+  }, [statusColumns]);
+
+  const currentStatus = useMemo(() => {
+    return statusColumns.find((s) => s.id === company.statusId);
+  }, [statusColumns, company.statusId]);
+
+  const statusName = currentStatus?.name || '';
+  const stageColor = getStageColor(statusName);
+
+  const nextStatus = useMemo((): StatusColumnType | null => {
+    if (!currentStatus) return null;
+    const next = sortedStatuses.find((s) => s.order === currentStatus.order + 1);
+    return next || null;
+  }, [currentStatus, sortedStatuses]);
+
+  const isLastStage = !nextStatus || statusName === '見送り' || statusName === '内定';
+
+  const miokuri = useMemo(() => {
+    return sortedStatuses.find((s) => s.name === '見送り');
+  }, [sortedStatuses]);
 
   const companyDeadline = useMemo(() => {
     const _today = startOfDay(new Date());
@@ -53,79 +96,508 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       })
       .sort((a, b) => a.deadline.localeCompare(b.deadline))[0] || null;
   }, [deadlines, company.name]);
-  const nextInterview = interviews
-    .filter(
-      (i) =>
-        i.companyId === company.id &&
-        (isAfter(new Date(i.datetime), today) ||
-          format(new Date(i.datetime), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-    )
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0];
+
+  const nextInterview = useMemo(() => {
+    const _today = startOfDay(new Date());
+    const _todayStr = format(_today, 'yyyy-MM-dd');
+    return interviews
+      .filter(
+        (i) =>
+          i.companyId === company.id &&
+          (isAfter(new Date(i.datetime), _today) ||
+            format(new Date(i.datetime), 'yyyy-MM-dd') === _todayStr)
+      )
+      .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0] || null;
+  }, [interviews, company.id]);
+
+  const updatedDate = new Date(company.updatedAt).toLocaleDateString('ja-JP', {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  // Format nextDeadline as M/D
+  const deadlineDisplay = useMemo(() => {
+    if (company.nextDeadline) {
+      const parts = company.nextDeadline.split('-');
+      if (parts[1] && parts[2]) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+      return company.nextDeadline;
+    }
+    return null;
+  }, [company.nextDeadline]);
+
+  // CSV deadline display
+  const csvDeadlineDisplay = useMemo(() => {
+    if (!companyDeadline) return null;
+    const p = companyDeadline.deadline.split('-');
+    const mmdd = p[1] && p[2] ? `${parseInt(p[1])}/${parseInt(p[2])}` : companyDeadline.deadline;
+    return { mmdd, type: companyDeadline.type };
+  }, [companyDeadline]);
+
+  // ---- Gesture handlers: Pointer (tap / long press) ----
+  const clearLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+    didMoveRef.current = false;
+    longPressFiredRef.current = false;
+
+    longPressTimerRef.current = setTimeout(() => {
+      if (!didMoveRef.current) {
+        longPressFiredRef.current = true;
+        // Open quick edit
+        setEditName(company.name);
+        setEditStatusId(company.statusId);
+        setEditDeadline(company.nextDeadline || '');
+        setEditIndustry(company.industry || '');
+        setShowQuickEdit(true);
+      }
+    }, 500);
+  }, [company.name, company.statusId, company.nextDeadline, company.industry]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (pointerStartRef.current) {
+      const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+      const dy = Math.abs(e.clientY - pointerStartRef.current.y);
+      if (dx > 6 || dy > 6) {
+        didMoveRef.current = true;
+        clearLongPress();
+      }
+    }
+  }, [clearLongPress]);
+
+  const handleClick = useCallback(() => {
+    clearLongPress();
+    if (!didMoveRef.current && !longPressFiredRef.current && swipeOffset === 0) {
+      onTap(company);
+    }
+  }, [clearLongPress, onTap, company, swipeOffset]);
+
+  // ---- Gesture handlers: Touch (swipe) ----
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchDirectionRef.current = 'none';
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+    const absDx = Math.abs(dx);
+
+    // Determine direction lock
+    if (touchDirectionRef.current === 'none' && (absDx > 10 || dy > 10)) {
+      touchDirectionRef.current = absDx > dy ? 'horizontal' : 'vertical';
+    }
+
+    if (touchDirectionRef.current === 'horizontal' && dx < 0) {
+      // Left swipe only
+      setSwipeOffset(Math.min(Math.abs(dx), 200));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (swipeOffset > 100 && miokuri) {
+      setShowDismissConfirm(true);
+    }
+    setSwipeOffset(0);
+    touchStartRef.current = null;
+    touchDirectionRef.current = 'none';
+  }, [swipeOffset, miokuri]);
+
+  // ---- Color strip tap ----
+  const handleColorStripClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleAwaitingResult(company.id);
+  }, [toggleAwaitingResult, company.id]);
+
+  // ---- Next stage button ----
+  const handleNextStageClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isLastStage || !nextStatus) return;
+    setNextStageDateTime('');
+    setShowNextStagePopup(true);
+  }, [isLastStage, nextStatus]);
+
+  const advanceToNextStage = useCallback((withDate: boolean) => {
+    if (!nextStatus) return;
+    if (company.awaitingResult) {
+      toggleAwaitingResult(company.id);
+    }
+    moveCompany(company.id, nextStatus.id, 0);
+    if (withDate && nextStageDateTime) {
+      // Parse datetime-local value
+      const dt = new Date(nextStageDateTime);
+      const dateStr = format(dt, 'yyyy-MM-dd');
+      const timeStr = format(dt, 'HH:mm');
+      addScheduledAction({
+        companyId: company.id,
+        type: 'other',
+        date: dateStr,
+        time: timeStr,
+        note: nextStatus.name,
+      });
+    }
+    showToast(`『${company.name}』を【${nextStatus.name}】に更新しました。`);
+    setShowNextStagePopup(false);
+  }, [nextStatus, company, nextStageDateTime, moveCompany, toggleAwaitingResult, addScheduledAction, showToast]);
+
+  // ---- Dismiss to 見送り ----
+  const handleDismissConfirm = useCallback(() => {
+    if (!miokuri) return;
+    moveCompany(company.id, miokuri.id, 0);
+    showToast(`『${company.name}』を【見送り】に更新しました。`);
+    setShowDismissConfirm(false);
+  }, [miokuri, moveCompany, company, showToast]);
+
+  // ---- Quick edit save ----
+  const handleQuickEditSave = useCallback(() => {
+    const updates: Partial<Omit<Company, 'id'>> = {};
+    if (editName !== company.name) updates.name = editName;
+    if (editDeadline !== (company.nextDeadline || '')) updates.nextDeadline = editDeadline || undefined;
+    if (editIndustry !== (company.industry || '')) updates.industry = editIndustry || undefined;
+
+    if (Object.keys(updates).length > 0) {
+      updateCompany(company.id, updates);
+    }
+
+    if (editStatusId !== company.statusId) {
+      moveCompany(company.id, editStatusId, 0);
+    }
+
+    showToast(`『${editName}』を更新しました。`);
+    setShowQuickEdit(false);
+  }, [editName, editStatusId, editDeadline, editIndustry, company, updateCompany, moveCompany, showToast]);
+
+  // ---- Inline deadline save ----
+  const handleInlineDeadlineSave = useCallback(() => {
+    if (inlineDeadlineValue) {
+      updateCompany(company.id, { nextDeadline: inlineDeadlineValue });
+    }
+    setShowInlineDateInput(false);
+    setInlineDeadlineValue('');
+  }, [inlineDeadlineValue, updateCompany, company.id]);
+
+  // ---- Compute transform with swipe ----
+  const baseTransform = CSS.Transform.toString(transform);
+  const combinedStyle = {
+    transform: swipeOffset > 0
+      ? `${baseTransform || ''} translateX(-${swipeOffset}px)`
+      : baseTransform || undefined,
+    transition: swipeOffset > 0 ? 'none' : transition,
+  };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onPointerDown={(e) => {
-        pointerStartRef.current = { x: e.clientX, y: e.clientY };
-        didMoveRef.current = false;
-      }}
-      onPointerMove={(e) => {
-        if (pointerStartRef.current) {
-          const dx = Math.abs(e.clientX - pointerStartRef.current.x);
-          const dy = Math.abs(e.clientY - pointerStartRef.current.y);
-          if (dx > 6 || dy > 6) didMoveRef.current = true;
-        }
-      }}
-      onClick={() => {
-        if (!didMoveRef.current) onTap(company);
-      }}
-      className={`bg-card rounded-xl shadow-sm p-3.5 ios-card-hover cursor-grab active:cursor-grabbing touch-manipulation select-none ${isDragging ? 'opacity-50 shadow-lg' : ''
+    <>
+      {/* Main card */}
+      <div
+        ref={setNodeRef}
+        style={combinedStyle}
+        {...attributes}
+        {...listeners}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onClick={handleClick}
+        className={`relative bg-card rounded-xl shadow-sm overflow-hidden cursor-grab active:cursor-grabbing touch-manipulation select-none ${
+          isDragging ? 'opacity-50 shadow-lg' : ''
         }`}
-    >
-      <div className="flex items-start justify-between gap-1.5 mb-0.5">
-        <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">{company.name}</p>
-        {displaySettings.showTag && company.tags && company.tags.length > 0 && TAG_CONFIG[company.tags[0]] && (
-          <span className={`flex-none text-[11px] font-bold px-2 py-0.5 rounded-full ${TAG_CONFIG[company.tags[0]].className}`}>
-            {TAG_CONFIG[company.tags[0]].label}
-          </span>
+      >
+        {/* Swipe background (visible when swiping left) */}
+        {swipeOffset > 0 && (
+          <div className="absolute inset-0 flex items-center justify-end pr-4 bg-red-500 text-white font-semibold rounded-xl z-0">
+            見送り
+          </div>
         )}
+
+        {/* Color strip */}
+        <button
+          onClick={handleColorStripClick}
+          className="absolute left-0 top-0 bottom-0 w-2.5 z-10 rounded-l-xl transition-opacity"
+          style={{
+            backgroundColor: stageColor,
+            opacity: company.awaitingResult ? 0.4 : 1,
+          }}
+          aria-label="結果待ち切り替え"
+        />
+
+        {/* Card content */}
+        <div className="pl-5 pr-3.5 py-3 relative bg-card rounded-xl">
+          {/* Row 1: Name + tag */}
+          <div className="flex items-start justify-between gap-1.5 mb-0.5">
+            <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">
+              {company.name}
+            </p>
+            {displaySettings.showTag && company.tags && company.tags.length > 0 && TAG_CONFIG[company.tags[0]] && (
+              <span className={`flex-none text-[11px] font-bold px-2 py-0.5 rounded-full ${TAG_CONFIG[company.tags[0]].className}`}>
+                {TAG_CONFIG[company.tags[0]].label}
+              </span>
+            )}
+          </div>
+
+          {/* Awaiting result label */}
+          {company.awaitingResult && (
+            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+              結果待ち
+            </span>
+          )}
+
+          {/* Industry */}
+          {displaySettings.showIndustry && company.industry && (
+            <p className="text-[13px] text-[var(--color-text-secondary)] mt-1 truncate">
+              {company.industry}
+            </p>
+          )}
+
+          {/* Next interview */}
+          {displaySettings.showNextInterview && nextInterview && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-[12px] text-[var(--color-primary)]">
+                {format(new Date(nextInterview.datetime), 'M/d HH:mm')} {nextInterview.type}
+              </span>
+            </div>
+          )}
+
+          {/* Updated date */}
+          {displaySettings.showUpdatedDate && (
+            <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{updatedDate}</p>
+          )}
+
+          {/* Deadline display */}
+          {displaySettings.showDeadlineBadge && (
+            <div className="mt-1.5">
+              {/* Company's own nextDeadline */}
+              {deadlineDisplay && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                  {deadlineDisplay} 締切
+                </div>
+              )}
+              {/* CSV deadline (only show if different from nextDeadline) */}
+              {csvDeadlineDisplay && !deadlineDisplay && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                  {csvDeadlineDisplay.mmdd} {csvDeadlineDisplay.type}
+                </div>
+              )}
+              {/* No deadline at all: show add link */}
+              {!deadlineDisplay && !csvDeadlineDisplay && !showInlineDateInput && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowInlineDateInput(true);
+                    setInlineDeadlineValue('');
+                  }}
+                  className="text-xs text-blue-500 dark:text-blue-400 hover:underline"
+                >
+                  ＋ 締切日を追加
+                </button>
+              )}
+              {/* Inline date input */}
+              {showInlineDateInput && (
+                <div
+                  className="flex items-center gap-1.5 mt-1"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="date"
+                    value={inlineDeadlineValue}
+                    onChange={(e) => setInlineDeadlineValue(e.target.value)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)]"
+                  />
+                  <button
+                    onClick={handleInlineDeadlineSave}
+                    className="text-xs px-2 py-1 rounded-lg bg-[var(--color-primary)] text-white font-semibold min-h-[28px]"
+                  >
+                    保存
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowInlineDateInput(false);
+                    }}
+                    className="text-xs text-[var(--color-text-secondary)] min-h-[28px]"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Next stage button */}
+          {!isLastStage && nextStatus && (
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={handleNextStageClick}
+                className="text-[12px] font-semibold text-[var(--color-primary)] min-h-[44px] px-2 flex items-center"
+              >
+                次の段階へ →
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      {displaySettings.showIndustry && company.industry && (
-        <p className="text-[13px] text-[var(--color-text-secondary)] mt-1 truncate">{company.industry}</p>
-      )}
-      {displaySettings.showNextInterview && nextInterview && (
-        <div className="flex items-center gap-1 mt-1.5">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="text-[12px] text-[var(--color-primary)]">
-            {format(new Date(nextInterview.datetime), 'M/d HH:mm')} {nextInterview.type}
-          </span>
+
+      {/* ---- Dismiss confirmation overlay ---- */}
+      {showDismissConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowDismissConfirm(false)}
+        >
+          <div
+            className="bg-card rounded-2xl p-6 mx-6 max-w-sm w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[16px] font-semibold text-[var(--color-text)] text-center mb-4">
+              見送りにしますか？
+            </p>
+            <p className="text-[14px] text-[var(--color-text-secondary)] text-center mb-6">
+              「{company.name}」を見送りに移動します。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDismissConfirm(false)}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-border)] text-[var(--color-text)] min-h-[44px]"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDismissConfirm}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-red-500 text-white min-h-[44px]"
+              >
+                見送り
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      {displaySettings.showUpdatedDate && (
-        <p className="text-[12px] text-[var(--color-text-secondary)] mt-1">{updatedDate}</p>
-      )}
-      {displaySettings.showDeadlineBadge && companyDeadline && (() => {
-        const daysUntil = Math.round(
-          (new Date(companyDeadline.deadline).getTime() -
-            new Date(todayStr).getTime()) /
-            (1000 * 60 * 60 * 24)
-        );
-        const badgeClass = daysUntil <= 3
-          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-          : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400';
-        const p = companyDeadline.deadline.split('-');
-        const mmdd = p[1] && p[2] ? `${parseInt(p[1])}/${parseInt(p[2])}` : companyDeadline.deadline;
-        return (
-          <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}`}>
-            📅 {mmdd} {companyDeadline.type}
+
+      {/* ---- Next stage date-time popup ---- */}
+      {showNextStagePopup && nextStatus && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowNextStagePopup(false)}
+        >
+          <div
+            className="bg-card rounded-2xl p-6 mx-6 max-w-sm w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[16px] font-semibold text-[var(--color-text)] text-center mb-2">
+              {nextStatus.name}
+            </p>
+            <p className="text-[13px] text-[var(--color-text-secondary)] text-center mb-4">
+              次の選考の日時を設定してください
+            </p>
+            <input
+              type="datetime-local"
+              value={nextStageDateTime}
+              onChange={(e) => setNextStageDateTime(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px] mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => advanceToNextStage(false)}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-border)] text-[var(--color-text)] min-h-[44px]"
+              >
+                スキップ
+              </button>
+              <button
+                onClick={() => advanceToNextStage(true)}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-primary)] text-white min-h-[44px]"
+              >
+                設定
+              </button>
+            </div>
           </div>
-        );
-      })()}
-    </div>
+        </div>
+      )}
+
+      {/* ---- Quick edit modal ---- */}
+      {showQuickEdit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowQuickEdit(false)}
+        >
+          <div
+            className="bg-card rounded-2xl p-6 mx-6 max-w-sm w-full shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[16px] font-semibold text-[var(--color-text)] text-center">
+              クイック編集
+            </p>
+
+            {/* 企業名 */}
+            <div>
+              <label className="text-[13px] text-[var(--color-text-secondary)] mb-1 block">企業名</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
+              />
+            </div>
+
+            {/* 選考段階 */}
+            <div>
+              <label className="text-[13px] text-[var(--color-text-secondary)] mb-1 block">選考段階</label>
+              <select
+                value={editStatusId}
+                onChange={(e) => setEditStatusId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
+              >
+                {sortedStatuses.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 締切日 */}
+            <div>
+              <label className="text-[13px] text-[var(--color-text-secondary)] mb-1 block">締切日</label>
+              <input
+                type="date"
+                value={editDeadline}
+                onChange={(e) => setEditDeadline(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
+              />
+            </div>
+
+            {/* 業界 */}
+            <div>
+              <label className="text-[13px] text-[var(--color-text-secondary)] mb-1 block">業界</label>
+              <select
+                value={editIndustry}
+                onChange={(e) => setEditIndustry(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
+              >
+                <option value="">未設定</option>
+                {INDUSTRIES.map((ind) => (
+                  <option key={ind} value={ind}>{ind}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 保存 */}
+            <button
+              onClick={handleQuickEditSave}
+              className="w-full py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-primary)] text-white min-h-[44px]"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -21,7 +21,7 @@ import { ACTION_TYPE_COLORS } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
 
-const DEADLINE_DOT_COLOR = '#FF3B30';
+const DEADLINE_DOT_COLOR = '#9CA3AF';
 
 interface MonthCalendarProps {
   onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
@@ -127,7 +127,7 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters }: Mon
               deadlines.some((dd) => dd.deadline === dateStr));
           if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
 
-          if (filters.has('interview') && dateInterviews.length > 0) dots.push('#FF9500');
+          if (filters.has('interview') && dateInterviews.length > 0) dots.push('#F97316');
 
           const filteredActions = dateActions.filter((a) => filters.has(toFilterKind(a.type)));
           if (filteredActions.length > 0) dots.push(ACTION_TYPE_COLORS[filteredActions[0].type]);

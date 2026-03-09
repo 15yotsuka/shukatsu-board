@@ -9,7 +9,6 @@ import {
   isValid,
   isToday,
   isBefore,
-  differenceInCalendarDays,
   startOfDay,
   endOfWeek,
   endOfMonth,
@@ -171,7 +170,7 @@ export default function DeadlineTab() {
         <select
           value={selectedIndustry}
           onChange={(e) => setSelectedIndustry(e.target.value)}
-          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-card text-[var(--color-text)]"
         >
           <option value="all">すべての業界</option>
           {industries.map((ind) => (
@@ -184,7 +183,7 @@ export default function DeadlineTab() {
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
-          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-card text-[var(--color-text)]"
         >
           <option value="deadline-asc">締切日（近い順）</option>
           <option value="deadline-desc">締切日（遠い順）</option>
@@ -211,23 +210,22 @@ export default function DeadlineTab() {
               </h3>
               <div className="space-y-1">
                 {section.items.map((entry, idx) => {
-                  const colorClass = getDeadlineColor(entry.deadline);
                   return (
                     <div
                       key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                      className="flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <div className="font-medium text-[var(--color-text)] truncate">
                           {entry.company_name}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <div className="text-xs text-[var(--color-text-secondary)] truncate">
                           {entry.label}
                           {entry.job_type ? ` / ${entry.job_type}` : ''}
                           {entry.industry ? ` • ${entry.industry}` : ''}
                         </div>
                       </div>
-                      <div className={`text-sm font-mono whitespace-nowrap ml-3 ${colorClass}`}>
+                      <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
                         {entry.deadline}
                       </div>
                     </div>
@@ -242,21 +240,3 @@ export default function DeadlineTab() {
   );
 }
 
-function getDeadlineColor(deadline: string): string {
-  const date = parseISO(deadline);
-  if (!isValid(date)) return 'text-gray-500';
-
-  const today = startOfDay(new Date());
-  const d = startOfDay(date);
-
-  if (isBefore(d, today)) {
-    return 'text-red-500';
-  }
-
-  const daysLeft = differenceInCalendarDays(d, today);
-  if (daysLeft <= 3) {
-    return 'text-orange-500';
-  }
-
-  return 'text-gray-700 dark:text-gray-300';
-}

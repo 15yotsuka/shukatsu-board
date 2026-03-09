@@ -130,10 +130,10 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
 };
 
 export const ACTION_TYPE_COLORS: Record<ActionType, string> = {
-  es: '#007AFF',
-  webtest: '#9B59B6',
-  interview: '#FF9500',
-  final: '#FF9500',
+  es: '#8B5CF6',
+  webtest: '#3B82F6',
+  interview: '#F97316',
+  final: '#F97316',
   other: '#8E8E93',
 };
 
