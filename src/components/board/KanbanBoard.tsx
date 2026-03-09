@@ -18,12 +18,16 @@ import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
 import { StatusColumn } from './StatusColumn';
 import { CompanyDetailModal } from './CompanyDetailModal';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 
 export function KanbanBoard() {
   const statusColumns = useAppStore((s) => s.statusColumns);
   const companies = useAppStore((s) => s.companies);
   const moveCompany = useAppStore((s) => s.moveCompany);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
+  const gradYear = useAppStore((s) => s.gradYear);
 
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -208,6 +212,15 @@ export function KanbanBoard() {
           />
         )}
       </AnimatePresence>
+      {gradYear !== null && !tutorialFlags.companies && (
+        <TutorialModal
+          steps={[
+            { title: 'カードの操作方法', body: 'タップ → 詳細を開く\n長押し → クイック編集\n左スワイプ → 見送り\n色帯タップ → 結果待ちON/OFF' },
+            { title: '「次の段階へ →」', body: 'カード下部のボタンで\n次の選考段階に進めます\n日時を設定するとカレンダーにも反映' },
+          ]}
+          onComplete={() => markTutorialSeen('companies')}
+        />
+      )}
     </>
   );
 }

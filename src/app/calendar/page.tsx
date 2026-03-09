@@ -5,6 +5,7 @@ import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { FilterChips, ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, type ActionType } from '@/lib/types';
@@ -22,6 +23,9 @@ export default function CalendarPage() {
   const companies = useAppStore((s) => s.companies);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
+  const gradYear = useAppStore((s) => s.gradYear);
   const { deadlines } = useDeadlines();
 
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
@@ -261,6 +265,13 @@ export default function CalendarPage() {
         <InterviewForm
           companyId={addInterviewCompanyId}
           onClose={() => { setShowAddInterview(false); setAddInterviewCompanyId(''); }}
+        />
+      )}
+
+      {gradYear !== null && !tutorialFlags.calendar && (
+        <TutorialModal
+          steps={[{ title: 'カレンダーの使い方', body: '日付をタップすると\nその日の面接・アクションが表示されます\nフィルターで種別ごとに絞り込めます' }]}
+          onComplete={() => markTutorialSeen('calendar')}
         />
       )}
     </div>

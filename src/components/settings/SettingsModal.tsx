@@ -20,6 +20,7 @@ import { useShallow } from 'zustand/shallow';
 import { useAppStore } from '@/store/useAppStore';
 import type { DisplaySettings, NotificationSettings } from '@/store/useAppStore';
 import { BulkImportModal } from '@/components/board/BulkImportModal';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import type { StatusColumn } from '@/lib/types';
 import { GRAD_YEARS, GRAD_YEAR_LABELS, type GradYear } from '@/lib/gradYears';
 
@@ -38,6 +39,9 @@ const TAB_LABELS: { id: Tab; label: string }[] = [
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('status');
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
+  const gradYear = useAppStore((s) => s.gradYear);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
@@ -86,6 +90,13 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           {activeTab === 'data' && <DataTab onClose={onClose} />}
         </div>
       </div>
+
+      {gradYear !== null && !tutorialFlags.settings && (
+        <TutorialModal
+          steps={[{ title: 'データを守りましょう', body: 'データタブからバックアップ（JSON）を\nエクスポートしておくと安心です\n機種変更やブラウザ変更時に復元できます' }]}
+          onComplete={() => markTutorialSeen('settings')}
+        />
+      )}
     </div>
   );
 }
@@ -368,6 +379,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
   const statusColumns = useAppStore((s) => s.statusColumns);
   const loadBackup = useAppStore((s) => s.loadBackup);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
+  const resetTutorials = useAppStore((s) => s.resetTutorials);
 
   const [showBulkImport, setShowBulkImport] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
@@ -513,6 +525,25 @@ function DataTab({ onClose }: { onClose: () => void }) {
           <div>
             <div className="text-[15px] text-[var(--color-danger)]">全企業を削除</div>
             <div className="text-[12px] text-[var(--color-text-secondary)]">登録済み {companies.length}社をすべて削除</div>
+          </div>
+        </button>
+      </div>
+
+      {/* チュートリアル */}
+      <div className="bg-card rounded-xl overflow-hidden">
+        <button
+          onClick={() => {
+            resetTutorials();
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-primary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <div>
+            <div className="text-[15px] text-[var(--color-text)]">チュートリアルを再表示</div>
+            <div className="text-[12px] text-[var(--color-text-secondary)]">各画面の使い方ガイドをリセット</div>
           </div>
         </button>
       </div>

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
 import { InterviewForm } from '@/components/calendar/InterviewForm';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { fireConfetti } from '@/lib/confetti';
 import { useToast } from '@/lib/useToast';
 import {
@@ -56,6 +57,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const updateCompany = useAppStore((s) => s.updateCompany);
   const deleteCompany = useAppStore((s) => s.deleteCompany);
   const statusColumns = useAppStore((s) => s.statusColumns);
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
+  const gradYear = useAppStore((s) => s.gradYear);
   const interviews = useAppStore((s) => s.interviews);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const allScheduledActions = useAppStore((s) => s.scheduledActions);
@@ -464,6 +468,15 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           </div>
         </div>
       </motion.div>
+
+      {gradYear !== null && !tutorialFlags.detail && (
+        <TutorialModal
+          steps={[
+            { title: '企業詳細の使い方', body: '選考詳細タブで面接予定やアクションを管理\nメモタブでES・面接ログを記録\nマイページタブでログイン情報を保存' },
+          ]}
+          onComplete={() => markTutorialSeen('detail')}
+        />
+      )}
 
       {/* 削除確認ダイアログ */}
       {showDeleteConfirm && (

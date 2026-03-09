@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/shallow';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { ACTION_TYPE_LABELS, TAG_CONFIG } from '@/lib/types';
 import type { Company, Tag } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
@@ -40,6 +41,9 @@ export default function Home() {
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const interviews = useAppStore((s) => s.interviews);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
+  const gradYear = useAppStore((s) => s.gradYear);
 
   const router = useRouter();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -321,6 +325,13 @@ export default function Home() {
             ))}
           </div>
         </div>
+      )}
+
+      {gradYear !== null && !tutorialFlags.home && (
+        <TutorialModal
+          steps={[{ title: '色は選考段階を表します', body: '🟣 ES　🔵 Webテスト　🟠 面接　🟢 内定\nカードの左端の色帯で一目で分かります' }]}
+          onComplete={() => markTutorialSeen('home')}
+        />
       )}
     </div>
   );
