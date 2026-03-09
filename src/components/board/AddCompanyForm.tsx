@@ -4,8 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
-import { TAG_CONFIG, SELECTION_TYPE_LABELS, type Tag, type SelectionType } from '@/lib/types';
-import { DEFAULT_MILESTONES } from '@/lib/progressMilestones';
+import { TAG_CONFIG, type Tag } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 
@@ -25,10 +24,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [deadline, setDeadline] = useState('');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [tags, setTags] = useState<Tag[]>([]);
-  const [selectionType, setSelectionType] = useState<SelectionType>('main');
-  const [customMilestones, setCustomMilestones] = useState<string[] | undefined>(undefined);
-  const [editingMilestones, setEditingMilestones] = useState(false);
-  const [newStepText, setNewStepText] = useState('');
   const [memo, setMemo] = useState('');
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
@@ -47,10 +42,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       .slice(0, 5);
   }, [name, deadlines]);
 
-  const effectiveMilestones = (customMilestones && customMilestones.length > 0)
-    ? customMilestones
-    : (DEFAULT_MILESTONES[selectionType] ?? DEFAULT_MILESTONES['main']);
-
   const handleSubmit = () => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -65,8 +56,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       nextDeadline: deadline.trim() || undefined,
       statusId,
       tags: tags.length > 0 ? tags : undefined,
-      selectionType,
-      customMilestones: customMilestones && customMilestones.length > 0 ? customMilestones : undefined,
       selectionMemo: memo.trim() || undefined,
     });
     onClose();
@@ -204,9 +193,9 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             )}
           </div>
 
-          {/* 初期ステータス */}
+          {/* 初期選考段階 */}
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期ステータス</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期選考段階</label>
             <select
               value={statusId}
               onChange={(e) => setStatusId(e.target.value)}
@@ -218,128 +207,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* 選考タイプ */}
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">選考タイプ</label>
-            <div className="flex flex-col gap-1.5">
-              {(Object.entries(SELECTION_TYPE_LABELS) as [SelectionType, string][]).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => { setSelectionType(key); setCustomMilestones(undefined); }}
-                  className={`px-3 py-2 rounded-xl text-[13px] font-semibold text-left transition-all ios-tap ${
-                    selectionType === key
-                      ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]'
-                      : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 選考ステップ */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">選考ステップ</label>
-              <button
-                type="button"
-                onClick={() => setEditingMilestones(!editingMilestones)}
-                className="text-[13px] font-semibold text-[var(--color-primary)] ios-tap px-2 py-1"
-              >
-                {editingMilestones ? '完了' : '編集'}
-              </button>
-            </div>
-            {!editingMilestones ? (
-              <div className="flex items-center gap-1 flex-wrap">
-                {effectiveMilestones.map((step, i) => (
-                  <span key={i} className="flex items-center gap-1">
-                    <span className="text-[12px] font-medium text-[var(--color-text)]">{step}</span>
-                    {i < effectiveMilestones.length - 1 && (
-                      <span className="text-[11px] text-[var(--color-text-secondary)]">→</span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-[var(--color-border)] rounded-xl overflow-hidden">
-                <div className="divide-y divide-[var(--color-bg)]">
-                  {effectiveMilestones.map((step, i) => (
-                    <div key={i} className="flex items-center gap-1 px-3 py-2 bg-card">
-                      <span className="flex-1 text-[13px] text-[var(--color-text)]">{step}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (i === 0) return;
-                          const arr = [...effectiveMilestones];
-                          [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
-                          setCustomMilestones(arr);
-                        }}
-                        disabled={i === 0}
-                        className="w-7 h-7 flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-30 ios-tap"
-                      >↑</button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (i === effectiveMilestones.length - 1) return;
-                          const arr = [...effectiveMilestones];
-                          [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
-                          setCustomMilestones(arr);
-                        }}
-                        disabled={i === effectiveMilestones.length - 1}
-                        className="w-7 h-7 flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-30 ios-tap"
-                      >↓</button>
-                      <button
-                        type="button"
-                        onClick={() => setCustomMilestones(effectiveMilestones.filter((_, idx) => idx !== i))}
-                        className="w-7 h-7 flex items-center justify-center text-[var(--color-danger)] ios-tap"
-                      >×</button>
-                    </div>
-                  ))}
-                </div>
-                {/* ステップ追加 */}
-                <div className="flex gap-2 p-2">
-                  <input
-                    type="text"
-                    value={newStepText}
-                    onChange={(e) => setNewStepText(e.target.value)}
-                    placeholder="新しいステップ名"
-                    className="ios-input flex-1 text-[13px] py-1.5"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newStepText.trim()) {
-                        setCustomMilestones([...effectiveMilestones, newStepText.trim()]);
-                        setNewStepText('');
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!newStepText.trim()) return;
-                      setCustomMilestones([...effectiveMilestones, newStepText.trim()]);
-                      setNewStepText('');
-                    }}
-                    disabled={!newStepText.trim()}
-                    className="px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40 flex-none"
-                  >＋</button>
-                </div>
-                {/* デフォルトに戻す */}
-                {customMilestones && customMilestones.length > 0 && (
-                  <div className="px-2 pb-2">
-                    <button
-                      type="button"
-                      onClick={() => setCustomMilestones(undefined)}
-                      className="w-full py-1.5 rounded-xl text-[12px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-bg)] ios-tap"
-                    >
-                      デフォルトに戻す
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* タグ */}

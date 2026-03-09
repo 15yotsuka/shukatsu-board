@@ -2,16 +2,15 @@ import { nanoid } from 'nanoid';
 import type { StatusColumn } from './types';
 
 export const DEFAULT_STATUS_NAMES = [
-  '未エントリー',
-  'ES作成中',
-  'ES提出済',
-  'Webテスト受検済',
+  'エントリー前',
+  'ES',
+  'Webテスト',
   '1次面接',
   '2次面接',
+  '3次面接',
   '最終面接',
-  'インターン選考中',
   '内定',
-  'お見送り',
+  '見送り',
 ];
 
 export const ES_TEMPLATE_QUESTIONS = [

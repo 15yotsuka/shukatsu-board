@@ -41,6 +41,7 @@ export interface Company {
   selectionType?: SelectionType;
   // カスタム選考ステップ（未設定の場合はデフォルトを使用）
   customMilestones?: string[];
+  awaitingResult?: boolean;
 }
 
 // ============================

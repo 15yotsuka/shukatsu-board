@@ -11,13 +11,10 @@ import {
   TAG_CONFIG,
   ACTION_TYPE_LABELS,
   ACTION_TYPE_COLORS,
-  SELECTION_TYPE_LABELS,
   type Tag,
   type ActionType,
-  type SelectionType,
 } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
-import { DEFAULT_MILESTONES, getMilestoneIndex } from '@/lib/progressMilestones';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -76,7 +73,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [statusId, setStatusId] = useState(company.statusId);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showInterviewForm, setShowInterviewForm] = useState(false);
-  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [nameError, setNameError] = useState('');
 
   const [myPageUrl, setMyPageUrl] = useState(company.myPageUrl ?? '');
@@ -86,43 +82,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [tags, setTags] = useState<Tag[]>(company.tags ?? []);
-  const [selectionType, setSelectionType] = useState<SelectionType>(company.selectionType ?? 'main');
-  const [customMilestones, setCustomMilestones] = useState<string[] | undefined>(company.customMilestones);
-  const [editingMilestones, setEditingMilestones] = useState(false);
-  const [newStepText, setNewStepText] = useState('');
   const [newActionType, setNewActionType] = useState<ActionType>('es');
   const [newActionDate, setNewActionDate] = useState('');
   const [newActionTime, setNewActionTime] = useState('');
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
-  const effectiveMilestones = (customMilestones && customMilestones.length > 0)
-    ? customMilestones
-    : (DEFAULT_MILESTONES[selectionType] ?? DEFAULT_MILESTONES['main']);
-  const currentStatusName = statusColumns.find((s) => s.id === statusId)?.name ?? '';
-  const headerMilestoneIdx = getMilestoneIndex(currentStatusName, effectiveMilestones);
-
-  // インターン→本選考 昇格ダイアログ表示条件
-  const showPromoteBanner =
-    selectionType === 'intern' &&
-    headerMilestoneIdx >= effectiveMilestones.length - 1;
-
-  const handlePromoteToMain = () => {
-    const newTags: Tag[] = [...tags];
-    if (!newTags.includes('インターン参加済み')) {
-      newTags.push('インターン参加済み');
-    }
-    updateCompany(company.id, {
-      selectionType: 'main',
-      customMilestones: undefined,
-      tags: newTags,
-    });
-    setSelectionType('main');
-    setCustomMilestones(undefined);
-    setTags(newTags);
-    setShowPromoteDialog(false);
-    fireConfetti();
-    showToast(`『${name}』を本選考に更新しました。`);
-  };
 
   const toggleTag = (tag: Tag) => {
     setTags((prev) =>
@@ -169,8 +133,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       myPageId: myPageId.trim() || undefined,
       myPagePassword: myPagePassword.trim() || undefined,
       tags: tags.length > 0 ? tags : undefined,
-      selectionType,
-      customMilestones: customMilestones && customMilestones.length > 0 ? customMilestones : undefined,
     });
     onClose();
   };
@@ -252,63 +214,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               );
             })()}
           </div>
-
-          {/* 選考タイプ */}
-          <div className="mb-2">
-            <select
-              value={selectionType}
-              onChange={(e) => {
-                setSelectionType(e.target.value as SelectionType);
-                setCustomMilestones(undefined);
-                setEditingMilestones(false);
-              }}
-              className="text-[13px] font-semibold bg-[var(--color-border)] text-[var(--color-text-secondary)] border-0 rounded-full px-3 py-1 outline-none ios-tap"
-            >
-              {(Object.entries(SELECTION_TYPE_LABELS) as [SelectionType, string][]).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* 進捗バー */}
-          <div className="relative flex items-start justify-between w-full mb-3 px-0.5">
-            <div className="absolute left-0 right-0 h-px bg-zinc-200 dark:bg-zinc-700" style={{ top: '5px' }}>
-              <div
-                className="h-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${effectiveMilestones.length > 1 ? (headerMilestoneIdx / (effectiveMilestones.length - 1)) * 100 : 0}%` }}
-              />
-            </div>
-            {effectiveMilestones.map((label, i) => (
-              <div key={i} className="flex flex-col items-center relative z-10 gap-1">
-                <div className={`w-2.5 h-2.5 rounded-full flex-none ${
-                  i < headerMilestoneIdx
-                    ? 'bg-blue-500'
-                    : i === headerMilestoneIdx
-                    ? 'bg-orange-500 ring-2 ring-orange-200 dark:ring-orange-900'
-                    : 'bg-zinc-200 dark:bg-zinc-700'
-                }`} />
-                <span className={`text-[8px] text-center leading-tight max-w-[32px] ${
-                  i === headerMilestoneIdx ? 'text-orange-500 font-bold' : 'text-zinc-400 dark:text-zinc-500'
-                }`}>{label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* インターン参加 → 本選考 昇格バナー */}
-          {showPromoteBanner && (
-            <div className="mb-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-4 py-3 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-amber-700 dark:text-amber-400">
-                🎉 インターン参加おめでとう！
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowPromoteDialog(true)}
-                className="text-[13px] font-bold text-[var(--color-primary)] ios-tap"
-              >
-                本選考に進む →
-              </button>
-            </div>
-          )}
 
           {/* Segmented control — 4 tabs */}
           <div className="flex gap-0 mb-0">
@@ -401,52 +306,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   <span className="text-lg">+</span>
                   面接予定を追加
                 </button>
-              </div>
-
-              {/* 選考ステップ */}
-              <div>
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">選考ステップ</p>
-                  <button
-                    type="button"
-                    onClick={() => setEditingMilestones(!editingMilestones)}
-                    className="text-[13px] font-semibold text-[var(--color-primary)] ios-tap min-h-[44px] px-2"
-                  >
-                    {editingMilestones ? '完了' : '編集'}
-                  </button>
-                </div>
-                {!editingMilestones ? (
-                  <div className="flex items-center gap-1 flex-wrap px-1">
-                    {effectiveMilestones.map((step, i) => (
-                      <span key={i} className="flex items-center gap-1">
-                        <span className="text-[12px] font-medium text-[var(--color-text)]">{step}</span>
-                        {i < effectiveMilestones.length - 1 && (
-                          <span className="text-[11px] text-[var(--color-text-secondary)]">→</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                    <div className="divide-y divide-[var(--color-border)]">
-                      {effectiveMilestones.map((step, i) => (
-                        <div key={i} className="flex items-center gap-1 px-3 py-2">
-                          <span className="flex-1 text-[14px] text-[var(--color-text)]">{step}</span>
-                          <button type="button" onClick={() => { if (i === 0) return; const arr = [...effectiveMilestones]; [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; setCustomMilestones(arr); }} disabled={i === 0} className="w-8 h-8 flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-30 ios-tap text-[16px]">↑</button>
-                          <button type="button" onClick={() => { if (i === effectiveMilestones.length - 1) return; const arr = [...effectiveMilestones]; [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]; setCustomMilestones(arr); }} disabled={i === effectiveMilestones.length - 1} className="w-8 h-8 flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-30 ios-tap text-[16px]">↓</button>
-                          <button type="button" onClick={() => setCustomMilestones(effectiveMilestones.filter((_, idx) => idx !== i))} className="w-8 h-8 flex items-center justify-center text-[var(--color-danger)] ios-tap text-[16px]">×</button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 p-3 border-t border-[var(--color-border)]">
-                      <input type="text" value={newStepText} onChange={(e) => setNewStepText(e.target.value)} placeholder="新しいステップ名" className="ios-input flex-1 text-[13px] py-1.5" onKeyDown={(e) => { if (e.key === 'Enter' && newStepText.trim()) { setCustomMilestones([...effectiveMilestones, newStepText.trim()]); setNewStepText(''); } }} />
-                      <button type="button" onClick={() => { if (!newStepText.trim()) return; setCustomMilestones([...effectiveMilestones, newStepText.trim()]); setNewStepText(''); }} disabled={!newStepText.trim()} className="px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40 flex-none">+ 追加</button>
-                    </div>
-                    <div className="px-3 pb-3">
-                      <button type="button" onClick={() => setCustomMilestones(undefined)} className="w-full py-2 rounded-xl text-[13px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-border)] ios-tap">デフォルトに戻す</button>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* 予定アクション */}
@@ -611,23 +470,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 ios-button-secondary !border !border-[var(--color-border)] !rounded-xl">キャンセル</button>
               <button onClick={handleDelete} className="flex-1 ios-button-primary !bg-[var(--color-danger)]">削除</button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* 本選考昇格ダイアログ (Mod 6) */}
-      {showPromoteDialog && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowPromoteDialog(false)} />
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl">
-            <h3 className="text-[17px] font-bold text-[var(--color-text)] mb-2">🎉 本選考に進みますか？</h3>
-            <p className="text-[14px] text-[var(--color-text-secondary)] mb-4">
-              選考タイプを「本選考」に切り替え、「インターン参加済み」タグを自動追加します。
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowPromoteDialog(false)} className="flex-1 ios-button-secondary !border !border-[var(--color-border)] !rounded-xl">後で</button>
-              <button onClick={handlePromoteToMain} className="flex-1 ios-button-primary">本選考へ進む</button>
             </div>
           </motion.div>
         </div>

@@ -63,7 +63,7 @@ export function DeadlineReminder() {
           </svg>
           <span className="text-[13px] font-semibold text-[var(--color-text)]">
             {overdueCount > 0
-              ? `期限超過：${overdueCount}件。ステータスを更新するか、タスクを削除してください。`
+              ? `期限超過：${overdueCount}件。選考段階を更新するか、タスクを削除してください。`
               : todayDeadlineCount > 0
               ? `本日の締切：${todayDeadlineCount}件`
               : '直近の面接／締切'}

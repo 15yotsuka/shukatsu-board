@@ -3,18 +3,16 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { INDUSTRIES } from '@/lib/industries';
-import { SELECTION_TYPE_LABELS, type SelectionType } from '@/lib/types';
 import { nanoid } from 'nanoid';
 
 interface BulkRow {
   id: string;
   name: string;
   industry: string;
-  selectionType: SelectionType;
 }
 
 function createEmptyRow(): BulkRow {
-  return { id: nanoid(6), name: '', industry: '', selectionType: 'main' };
+  return { id: nanoid(6), name: '', industry: '' };
 }
 
 const MAX_ROWS = 20;
@@ -55,7 +53,6 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
       addCompany({
         name: r.name.trim(),
         industry: r.industry || undefined,
-        selectionType: r.selectionType,
         statusId: selectedStatusId,
       });
     });
@@ -77,7 +74,7 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
 
         <div className="px-5 pb-2 flex-shrink-0">
           <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-            初期ステータス
+            初期選考段階
           </label>
           <select
             value={selectedStatusId}
@@ -129,15 +126,6 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                     <option value="">業界</option>
                     {INDUSTRIES.map((ind) => (
                       <option key={ind} value={ind}>{ind}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={row.selectionType}
-                    onChange={(e) => updateRow(row.id, 'selectionType', e.target.value as SelectionType)}
-                    className="ios-input flex-none w-[6rem] text-[13px] !py-1.5"
-                  >
-                    {(Object.entries(SELECTION_TYPE_LABELS) as [SelectionType, string][]).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
                 </div>

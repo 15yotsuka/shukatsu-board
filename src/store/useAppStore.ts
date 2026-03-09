@@ -49,6 +49,22 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   },
 };
 
+export interface TutorialFlags {
+  home: boolean;
+  companies: boolean;
+  detail: boolean;
+  calendar: boolean;
+  settings: boolean;
+}
+
+export const DEFAULT_TUTORIAL_FLAGS: TutorialFlags = {
+  home: false,
+  companies: false,
+  detail: false,
+  calendar: false,
+  settings: false,
+};
+
 interface AppActions {
   // Company CRUD
   addCompany: (
@@ -96,6 +112,13 @@ interface AppActions {
   // Grad year
   setGradYear: (year: GradYear) => void;
 
+  // Awaiting result
+  toggleAwaitingResult: (companyId: string) => void;
+
+  // Tutorial flags
+  markTutorialSeen: (key: keyof TutorialFlags) => void;
+  resetTutorials: () => void;
+
   // Backup / Restore
   loadBackup: (data: Partial<AppState>) => void;
 }
@@ -104,9 +127,10 @@ type AppStore = AppState & {
   displaySettings: DisplaySettings;
   notificationSettings: NotificationSettings;
   gradYear: GradYear | null;
+  tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 9;
+const CURRENT_SCHEMA_VERSION = 10;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -121,6 +145,7 @@ export const useAppStore = create<AppStore>()(
       displaySettings: DEFAULT_DISPLAY_SETTINGS,
       notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
       gradYear: null,
+      tutorialFlags: DEFAULT_TUTORIAL_FLAGS,
 
       // Company CRUD
       addCompany: (company) => {
@@ -428,6 +453,27 @@ export const useAppStore = create<AppStore>()(
         set({ gradYear: year });
       },
 
+      // Awaiting result
+      toggleAwaitingResult: (companyId) => {
+        set((state) => ({
+          companies: state.companies.map((c) =>
+            c.id === companyId
+              ? { ...c, awaitingResult: !c.awaitingResult, updatedAt: new Date().toISOString() }
+              : c
+          ),
+        }));
+      },
+
+      // Tutorial flags
+      markTutorialSeen: (key) => {
+        set((state) => ({
+          tutorialFlags: { ...state.tutorialFlags, [key]: true },
+        }));
+      },
+      resetTutorials: () => {
+        set({ tutorialFlags: DEFAULT_TUTORIAL_FLAGS });
+      },
+
       // Backup / Restore
       loadBackup: (data) => {
         set({
@@ -461,34 +507,95 @@ export const useAppStore = create<AppStore>()(
           '結果待ち': '結果待ち',
           // '持ち駒' intentionally dropped
         };
+
+        // Pre-v10: strip trackType & remap selectionType/priority
+        let companies = (state.companies ?? []).map((c: Company & { trackType?: unknown; priority?: string }) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { trackType, priority: oldPriority, ...rest } = c as Company & { trackType?: unknown; priority?: string };
+          const rawType = rest.selectionType as string | undefined;
+          const remapped = rawType
+            ? (selectionTypeRemap[rawType] ?? rawType)
+            : 'main';
+          let tags = rest.tags as Tag[] | undefined;
+          if (!tags && oldPriority) {
+            const converted = priorityToTagRemap[oldPriority];
+            if (converted) tags = [converted];
+          }
+          return {
+            ...rest,
+            selectionType: remapped,
+            ...(tags ? { tags } : {}),
+          };
+        });
+
+        let statusColumns: StatusColumn[] = (state.statusColumns ?? createAllDefaultStatuses()).map(
+          (s: StatusColumn & { trackType?: unknown }) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { trackType, ...rest } = s as StatusColumn & { trackType?: unknown };
+            return rest;
+          }
+        );
+
+        // v9→v10: remap status column names, deduplicate, add awaitingResult, tutorialFlags
+        if (version < 10) {
+          const nameRemap: Record<string, string> = {
+            '未エントリー': 'エントリー前',
+            'ES作成中': 'ES',
+            'ES提出済': 'ES',
+            'Webテスト受検済': 'Webテスト',
+            'インターン選考中': 'エントリー前',
+            'お見送り': '見送り',
+          };
+
+          // Remap column names
+          statusColumns = statusColumns.map((col: StatusColumn) => ({
+            ...col,
+            name: nameRemap[col.name] ?? col.name,
+          }));
+
+          // Deduplicate: keep first column with each name, merge companies from removed columns
+          const seen = new Map<string, string>(); // name → kept column id
+          const removedToKept = new Map<string, string>(); // removed column id → kept column id
+          for (const col of statusColumns) {
+            if (seen.has(col.name)) {
+              removedToKept.set(col.id, seen.get(col.name)!);
+            } else {
+              seen.set(col.name, col.id);
+            }
+          }
+
+          // Move companies from removed columns to kept columns
+          if (removedToKept.size > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            companies = companies.map((c: any) => {
+              const keptId = removedToKept.get(c.statusId);
+              if (keptId) {
+                return { ...c, statusId: keptId };
+              }
+              return c;
+            });
+          }
+
+          // Remove duplicate columns
+          statusColumns = statusColumns.filter((col: StatusColumn) => !removedToKept.has(col.id));
+
+          // Re-number order sequentially
+          statusColumns = statusColumns
+            .sort((a: StatusColumn, b: StatusColumn) => a.order - b.order)
+            .map((col: StatusColumn, idx: number) => ({ ...col, order: idx }));
+
+          // Add awaitingResult: false to all companies
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          companies = companies.map((c: any) => ({
+            ...c,
+            awaitingResult: c.awaitingResult ?? false,
+          }));
+        }
+
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
-          companies: (state.companies ?? []).map((c: Company & { trackType?: unknown; priority?: string }) => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { trackType, priority: oldPriority, ...rest } = c as Company & { trackType?: unknown; priority?: string };
-            const rawType = rest.selectionType as string | undefined;
-            const remapped = rawType
-              ? (selectionTypeRemap[rawType] ?? rawType)
-              : 'main';
-            // Convert old single priority → tags[] (only if no tags yet)
-            let tags = rest.tags as Tag[] | undefined;
-            if (!tags && oldPriority) {
-              const converted = priorityToTagRemap[oldPriority];
-              if (converted) tags = [converted];
-            }
-            return {
-              ...rest,
-              selectionType: remapped,
-              ...(tags ? { tags } : {}),
-            };
-          }),
-          statusColumns: (state.statusColumns ?? createAllDefaultStatuses()).map(
-            (s: StatusColumn & { trackType?: unknown }) => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              const { trackType, ...rest } = s as StatusColumn & { trackType?: unknown };
-              return rest;
-            }
-          ),
+          companies,
+          statusColumns,
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
           scheduledActions: state.scheduledActions ?? [],
@@ -498,6 +605,8 @@ export const useAppStore = create<AppStore>()(
           notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           gradYear: (state as any).gradYear ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tutorialFlags: (state as any).tutorialFlags ?? DEFAULT_TUTORIAL_FLAGS,
         } as AppState;
       },
     }

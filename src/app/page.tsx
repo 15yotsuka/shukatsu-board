@@ -152,9 +152,9 @@ export default function Home() {
     return companies.filter((c) => ids.includes(c.statusId)).length;
   };
 
-  const activeCount = getCount(['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中']);
+  const activeCount = getCount(['エントリー前', 'ES', 'Webテスト', '1次面接', '2次面接', '3次面接', '最終面接']);
   const offerCount = getCount(['内定']);
-  const sayonaraCount = getCount(['お見送り']);
+  const sayonaraCount = getCount(['見送り']);
 
   const handleItemClick = (companyId: string) => {
     const c = companies.find((co) => co.id === companyId);

@@ -213,7 +213,7 @@ function TaskCard({
 
 const SORT_BUTTONS: { field: SortField; label: string }[] = [
   { field: 'deadline', label: '締切日' },
-  { field: 'status', label: 'ステータス' },
+  { field: 'status', label: '選考段階' },
   { field: 'priority', label: '優先度' },
   { field: 'industry', label: '業界' },
   { field: 'manual', label: '手動' },

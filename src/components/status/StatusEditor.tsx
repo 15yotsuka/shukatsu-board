@@ -123,7 +123,7 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
         </div>
 
         <div className="px-4 pt-4 pb-2">
-          <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">ステータス編集</h2>
+          <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">選考段階編集</h2>
         </div>
 
         <div className="p-4">
@@ -165,7 +165,7 @@ export function StatusEditor({ onClose }: StatusEditorProps) {
               onChange={(e) => setNewStatusName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
               className="ios-input flex-1"
-              placeholder="新しいステータス名"
+              placeholder="新しい選考段階名"
             />
             <button
               onClick={handleAddStatus}

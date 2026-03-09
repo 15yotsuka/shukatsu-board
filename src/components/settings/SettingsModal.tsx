@@ -30,7 +30,7 @@ interface SettingsModalProps {
 }
 
 const TAB_LABELS: { id: Tab; label: string }[] = [
-  { id: 'status', label: 'ステータス' },
+  { id: 'status', label: '選考段階' },
   { id: 'display', label: '表示' },
   { id: 'notification', label: '通知' },
   { id: 'data', label: 'データ' },
@@ -90,7 +90,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   );
 }
 
-// ─── ステータス管理タブ ───────────────────────────────────────────
+// ─── 選考段階管理タブ ───────────────────────────────────────────
 
 function StatusTab({ onClose }: { onClose: () => void }) {
   const statusColumns = useAppStore((s) => s.statusColumns);
@@ -168,7 +168,7 @@ function StatusTab({ onClose }: { onClose: () => void }) {
           onChange={(e) => setNewStatusName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
           className="ios-input flex-1"
-          placeholder="新しいステータス名"
+          placeholder="新しい選考段階名"
         />
         <button
           onClick={handleAddStatus}
@@ -396,7 +396,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
     const state = useAppStore.getState();
     const statusMap = Object.fromEntries(state.statusColumns.map((s) => [s.id, s.name]));
     const BOM = '\uFEFF';
-    const header = '企業名,業界,ステータス,メモ,作成日\n';
+    const header = '企業名,業界,選考段階,メモ,作成日\n';
     const escape = (v: string) => {
       if (v.includes(',') || v.includes('"') || v.includes('\n')) {
         return `"${v.replace(/"/g, '""')}"`;
@@ -480,7 +480,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
           </svg>
           <div>
             <div className="text-[15px] text-[var(--color-text)]">企業データをCSVで書き出し</div>
-            <div className="text-[12px] text-[var(--color-text-secondary)]">企業名・業界・ステータス・メモ（Excel対応）</div>
+            <div className="text-[12px] text-[var(--color-text-secondary)]">企業名・業界・選考段階・メモ（Excel対応）</div>
           </div>
         </button>
       </div>
