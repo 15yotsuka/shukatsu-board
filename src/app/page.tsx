@@ -203,6 +203,15 @@ export default function Home() {
   return (
     <div className="pb-28 px-4 pt-4">
 
+      {/* 色凡例 */}
+      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
+      </div>
+
       {/* フィルター + 並べ替え */}
       <div className="flex items-center gap-2 mb-4">
         <div className="flex-1 min-w-0">

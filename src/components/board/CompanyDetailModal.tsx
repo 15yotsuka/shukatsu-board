@@ -213,6 +213,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 </span>
               );
             })()}
+            {company.nextDeadline && (
+              <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                締切 {company.nextDeadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+              </span>
+            )}
           </div>
 
           {/* Segmented control — 4 tabs */}

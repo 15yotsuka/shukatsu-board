@@ -17,7 +17,7 @@ import {
 type Section = '期限切れ' | '今日' | '今週' | '今月' | 'それ以降';
 type SortMode = 'deadline-asc' | 'deadline-desc' | 'industry';
 
-const SECTION_ORDER: Section[] = ['期限切れ', '今日', '今週', '今月', 'それ以降'];
+const SECTION_ORDER: Section[] = ['今日', '今週', '今月', 'それ以降', '期限切れ'];
 
 export default function DeadlineTab() {
   const { deadlines, loading, error } = useDeadlines();
@@ -25,6 +25,7 @@ export default function DeadlineTab() {
   const setGradYear = useAppStore((state) => state.setGradYear);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [sortMode, setSortMode] = useState<SortMode>('deadline-asc');
+  const [expiredCollapsed, setExpiredCollapsed] = useState(true);
 
   const industries = useMemo(() => {
     const set = new Set<string>();
@@ -204,13 +205,47 @@ export default function DeadlineTab() {
       ) : (
         <div className="space-y-6">
           {sections.map((section) => (
-            <div key={section.title}>
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
-                {section.title}
-              </h3>
-              <div className="space-y-1">
-                {section.items.map((entry, idx) => {
-                  return (
+            section.title === '期限切れ' ? (
+              <div key={section.title}>
+                <button
+                  onClick={() => setExpiredCollapsed(!expiredCollapsed)}
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1 ios-tap"
+                >
+                  <span>{expiredCollapsed ? '\u25B6' : '\u25BC'}</span>
+                  期限切れ（{section.items.length}件）
+                </button>
+                {!expiredCollapsed && (
+                  <div className="space-y-1">
+                    {section.items.map((entry, idx) => (
+                      <div
+                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                        className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-[var(--color-text)] truncate">
+                            {entry.company_name}
+                          </div>
+                          <div className="text-xs text-[var(--color-text-secondary)] truncate">
+                            {entry.label}
+                            {entry.job_type ? ` / ${entry.job_type}` : ''}
+                            {entry.industry ? ` • ${entry.industry}` : ''}
+                          </div>
+                        </div>
+                        <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
+                          {entry.deadline}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div key={section.title}>
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
+                  {section.title}
+                </h3>
+                <div className="space-y-1">
+                  {section.items.map((entry, idx) => (
                     <div
                       key={`${entry.company_name}-${entry.deadline}-${idx}`}
                       className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
@@ -229,10 +264,10 @@ export default function DeadlineTab() {
                         {entry.deadline}
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
+            )
           ))}
         </div>
       )}
