@@ -9,7 +9,8 @@ import { isAfter, isBefore, startOfDay, format, parseISO, isValid } from 'date-f
 import type { Company, StatusColumn as StatusColumnType } from '@/lib/types';
 import { TAG_CONFIG } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
-import { getStageColor } from '@/lib/stageColors';
+import { getStageColor, STAGE_COLORS } from '@/lib/stageColors';
+import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 import { INDUSTRIES } from '@/lib/industries';
 import { useToast } from '@/lib/useToast';
 
@@ -82,6 +83,10 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   }, [currentStatus, sortedStatuses]);
 
   const isLastStage = !nextStatus || statusName === '見送り' || statusName === '内定';
+
+  // Progress bar: 7 stages (エントリー前 through 最終面接)
+  const PROGRESS_STAGES = DEFAULT_STATUS_NAMES.slice(0, 7); // excludes 内定, 見送り
+  const currentStageIndex = PROGRESS_STAGES.indexOf(statusName);
 
   const miokuri = useMemo(() => {
     return sortedStatuses.find((s) => s.name === '見送り');
@@ -348,6 +353,24 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
             <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
               結果待ち
             </span>
+          )}
+
+          {/* Progress bar */}
+          {displaySettings.showProgressBar && statusName !== '見送り' && (
+            <div className="flex items-center gap-1 mt-1">
+              {PROGRESS_STAGES.map((stage, i) => {
+                const isNaitei = statusName === '内定';
+                const isFilled = isNaitei || (currentStageIndex >= 0 && i <= currentStageIndex);
+                const dotColor = isNaitei ? '#22C55E' : STAGE_COLORS[stage] || '#9CA3AF';
+                return (
+                  <span
+                    key={stage}
+                    className={`w-2 h-2 rounded-full ${!isFilled ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
+                    style={isFilled ? { backgroundColor: dotColor } : undefined}
+                  />
+                );
+              })}
+            </div>
           )}
 
           {/* Industry */}

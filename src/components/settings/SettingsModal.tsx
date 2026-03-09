@@ -252,6 +252,7 @@ const DISPLAY_ITEMS: { key: keyof DisplaySettings; label: string }[] = [
   { key: 'showNextInterview', label: '次の面接日時' },
   { key: 'showUpdatedDate', label: '更新日' },
   { key: 'showDeadlineBadge', label: '締切バッジ' },
+  { key: 'showProgressBar', label: '選考進捗ドット（●●○○○）' },
 ];
 
 function DisplayTab() {

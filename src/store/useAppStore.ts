@@ -19,6 +19,7 @@ export interface DisplaySettings {
   showNextInterview: boolean;
   showUpdatedDate: boolean;
   showDeadlineBadge: boolean;
+  showProgressBar: boolean;
 }
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
@@ -27,6 +28,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   showNextInterview: true,
   showUpdatedDate: true,
   showDeadlineBadge: true,
+  showProgressBar: true,
 };
 
 export interface NotificationSettings {
@@ -130,7 +132,7 @@ type AppStore = AppState & {
   tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 10;
+const CURRENT_SCHEMA_VERSION = 11;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -592,6 +594,15 @@ export const useAppStore = create<AppStore>()(
           }));
         }
 
+        // v10→v11: add showProgressBar to displaySettings
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existingDisplay = (state as any).displaySettings ?? DEFAULT_DISPLAY_SETTINGS;
+        const displaySettings = {
+          ...DEFAULT_DISPLAY_SETTINGS,
+          ...existingDisplay,
+          showProgressBar: existingDisplay.showProgressBar ?? true,
+        };
+
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
           companies,
@@ -599,8 +610,7 @@ export const useAppStore = create<AppStore>()(
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
           scheduledActions: state.scheduledActions ?? [],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          displaySettings: (state as any).displaySettings ?? DEFAULT_DISPLAY_SETTINGS,
+          displaySettings,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
