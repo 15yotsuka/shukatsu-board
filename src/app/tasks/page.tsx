@@ -13,7 +13,7 @@ import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { createSampleCompanies, SAMPLE_SCHEDULED_ACTIONS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
-import { ACTION_TYPE_LABELS, scheduleStageToAction, type Tag } from '@/lib/types';
+import { ACTION_TYPE_LABELS, scheduleStageToAction, TAG_CONFIG, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { getStageColor } from '@/lib/stageColors';
 import { useToast } from '@/lib/useToast';
@@ -135,7 +135,7 @@ function TaskCard({
       <button
         onClick={(e) => { e.stopPropagation(); onToggleAwaitingResult(); }}
         onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onToggleAwaitingResult(); }}
-        className="absolute left-0 top-0 bottom-0 w-5 rounded-l-2xl transition-opacity"
+        className="absolute left-0 top-0 bottom-0 w-6 rounded-l-2xl transition-opacity"
         style={{
           backgroundColor: getStageColor(statusName),
           opacity: company.awaitingResult ? 0.4 : 1,
@@ -144,7 +144,7 @@ function TaskCard({
         }}
         aria-label="結果待ち切り替え"
       />
-      <div className="pl-7 pr-4 py-3 flex flex-col gap-1.5">
+      <div className="pl-8 pr-4 py-3 flex flex-col gap-1.5">
         {/* Row 1: drag handle + name + status badge + advance button */}
         <div className="flex items-center gap-2">
           {isDraggable && (
@@ -198,6 +198,17 @@ function TaskCard({
             );
           })}
         </div>
+
+        {/* Tags */}
+        {company.tags && company.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {company.tags.map((tag) => TAG_CONFIG[tag] && (
+              <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${TAG_CONFIG[tag].className}`}>
+                {TAG_CONFIG[tag].label}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Row 3: deadline + interview (conditional) */}
         {(nextStepLabel || upcomingInterview) && (
@@ -497,7 +508,12 @@ function TasksContent() {
                       displaySettings={displaySettings}
                       onOpenDetail={() => setSelectedCompany(c)}
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
-                      onToggleAwaitingResult={() => toggleAwaitingResult(c.id)}
+                      onToggleAwaitingResult={() => {
+                        const willBeAwaiting = !c.awaitingResult;
+                        toggleAwaitingResult(c.id);
+                        const base = (c.tags ?? []).filter((t) => t !== '結果待ち');
+                        updateCompany(c.id, { tags: willBeAwaiting ? [...base, '結果待ち'] : base });
+                      }}
                     />
                   );
                 })}
@@ -677,7 +693,7 @@ function TasksContent() {
       {gradYear !== null && !tutorialFlags.companies && (
         <TutorialModal
           steps={[
-            { title: '企業一覧の使い方', body: '並べ替え・絞り込みで企業を管理\nカードを長押しでクイック編集\n左スワイプで見送りに' },
+            { title: '企業一覧の使い方', body: '並べ替え・絞り込みで企業を管理\nカードを長押しでクイック編集\n左スワイプで見送りに\n左の色帯タップ → 結果待ちタグを付与' },
           ]}
           onComplete={() => markTutorialSeen('companies')}
         />
