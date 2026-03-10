@@ -40,6 +40,7 @@ type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
   'active': ['ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中'],
+  'entry_before': ['エントリー前'],
   'entry': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
   'interview': ['1次面接', '2次面接', '最終面接'],
   'intern': ['インターン選考中'],
@@ -51,6 +52,7 @@ const FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'すべて' },
   { value: 'active', label: '進行中' },
   { value: 'awaiting', label: '結果待ち' },
+  { value: 'entry_before', label: 'エントリー前' },
   { value: 'entry', label: 'エントリー' },
   { value: 'interview', label: '面接中' },
   { value: 'intern', label: 'インターン' },
@@ -274,6 +276,7 @@ function TasksContent() {
   const [nextStageEndTime, setNextStageEndTime] = useState('');
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -391,14 +394,27 @@ function TasksContent() {
     });
   }, [companies, sortField, sortOrder, statusColumns]);
 
-  const filtered = filter
-    ? sortedAll.filter((c) => {
+  const industries = useMemo(() => {
+    const set = new Set<string>();
+    companies.forEach((c) => { if (c.industry) set.add(c.industry); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ja'));
+  }, [companies]);
+
+  const filtered = useMemo(() => {
+    let list = sortedAll;
+    if (filter) {
+      list = list.filter((c) => {
         if (filter === 'awaiting') return c.awaitingResult === true;
         const name = getStatusName(c.statusId);
         if (FILTER_GROUPS[filter]) return FILTER_GROUPS[filter].includes(name);
         return name === filter || name.includes(filter);
-      })
-    : sortedAll;
+      });
+    }
+    if (selectedIndustry !== 'all') {
+      list = list.filter((c) => (c.industry ?? '') === selectedIndustry);
+    }
+    return list;
+  }, [sortedAll, filter, selectedIndustry]);
 
   const active = filtered.filter((c) => !getStatusName(c.statusId).includes('お見送り'));
   const archived = filtered.filter((c) => getStatusName(c.statusId).includes('お見送り'));
@@ -459,21 +475,32 @@ function TasksContent() {
         })}
       </div>
 
-      {/* Filter dropdown */}
-      <div className="mb-4">
+      {/* Filter dropdowns */}
+      <div className="flex gap-2 mb-4">
         <select
           value={filter}
           onChange={(e) => {
             const v = e.target.value;
             router.push(v ? `/tasks?filter=${encodeURIComponent(v)}` : '/tasks');
           }}
-          className="w-full px-3 py-2 rounded-xl text-[14px] font-medium bg-card border border-[var(--color-border)] text-[var(--color-text)] appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
+          className="flex-1 px-3 py-2 rounded-xl text-[14px] font-medium bg-card border border-[var(--color-border)] text-[var(--color-text)] appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")` }}
         >
           {FILTER_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
+          ))}
+        </select>
+        <select
+          value={selectedIndustry}
+          onChange={(e) => setSelectedIndustry(e.target.value)}
+          className="flex-1 px-3 py-2 rounded-xl text-[14px] font-medium bg-card border border-[var(--color-border)] text-[var(--color-text)] appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")` }}
+        >
+          <option value="all">すべての業界</option>
+          {industries.map((ind) => (
+            <option key={ind} value={ind}>{ind}</option>
           ))}
         </select>
       </div>
@@ -705,13 +732,13 @@ function TasksContent() {
               body: '応募中の企業を一覧で管理できます。\n並べ替え・絞り込みで\n今の状況をすぐ把握できます。',
             },
             {
-              title: 'カードの操作',
-              body: '「次の段階へ →」で選考段階を更新\n長押しでクイック編集\n左スワイプで見送りに移動',
-            },
-            {
               title: '結果待ちをマークしよう',
               body: '面接後など、返事を待っているときに\n使えるマーク機能があります。',
               highlight: '左端の色帯をタップすると\n「結果待ち」タグが付きます！\n絞り込みでまとめて確認できます。',
+            },
+            {
+              title: 'カードの操作',
+              body: '「次の段階へ →」で選考段階を更新\n長押しでクイック編集\n左スワイプで見送りに移動',
             },
           ]}
           onComplete={() => markTutorialSeen('companies')}
