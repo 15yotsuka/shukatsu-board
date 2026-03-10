@@ -95,8 +95,34 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [newActionType, setNewActionType] = useState<ActionType>('es');
   const [newActionDate, setNewActionDate] = useState('');
   const [newActionTime, setNewActionTime] = useState('');
+  const [newActionSubType, setNewActionSubType] = useState<string>('1次面接');
+  const [showNextStagePopup, setShowNextStagePopup] = useState(false);
+  const [nextStageDateTime, setNextStageDateTime] = useState('');
+  const [nextStageSubType, setNextStageSubType] = useState<string>('1次面接');
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
+
+  const currentStatusIndex = trackStatuses.findIndex((s) => s.id === statusId);
+  const nextStatus = currentStatusIndex >= 0 && currentStatusIndex < trackStatuses.length - 1
+    ? trackStatuses[currentStatusIndex + 1]
+    : null;
+
+  const STAGE_TO_ACTION_TYPE: Record<string, ActionType> = {
+    'ES': 'es',
+    'Webテスト': 'webtest',
+    '1次面接': 'interview',
+    '2次面接': 'interview',
+    '3次面接': 'interview',
+    '最終面接': 'interview',
+  };
+  const STAGE_TO_SUBTYPE: Record<string, string> = {
+    '1次面接': '1次面接',
+    '2次面接': '2次面接',
+    '3次面接': '3次面接',
+    '最終面接': '最終面接',
+  };
+  const nextStageActionType = nextStatus ? (STAGE_TO_ACTION_TYPE[nextStatus.name] ?? 'other') : 'other';
+  const nextStageIsInterview = nextStageActionType === 'interview';
 
   const toggleTag = (tag: Tag) => {
     setTags((prev) =>
@@ -207,6 +233,19 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
+            {nextStatus && nextStatus.name !== '見送り' && (
+              <button
+                onClick={() => {
+                  const defaultSub = nextStatus ? (STAGE_TO_SUBTYPE[nextStatus.name] ?? '1次面接') : '1次面接';
+                  setNextStageSubType(defaultSub);
+                  setNextStageDateTime('');
+                  setShowNextStagePopup(true);
+                }}
+                className="flex-none text-[12px] font-semibold rounded-full px-3 py-1 bg-[var(--color-primary)]/10 text-[var(--color-primary)] ios-tap"
+              >
+                次へ →
+              </button>
+            )}
             {(() => {
               const today = format(new Date(), 'yyyy-MM-dd');
               const next = [...scheduledActions]
@@ -219,7 +258,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   className="flex-none text-[13px] font-semibold rounded-full px-3 py-1"
                   style={{ backgroundColor: `${color}15`, color }}
                 >
-                  {ACTION_TYPE_LABELS[next.type]} {next.date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                  {next.subType ?? ACTION_TYPE_LABELS[next.type]} {next.date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
                 </span>
               );
             })()}
@@ -334,19 +373,35 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">予定アクション</h3>
                 </div>
                 <div className="space-y-2 mb-3">
-                  <div className="flex gap-2">
-                    <select value={newActionType} onChange={(e) => setNewActionType(e.target.value as ActionType)} className="ios-input flex-none w-auto text-[13px] py-2">
-                      {(Object.entries(ACTION_TYPE_LABELS) as [ActionType, string][]).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
+                  <div className="flex gap-2 flex-wrap">
+                    <select value={newActionType} onChange={(e) => { setNewActionType(e.target.value as ActionType); }} className="ios-input flex-none w-auto text-[13px] py-2">
+                      <option value="es">ES提出</option>
+                      <option value="webtest">Webテスト</option>
+                      <option value="gd">GD</option>
+                      <option value="interview">面接</option>
+                      <option value="other">その他</option>
                     </select>
-                    <input type="date" value={newActionDate} onChange={(e) => setNewActionDate(e.target.value)} className="ios-input flex-1 text-[13px] py-2" />
+                    {newActionType === 'interview' && (
+                      <select value={newActionSubType} onChange={(e) => setNewActionSubType(e.target.value)} className="ios-input flex-none w-auto text-[13px] py-2">
+                        <option value="1次面接">1次面接</option>
+                        <option value="2次面接">2次面接</option>
+                        <option value="3次面接">3次面接</option>
+                        <option value="最終面接">最終面接</option>
+                      </select>
+                    )}
+                    <input type="date" value={newActionDate} onChange={(e) => setNewActionDate(e.target.value)} className="ios-input flex-1 text-[13px] py-2 min-w-[130px]" />
                     <input type="time" value={newActionTime} onChange={(e) => setNewActionTime(e.target.value)} className="ios-input w-[7rem] flex-none text-[13px] py-2" />
                   </div>
                   <button
                     onClick={() => {
                       if (!newActionDate) return;
-                      addScheduledAction({ companyId: company.id, type: newActionType, date: newActionDate, time: newActionTime || undefined });
+                      addScheduledAction({
+                        companyId: company.id,
+                        type: newActionType,
+                        subType: newActionType === 'interview' ? newActionSubType : undefined,
+                        date: newActionDate,
+                        time: newActionTime || undefined,
+                      });
                       setNewActionDate('');
                       setNewActionTime('');
                     }}
@@ -362,7 +417,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                       <div key={action.id} className="flex items-center justify-between px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: ACTION_TYPE_COLORS[action.type] }} />
-                          <span className="text-[14px] font-medium text-[var(--color-text)]">{ACTION_TYPE_LABELS[action.type]}</span>
+                          <span className="text-[14px] font-medium text-[var(--color-text)]">{action.subType ?? ACTION_TYPE_LABELS[action.type]}</span>
                           <span className="text-[13px] text-[var(--color-text-secondary)]">
                             {(() => { const d = parseISO(action.date); return isValid(d) ? format(d, 'M/d(E)', { locale: ja }) : action.date; })()}
                             {action.time && ` ${action.time}`}

@@ -159,6 +159,22 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             </select>
           </div>
 
+          {/* 初期選考段階 */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期選考段階</label>
+            <select
+              value={statusId}
+              onChange={(e) => setStatusId(e.target.value)}
+              className="ios-input"
+            >
+              {trackStatuses.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* 締切日 */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">締切日</label>
@@ -191,22 +207,6 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* 初期選考段階 */}
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">初期選考段階</label>
-            <select
-              value={statusId}
-              onChange={(e) => setStatusId(e.target.value)}
-              className="ios-input"
-            >
-              {trackStatuses.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* タグ */}
