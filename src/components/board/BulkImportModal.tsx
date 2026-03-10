@@ -286,7 +286,7 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
 
         <div className="px-5 pb-2 flex-shrink-0">
           <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-            初期選考段階（共通）
+            初期選考段階
           </label>
           <select
             value={selectedStatusId}
@@ -412,7 +412,7 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                       onChange={(e) => updateRow(row.id, 'statusId', e.target.value)}
                       className="ios-input text-[13px] !py-1.5"
                     >
-                      <option value="">選考段階（共通）</option>
+                      <option value="">選考段階</option>
                       {statusColumns.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
