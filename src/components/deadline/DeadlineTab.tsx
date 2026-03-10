@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { GRAD_YEARS, type GradYear } from '@/lib/gradYears';
 import { useAppStore } from '@/store/useAppStore';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import {
   parseISO,
   isValid,
@@ -23,6 +24,8 @@ export default function DeadlineTab() {
   const { deadlines, loading, error } = useDeadlines();
   const gradYear = useAppStore((state) => state.gradYear);
   const setGradYear = useAppStore((state) => state.setGradYear);
+  const tutorialFlags = useAppStore((state) => state.tutorialFlags);
+  const markTutorialSeen = useAppStore((state) => state.markTutorialSeen);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [sortMode, setSortMode] = useState<SortMode>('deadline-asc');
   const [expiredCollapsed, setExpiredCollapsed] = useState(true);
@@ -270,6 +273,18 @@ export default function DeadlineTab() {
             )
           ))}
         </div>
+      )}
+
+      {gradYear !== null && !tutorialFlags.deadline && (
+        <TutorialModal
+          steps={[
+            {
+              title: '締切一覧の使い方',
+              body: 'CSVから取得した締切情報が表示されます\n卒年タブで対象年度を切り替えられます\n\n業界フィルターやソート順で\n必要な情報をすばやく確認できます',
+            },
+          ]}
+          onComplete={() => markTutorialSeen('deadline')}
+        />
       )}
     </div>
   );

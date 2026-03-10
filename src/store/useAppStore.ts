@@ -57,6 +57,8 @@ export interface TutorialFlags {
   detail: boolean;
   calendar: boolean;
   settings: boolean;
+  addCompany: boolean;
+  deadline: boolean;
 }
 
 export const DEFAULT_TUTORIAL_FLAGS: TutorialFlags = {
@@ -65,6 +67,8 @@ export const DEFAULT_TUTORIAL_FLAGS: TutorialFlags = {
   detail: false,
   calendar: false,
   settings: false,
+  addCompany: false,
+  deadline: false,
 };
 
 interface AppActions {

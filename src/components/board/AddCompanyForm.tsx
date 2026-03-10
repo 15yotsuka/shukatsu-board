@@ -8,6 +8,7 @@ import { TAG_CONFIG, type Tag } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
 import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 import { useDeadlines } from '@/contexts/DeadlineContext';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -16,6 +17,8 @@ interface AddCompanyFormProps {
 export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const addCompany = useAppStore((s) => s.addCompany);
   const statusColumns = useAppStore((s) => s.statusColumns);
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
@@ -317,6 +320,18 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
           </button>
         </div>
       </motion.div>
+
+      {!tutorialFlags.addCompany && (
+        <TutorialModal
+          steps={[
+            {
+              title: '企業追加のヒント',
+              body: '企業名を入力すると候補が表示されます\n業界や締切日も自動で入力されます\n\n選考フローは企業ごとにカスタマイズ可能です',
+            },
+          ]}
+          onComplete={() => markTutorialSeen('addCompany')}
+        />
+      )}
     </div>
   );
 }
