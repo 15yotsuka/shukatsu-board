@@ -700,7 +700,19 @@ function TasksContent() {
       {gradYear !== null && !tutorialFlags.companies && (
         <TutorialModal
           steps={[
-            { title: '企業一覧の使い方', body: '並べ替え・絞り込みで企業を管理\nカードを長押しでクイック編集\n左スワイプで見送りに\n左の色帯タップ → 結果待ちタグを付与' },
+            {
+              title: '企業一覧へようこそ',
+              body: '応募中の企業を一覧で管理できます。\n並べ替え・絞り込みで\n今の状況をすぐ把握できます。',
+            },
+            {
+              title: 'カードの操作',
+              body: '「次の段階へ →」で選考段階を更新\n長押しでクイック編集\n左スワイプで見送りに移動',
+            },
+            {
+              title: '結果待ちをマークしよう',
+              body: '面接後など、返事を待っているときに\n使えるマーク機能があります。',
+              highlight: '左端の色帯をタップすると\n「結果待ち」タグが付きます！\n絞り込みでまとめて確認できます。',
+            },
           ]}
           onComplete={() => markTutorialSeen('companies')}
         />

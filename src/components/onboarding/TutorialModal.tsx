@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 interface TutorialStep {
   title: string;
   body: string;
+  highlight?: string;
 }
 
 interface TutorialModalProps {
@@ -46,9 +47,18 @@ export function TutorialModal({ steps, onComplete }: TutorialModalProps) {
         <h3 className="text-[17px] font-bold text-[var(--color-text)] text-center mb-3">
           {step.title}
         </h3>
-        <p className="text-[14px] text-[var(--color-text-secondary)] text-center whitespace-pre-line leading-relaxed mb-6">
+        <p className="text-[14px] text-[var(--color-text-secondary)] text-center whitespace-pre-line leading-relaxed mb-4">
           {step.body}
         </p>
+        {step.highlight && (
+          <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-xl px-4 py-3 mb-6">
+            <span className="text-2xl flex-none">👆</span>
+            <p className="text-[13px] font-semibold text-amber-700 dark:text-amber-300 leading-snug text-left">
+              {step.highlight}
+            </p>
+          </div>
+        )}
+        {!step.highlight && <div className="mb-2" />}
 
         <div className="flex gap-3">
           <button
