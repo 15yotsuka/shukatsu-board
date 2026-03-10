@@ -364,20 +364,22 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         <button
           onClick={handleColorStripClick}
           onTouchEnd={handleColorStripClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           className="absolute left-0 top-0 bottom-0 z-10 rounded-l-xl transition-opacity"
           style={{
             backgroundColor: stageColor,
             opacity: company.awaitingResult ? 0.4 : 1,
-            width: '16px',
+            width: '24px',
             WebkitTapHighlightColor: 'transparent',
-            touchAction: 'none',
+            touchAction: 'manipulation',
           }}
           aria-label="結果待ち切り替え"
         />
 
         {/* Card content */}
         <div className="overflow-hidden rounded-xl">
-        <div className="pl-6 pr-3.5 py-3">
+        <div className="pl-8 pr-3.5 py-3">
           {/* Row 1: Name + tag */}
           <div className="flex items-start justify-between gap-1.5 mb-0.5">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">
