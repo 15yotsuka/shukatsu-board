@@ -257,7 +257,7 @@ export default function Home() {
             {todoItems.length === 0 ? '予定はありません' : '該当する予定がありません'}
           </p>
           <p className="text-[13px] text-[var(--color-text-secondary)]">
-            {todoItems.length === 0 ? '企業ページから予定アクションを追加してください' : 'フィルターを変更してみてください'}
+            {todoItems.length === 0 ? '企業ページから選考予定を追加してください' : 'フィルターを変更してみてください'}
           </p>
         </div>
       ) : isDefaultSort ? (

@@ -95,15 +95,15 @@ export function HeroCardCarousel() {
         <div className="px-4">
           <div className="w-full bg-gradient-to-br from-blue-600 to-blue-900 rounded-3xl p-6 shadow-2xl">
             <p className="text-[13px] font-semibold text-blue-200 uppercase tracking-widest mb-2">
-              {mode === 'deadline' ? '締切管理' : '面接管理'}
+              {mode === 'deadline' ? '締切管理' : '選考予定管理'}
             </p>
             <p className="text-[18px] font-bold text-white mb-1">
-              {mode === 'deadline' ? '予定を登録すると、ここに表示されます' : '面接予定を追加しよう'}
+              {mode === 'deadline' ? '予定を登録すると、ここに表示されます' : '選考予定を追加しよう'}
             </p>
             <p className="text-[13px] text-blue-300 leading-relaxed">
               {mode === 'deadline'
                 ? '企業の詳細画面から締切日を設定すると、ここに表示されます'
-                : '企業の詳細画面から面接予定を追加すると、ここに表示されます'}
+                : '企業の詳細画面から選考予定を追加すると、ここに表示されます'}
             </p>
           </div>
         </div>

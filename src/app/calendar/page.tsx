@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
-import { InterviewForm } from '@/components/calendar/InterviewForm';
 import { FilterChips, ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { useAppStore } from '@/store/useAppStore';
@@ -312,16 +311,8 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Step 3a: 面接 → InterviewForm */}
-      {showAddEvent && addEventCompanyId && addEventType === 'interview' && (
-        <InterviewForm
-          companyId={addEventCompanyId}
-          onClose={resetAddFlow}
-        />
-      )}
-
-      {/* Step 3b: その他の種別 → 日時入力フォーム */}
-      {showAddEvent && addEventCompanyId && addEventType && addEventType !== 'interview' && (
+      {/* Step 3: 日時入力フォーム（全種別共通） */}
+      {showAddEvent && addEventCompanyId && addEventType && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
