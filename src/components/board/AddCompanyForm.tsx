@@ -6,9 +6,9 @@ import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
 import { TAG_CONFIG, type Tag, type ActionType } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
-import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
+import { SelectionFlowEditor, DEFAULT_FLOW_STAGES } from '@/components/board/SelectionFlowEditor';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -30,9 +30,8 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [tags, setTags] = useState<Tag[]>([]);
   const [memo, setMemo] = useState('');
+  const [flowStages, setFlowStages] = useState<string[]>(DEFAULT_FLOW_STAGES);
   const [showFlowEditor, setShowFlowEditor] = useState(false);
-  const FLOW_STAGES = DEFAULT_STATUS_NAMES.filter(s => s !== '内定' && s !== '見送り');
-  const [enabledStages, setEnabledStages] = useState<Set<string>>(new Set(FLOW_STAGES));
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -72,8 +71,9 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       return;
     }
 
-    const customFlow = FLOW_STAGES.filter(s => enabledStages.has(s));
-    const isDefault = customFlow.length === FLOW_STAGES.length;
+    const isDefault =
+      flowStages.length === DEFAULT_FLOW_STAGES.length &&
+      flowStages.every((s, i) => s === DEFAULT_FLOW_STAGES[i]);
 
     addCompany({
       name: trimmed,
@@ -83,7 +83,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       statusId,
       tags: tags.length > 0 ? tags : undefined,
       selectionMemo: memo.trim() || undefined,
-      selectionFlow: isDefault ? undefined : customFlow,
+      selectionFlow: isDefault ? undefined : flowStages,
     });
 
     // Create ScheduledAction if deadline is set
@@ -279,46 +279,20 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
           {/* 選考フロー */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">選考フロー</label>
-            <div className="text-[12px] text-[var(--color-text-secondary)] mb-1">
-              {FLOW_STAGES.filter(s => enabledStages.has(s)).join(' → ')}
-            </div>
             <button
               type="button"
               onClick={() => setShowFlowEditor(!showFlowEditor)}
-              className="text-[13px] text-[var(--color-primary)] ios-tap"
+              className="text-[13px] text-[var(--color-primary)] ios-tap mb-2"
             >
               ✏️ {showFlowEditor ? 'フロー編集を閉じる' : '選考フローを変更'}
             </button>
             {showFlowEditor && (
-              <div className="mt-2 bg-[var(--color-border)]/30 rounded-xl p-3 space-y-2">
-                <p className="text-[12px] text-[var(--color-text-secondary)] mb-2">
-                  不要な段階をOFFにしてください
-                </p>
-                {FLOW_STAGES.map((stage) => (
-                  <label key={stage} className="flex items-center gap-2 ios-tap cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={enabledStages.has(stage)}
-                      onChange={(e) => {
-                        setEnabledStages(prev => {
-                          const next = new Set(prev);
-                          if (e.target.checked) next.add(stage);
-                          else next.delete(stage);
-                          return next;
-                        });
-                      }}
-                      className="w-4 h-4 accent-[var(--color-primary)]"
-                    />
-                    <span className="text-[14px] text-[var(--color-text)]">{stage}</span>
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setEnabledStages(new Set(FLOW_STAGES))}
-                  className="text-[12px] text-[var(--color-text-secondary)] mt-1 ios-tap"
-                >
-                  リセット（デフォルトに戻す）
-                </button>
+              <div className="bg-[var(--color-border)]/30 rounded-xl p-3">
+                <SelectionFlowEditor
+                  stages={flowStages}
+                  onChange={setFlowStages}
+                  onReset={() => setFlowStages(DEFAULT_FLOW_STAGES)}
+                />
               </div>
             )}
           </div>
