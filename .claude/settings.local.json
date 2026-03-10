@@ -21,7 +21,8 @@
       "Bash(venv/Scripts/pip install:*)",
       "Bash(venv/Scripts/python:*)",
       "Bash(npm audit)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(gh api:*)"
     ]
   }
 }

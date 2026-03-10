@@ -14,6 +14,7 @@ import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
+import { getStageColor } from '@/lib/stageColors';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -125,9 +126,14 @@ function TaskCard({
       ref={setNodeRef}
       style={style}
       onClick={onOpenDetail}
-      className="bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+      className="relative bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
     >
-      <div className="px-4 py-3 flex flex-col gap-1.5">
+      {/* Left color strip (stage color) */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-2.5 rounded-l-2xl"
+        style={{ backgroundColor: getStageColor(statusName) }}
+      />
+      <div className="pl-5 pr-4 py-3 flex flex-col gap-1.5">
         {/* Row 1: drag handle + name + status badge + advance button */}
         <div className="flex items-center gap-2">
           {isDraggable && (
