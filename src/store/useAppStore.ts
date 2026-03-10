@@ -136,7 +136,16 @@ type AppStore = AppState & {
   tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 12;
+const CURRENT_SCHEMA_VERSION = 13;
+
+function normalizeCompanyName(name: string): string {
+  return name
+    .replace(/^株式会社\s*/u, '')
+    .replace(/\s*株式会社$/u, '')
+    .replace(/^有限会社\s*/u, '')
+    .replace(/\s*有限会社$/u, '')
+    .trim();
+}
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -162,6 +171,7 @@ export const useAppStore = create<AppStore>()(
         );
         const newCompany: Company = {
           ...company,
+          name: normalizeCompanyName(company.name),
           id: nanoid(),
           orderInColumn: companiesInColumn.length,
           createdAt: now,
@@ -174,7 +184,12 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           companies: state.companies.map((c) =>
             c.id === id
-              ? { ...c, ...updates, updatedAt: new Date().toISOString() }
+              ? {
+                  ...c,
+                  ...updates,
+                  name: updates.name !== undefined ? normalizeCompanyName(updates.name) : c.name,
+                  updatedAt: new Date().toISOString(),
+                }
               : c
           ),
         }));
@@ -618,9 +633,15 @@ export const useAppStore = create<AppStore>()(
           }
         );
 
+        // v12→v13: strip 株式会社/有限会社 from existing company names
+        const normalizedCompanies = companies.map((c: Company) => ({
+          ...c,
+          name: normalizeCompanyName(c.name),
+        }));
+
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
-          companies,
+          companies: normalizedCompanies,
           statusColumns,
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
