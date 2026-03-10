@@ -10,6 +10,7 @@ import { AddCompanyForm } from '@/components/board/AddCompanyForm';
 import { BulkImportModal } from '@/components/board/BulkImportModal';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
+import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
@@ -231,6 +232,9 @@ function TasksContent() {
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
+  const tutorialFlags = useAppStore((s) => s.tutorialFlags);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
+  const gradYear = useAppStore((s) => s.gradYear);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -563,6 +567,15 @@ function TasksContent() {
           </ErrorBoundary>
         )}
       </AnimatePresence>
+
+      {gradYear !== null && !tutorialFlags.companies && (
+        <TutorialModal
+          steps={[
+            { title: '企業一覧の使い方', body: '並べ替え・絞り込みで企業を管理\nカードを長押しでクイック編集\n左スワイプで見送りに' },
+          ]}
+          onComplete={() => markTutorialSeen('companies')}
+        />
+      )}
     </div>
   );
 }

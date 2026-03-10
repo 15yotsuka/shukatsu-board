@@ -111,6 +111,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   );
   const [showFlowEditor, setShowFlowEditor] = useState(false);
 
+  // Status change date popup (when user changes dropdown)
+  const [showStatusChangeDatePopup, setShowStatusChangeDatePopup] = useState(false);
+  const [statusChangeStageName, setStatusChangeStageName] = useState('');
+  const [statusChangeDate, setStatusChangeDate] = useState('');
+  const [statusChangeStartTime, setStatusChangeStartTime] = useState('');
+  const [statusChangeEndTime, setStatusChangeEndTime] = useState('');
+
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
   const currentStatusIndex = trackStatuses.findIndex((s) => s.id === statusId);
@@ -227,7 +234,19 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <select
               value={statusId}
-              onChange={(e) => setStatusId(e.target.value)}
+              onChange={(e) => {
+                const newId = e.target.value;
+                if (newId === statusId) return;
+                setStatusId(newId);
+                const targetName = statusColumns.find((s) => s.id === newId)?.name;
+                if (targetName && !['エントリー前', '内定', '見送り'].includes(targetName)) {
+                  setStatusChangeStageName(targetName);
+                  setStatusChangeDate('');
+                  setStatusChangeStartTime('');
+                  setStatusChangeEndTime('');
+                  setShowStatusChangeDatePopup(true);
+                }
+              }}
               className="flex-1 min-w-0 text-[14px] font-semibold bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-0 rounded-full px-3 py-1 outline-none ios-tap"
             >
               {trackStatuses.map((s) => (
@@ -365,6 +384,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                         date: newActionDate,
                         time: newActionTime || undefined,
                       });
+                      // Auto-update status dropdown to match the stage
+                      const matchingStatus = statusColumns.find((s) => s.name === newScheduleStage);
+                      if (matchingStatus) {
+                        setStatusId(matchingStatus.id);
+                      }
                       setNewActionDate('');
                       setNewActionTime('');
                     }}
@@ -641,6 +665,78 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   setShowNextStagePopup(false);
                 }}
                 disabled={!nextStageDate}
+                className="flex-1 py-2.5 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40"
+              >
+                設定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* プルダウン変更時の日程設定ポップアップ */}
+      {showStatusChangeDatePopup && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStatusChangeDatePopup(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl p-4 mx-4 max-w-sm w-full shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-[16px]">
+              {statusChangeStageName}の日程を設定
+            </h3>
+            <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-2">
+              {getDateLabel(statusChangeStageName)}はありますか？（任意）
+            </label>
+            <div className="space-y-2 mb-4">
+              <input
+                type="date"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
+                value={statusChangeDate}
+                onChange={(e) => setStatusChangeDate(e.target.value)}
+              />
+              {needsTimeInput(statusChangeStageName) && (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
+                    <input
+                      type="time"
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                      value={statusChangeStartTime}
+                      onChange={(e) => setStatusChangeStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
+                    <input
+                      type="time"
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                      value={statusChangeEndTime}
+                      onChange={(e) => setStatusChangeEndTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowStatusChangeDatePopup(false)}
+                className="flex-1 py-2.5 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap"
+              >
+                スキップ
+              </button>
+              <button
+                onClick={() => {
+                  if (!statusChangeDate) return;
+                  const { type, subType } = scheduleStageToAction(statusChangeStageName);
+                  addScheduledAction({
+                    companyId: company.id,
+                    type,
+                    subType,
+                    date: statusChangeDate,
+                    time: statusChangeStartTime || undefined,
+                    endTime: statusChangeEndTime || undefined,
+                  });
+                  setShowStatusChangeDatePopup(false);
+                }}
+                disabled={!statusChangeDate}
                 className="flex-1 py-2.5 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40"
               >
                 設定

@@ -420,10 +420,10 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
           {/* Next event (merged: ScheduledAction + Interview) */}
           {displaySettings.showNextInterview && nextEvent && (
             <div className="flex items-center gap-1 mt-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" style={{ color: stageColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-[12px]" style={{ color: stageColor }}>
+              <span className="text-[12px] text-gray-500 dark:text-gray-400">
                 {(() => { const d = parseISO(nextEvent.date); return isValid(d) ? format(d, 'M/d') : nextEvent.date; })()}
                 {nextEvent.time && ` ${nextEvent.time}`} {nextEvent.label}
               </span>
