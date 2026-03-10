@@ -13,7 +13,7 @@ import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
-import { ACTION_TYPE_LABELS, type Tag } from '@/lib/types';
+import { ACTION_TYPE_LABELS, scheduleStageToAction, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { getStageColor } from '@/lib/stageColors';
 import { useToast } from '@/lib/useToast';
@@ -229,6 +229,8 @@ function TasksContent() {
   const interviews = useAppStore((s) => s.interviews);
   const addCompany = useAppStore((s) => s.addCompany);
   const updateCompany = useAppStore((s) => s.updateCompany);
+  const addScheduledAction = useAppStore((s) => s.addScheduledAction);
+  const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
@@ -239,6 +241,10 @@ function TasksContent() {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
+  const [nextStageTarget, setNextStageTarget] = useState<{ company: Company; nextName: string; nextColumnId: string } | null>(null);
+  const [nextStageDate, setNextStageDate] = useState('');
+  const [nextStageStartTime, setNextStageStartTime] = useState('');
+  const [nextStageEndTime, setNextStageEndTime] = useState('');
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const searchParams = useSearchParams();
@@ -304,9 +310,30 @@ function TasksContent() {
     if (!nextMilestoneName) return;
     const nextColumn = statusColumns.find((col) => col.name === nextMilestoneName);
     if (!nextColumn) return;
-    if (window.confirm(`「${currentStatus?.name}」→「${nextMilestoneName}」に進めますか？`)) {
-      updateCompany(company.id, { statusId: nextColumn.id });
+    setNextStageDate('');
+    setNextStageStartTime('');
+    setNextStageEndTime('');
+    setNextStageTarget({ company, nextName: nextMilestoneName, nextColumnId: nextColumn.id });
+  };
+
+  const advanceToNextStage = (withDate: boolean) => {
+    if (!nextStageTarget) return;
+    const { company, nextName, nextColumnId } = nextStageTarget;
+    if (company.awaitingResult) toggleAwaitingResult(company.id);
+    updateCompany(company.id, { statusId: nextColumnId });
+    if (withDate && nextStageDate) {
+      const { type, subType } = scheduleStageToAction(nextName);
+      addScheduledAction({
+        companyId: company.id,
+        type,
+        subType,
+        date: nextStageDate,
+        startTime: nextStageStartTime || undefined,
+        endTime: nextStageEndTime || undefined,
+      });
     }
+    showToast(`『${company.name}』を【${nextName}】に更新しました。`);
+    setNextStageTarget(null);
   };
 
   const handleBulkDelete = () => {
@@ -546,6 +573,79 @@ function TasksContent() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* 次の段階へ 日時設定ポップアップ */}
+      {nextStageTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onPointerDown={() => setNextStageTarget(null)}
+        >
+          <div
+            className="bg-card rounded-2xl p-6 mx-6 max-w-sm w-full shadow-xl"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[16px] font-semibold text-[var(--color-text)] text-center mb-2">
+              {nextStageTarget.nextName}
+            </p>
+            <p className="text-[13px] text-[var(--color-text-secondary)] text-center mb-4">
+              次の選考の日程を設定してください
+            </p>
+            <div className="space-y-2 mb-4">
+              <input
+                type="date"
+                value={nextStageDate}
+                onChange={(e) => setNextStageDate(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
+              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
+                  <input
+                    type="time"
+                    step={300}
+                    value={nextStageStartTime}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setNextStageStartTime(v);
+                      if (v && !nextStageEndTime) {
+                        const [h, m] = v.split(':').map(Number);
+                        setNextStageEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
+                  <input
+                    type="time"
+                    step={300}
+                    value={nextStageEndTime}
+                    onChange={(e) => setNextStageEndTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => advanceToNextStage(false)}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-border)] text-[var(--color-text)] min-h-[44px]"
+              >
+                スキップ
+              </button>
+              <button
+                onClick={() => advanceToNextStage(true)}
+                disabled={!nextStageDate}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-primary)] text-white min-h-[44px] disabled:opacity-40"
+              >
+                設定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {selectedCompany && (
