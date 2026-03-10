@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { INDUSTRIES } from '@/lib/industries';
 import { nanoid } from 'nanoid';
@@ -19,6 +19,82 @@ function createEmptyRow(): BulkRow {
 const MAX_ROWS = 20;
 const INITIAL_ROWS = 3;
 
+// ヘッダー行判定用キーワード
+const NAME_HEADERS = ['企業名', '会社名', 'name', 'Name', '名前', '社名', 'company'];
+const INDUSTRY_HEADERS = ['業界', 'industry', 'Industry', '業種', 'セクター'];
+
+function isHeaderRow(fields: string[]): boolean {
+  const first = fields[0]?.trim().toLowerCase() ?? '';
+  return NAME_HEADERS.some((h) => first === h.toLowerCase());
+}
+
+function detectNameAndIndustryColumns(fields: string[]): { nameCol: number; industryCol: number } {
+  let nameCol = 0;
+  let industryCol = -1;
+  fields.forEach((f, i) => {
+    const lower = f.trim().toLowerCase();
+    if (NAME_HEADERS.some((h) => lower === h.toLowerCase())) nameCol = i;
+    if (INDUSTRY_HEADERS.some((h) => lower === h.toLowerCase())) industryCol = i;
+  });
+  return { nameCol, industryCol };
+}
+
+function splitLine(line: string): string[] {
+  // タブ区切り優先、なければカンマ区切り
+  if (line.includes('\t')) return line.split('\t');
+  return line.split(',');
+}
+
+interface ParsedEntry {
+  name: string;
+  industry: string;
+}
+
+function parseTextLines(text: string): ParsedEntry[] {
+  if (!text.trim()) return [];
+  const lines = text.trim().split('\n');
+
+  // 1行目がヘッダーかチェック
+  const firstFields = splitLine(lines[0]);
+  const hasHeader = isHeaderRow(firstFields);
+  const { nameCol, industryCol } = hasHeader
+    ? detectNameAndIndustryColumns(firstFields)
+    : { nameCol: 0, industryCol: firstFields.length > 1 ? 1 : -1 };
+
+  const startIdx = hasHeader ? 1 : 0;
+  const results: ParsedEntry[] = [];
+
+  for (let i = startIdx; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) continue;
+    const fields = splitLine(trimmed);
+    const name = fields[nameCol]?.trim() ?? '';
+    const industry = industryCol >= 0 ? (fields[industryCol]?.trim() ?? '') : '';
+    if (name) results.push({ name, industry });
+  }
+  return results;
+}
+
+function decodeBuffer(buffer: ArrayBuffer): string {
+  // BOM付きUTF-8チェック
+  const bytes = new Uint8Array(buffer);
+  if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    return new TextDecoder('utf-8').decode(buffer);
+  }
+  // UTF-8でデコード試行
+  const utf8 = new TextDecoder('utf-8', { fatal: true });
+  try {
+    return utf8.decode(buffer);
+  } catch {
+    // Shift_JISフォールバック
+    try {
+      return new TextDecoder('shift_jis').decode(buffer);
+    } catch {
+      return new TextDecoder('utf-8').decode(buffer);
+    }
+  }
+}
+
 interface BulkImportModalProps {
   statusColumns: { id: string; name: string }[];
   onClose: () => void;
@@ -30,31 +106,61 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
   const [rows, setRows] = useState<BulkRow[]>(() =>
     Array.from({ length: INITIAL_ROWS }, createEmptyRow)
   );
-  const [mode, setMode] = useState<'rows' | 'text'>('rows');
+  const [mode, setMode] = useState<'rows' | 'text' | 'file'>('rows');
   const [textInput, setTextInput] = useState('');
+  const [filePreview, setFilePreview] = useState<ParsedEntry[]>([]);
+  const [fileName, setFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const parsedTextRows = useMemo(() => {
-    if (!textInput.trim()) return [];
-    return textInput.trim().split('\n').map(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return null;
-      if (trimmed.includes(',')) {
-        const [name, industry] = trimmed.split(',').map(s => s.trim());
-        return { name, industry: industry || '' };
-      }
-      return { name: trimmed, industry: '' };
-    }).filter(Boolean) as { name: string; industry: string }[];
-  }, [textInput]);
+  const parsedTextRows = useMemo(() => parseTextLines(textInput), [textInput]);
 
   const autoIndustry = (name: string): string => {
     const suggestions = getCompanySuggestions(name);
     return suggestions[0]?.industry || '';
   };
 
+  const isValidIndustry = (industry: string): boolean => {
+    return (INDUSTRIES as readonly string[]).includes(industry);
+  };
+
+  const resolveIndustry = (name: string, rawIndustry: string): { industry: string; autoDetected: boolean } => {
+    if (rawIndustry && isValidIndustry(rawIndustry)) {
+      return { industry: rawIndustry, autoDetected: false };
+    }
+    const auto = autoIndustry(name);
+    return { industry: auto, autoDetected: !!auto };
+  };
+
   const handleTextImport = () => {
     if (parsedTextRows.length === 0) return;
+    let autoCount = 0;
     parsedTextRows.forEach((r) => {
-      const industry = r.industry || autoIndustry(r.name);
+      const { industry, autoDetected } = resolveIndustry(r.name, r.industry);
+      if (autoDetected) autoCount++;
+      addCompany({
+        name: r.name,
+        industry: industry || undefined,
+        statusId: selectedStatusId,
+      });
+    });
+    onClose();
+  };
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+
+    const buffer = await file.arrayBuffer();
+    const text = decodeBuffer(buffer);
+    const parsed = parseTextLines(text);
+    setFilePreview(parsed);
+  }, []);
+
+  const handleFileImport = () => {
+    if (filePreview.length === 0) return;
+    filePreview.forEach((r) => {
+      const { industry } = resolveIndustry(r.name, r.industry);
       addCompany({
         name: r.name,
         industry: industry || undefined,
@@ -122,19 +228,20 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
         </div>
 
         {/* Mode toggle */}
-        <div className="flex gap-2 px-5 mb-3">
-          <button
-            onClick={() => setMode('rows')}
-            className={`flex-1 py-2 text-[13px] font-semibold rounded-xl ios-tap ${mode === 'rows' ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'}`}
-          >
-            フォーム入力
-          </button>
-          <button
-            onClick={() => setMode('text')}
-            className={`flex-1 py-2 text-[13px] font-semibold rounded-xl ios-tap ${mode === 'text' ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'}`}
-          >
-            テキスト貼り付け
-          </button>
+        <div className="flex gap-1.5 px-5 mb-3">
+          {([
+            { key: 'rows' as const, label: 'フォーム' },
+            { key: 'text' as const, label: 'テキスト' },
+            { key: 'file' as const, label: 'ファイル' },
+          ]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setMode(key)}
+              className={`flex-1 py-2 text-[13px] font-semibold rounded-xl ios-tap ${mode === key ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {/* Scrollable rows (form mode) */}
@@ -200,25 +307,94 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
         {mode === 'text' && (
           <div className="px-5 flex-1 overflow-y-auto">
             <p className="text-[12px] text-[var(--color-text-secondary)] mb-2">
-              1行につき1社。カンマで区切ると業界も指定できます。
+              1行につき1社。カンマまたはタブで区切ると業界も指定できます。ヘッダー行は自動検出されます。
             </p>
             <textarea
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              placeholder={'ソニーグループ,メーカー\n三菱商事,商社\n野村証券'}
+              placeholder={'企業名,業界\nソニーグループ,メーカー\n三菱商事\t商社\n野村証券'}
               className="ios-input w-full min-h-[200px] resize-y text-[14px]"
             />
             {parsedTextRows.length > 0 && (
-              <p className="text-[12px] text-[var(--color-text-secondary)] mt-2">
-                {parsedTextRows.length}社を追加します
+              <div className="mt-2 space-y-1">
+                <p className="text-[12px] font-semibold text-[var(--color-text-secondary)]">
+                  プレビュー（{parsedTextRows.length}社）
+                </p>
+                <div className="max-h-32 overflow-y-auto rounded-lg border border-[var(--color-border)]">
+                  {parsedTextRows.slice(0, 20).map((r, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-[13px] border-b border-[var(--color-border)] last:border-0">
+                      <span className="text-[var(--color-text)] truncate">{r.name}</span>
+                      <span className="text-[var(--color-text-secondary)] flex-none ml-2">
+                        {r.industry || autoIndustry(r.name) || '—'}
+                      </span>
+                    </div>
+                  ))}
+                  {parsedTextRows.length > 20 && (
+                    <p className="text-[12px] text-center text-[var(--color-text-secondary)] py-1">
+                      他{parsedTextRows.length - 20}社...
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* File upload mode */}
+        {mode === 'file' && (
+          <div className="px-5 flex-1 overflow-y-auto">
+            <p className="text-[12px] text-[var(--color-text-secondary)] mb-3">
+              CSV・TSV・テキストファイルを選択してください。UTF-8・Shift_JIS対応。ヘッダー行は自動検出されます。
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.tsv,.txt"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-3 border-2 border-dashed border-[var(--color-primary)]/40 rounded-xl text-[var(--color-primary)] font-medium text-[14px] hover:bg-[var(--color-primary-light)] transition-colors flex items-center justify-center gap-2 ios-tap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              CSVファイルを選択
+            </button>
+            {fileName && (
+              <p className="text-[13px] text-[var(--color-text)] mt-2 font-medium">
+                {fileName}
               </p>
+            )}
+            {filePreview.length > 0 && (
+              <div className="mt-3 space-y-1">
+                <p className="text-[12px] font-semibold text-[var(--color-text-secondary)]">
+                  {filePreview.length}社見つかりました。追加しますか？
+                </p>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--color-border)]">
+                  {filePreview.slice(0, 30).map((r, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-[13px] border-b border-[var(--color-border)] last:border-0">
+                      <span className="text-[var(--color-text)] truncate">{r.name}</span>
+                      <span className="text-[var(--color-text-secondary)] flex-none ml-2">
+                        {r.industry || autoIndustry(r.name) || '—'}
+                      </span>
+                    </div>
+                  ))}
+                  {filePreview.length > 30 && (
+                    <p className="text-[12px] text-center text-[var(--color-text-secondary)] py-1">
+                      他{filePreview.length - 30}社...
+                    </p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         )}
 
         {/* Footer */}
         <div className="px-5 pb-6 pt-3 flex-shrink-0 space-y-2 border-t border-[var(--color-border)]">
-          {mode === 'rows' ? (
+          {mode === 'rows' && (
             <>
               {validRows.length > 0 && (
                 <p className="text-[12px] text-[var(--color-text-secondary)] text-center">
@@ -233,13 +409,23 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                 {validRows.length > 0 ? `${validRows.length}社を追加する` : '追加する'}
               </button>
             </>
-          ) : (
+          )}
+          {mode === 'text' && (
             <button
               onClick={handleTextImport}
               disabled={parsedTextRows.length === 0}
               className="ios-button-primary disabled:opacity-40"
             >
               {parsedTextRows.length > 0 ? `${parsedTextRows.length}社を追加する` : '追加する'}
+            </button>
+          )}
+          {mode === 'file' && (
+            <button
+              onClick={handleFileImport}
+              disabled={filePreview.length === 0}
+              className="ios-button-primary disabled:opacity-40"
+            >
+              {filePreview.length > 0 ? `${filePreview.length}社を追加する` : '追加する'}
             </button>
           )}
           <button onClick={onClose} className="ios-button-secondary">

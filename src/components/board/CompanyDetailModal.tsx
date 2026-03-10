@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
@@ -17,6 +17,7 @@ import {
 } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
 import { format, parseISO, isValid } from 'date-fns';
+import { useDeadlines } from '@/contexts/DeadlineContext';
 import { ja } from 'date-fns/locale';
 
 interface MemoData {
@@ -67,6 +68,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const showToast = useToast((s) => s.show);
+  const { deadlines: allCsvDeadlines } = useDeadlines();
+  const csvDeadlines = useMemo(
+    () => allCsvDeadlines.filter((d) => d.company_name === company.name),
+    [allCsvDeadlines, company.name]
+  );
 
   const [activeTab, setActiveTab] = useState<TabIndex>(0);
 
@@ -207,12 +213,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 .filter((a) => a.date >= today)
                 .sort((a, b) => a.date.localeCompare(b.date))[0];
               if (!next) return null;
-              const daysLeft = (new Date(next.date).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24);
-              const colorClass = daysLeft <= 3
-                ? 'text-orange-500 bg-orange-500/10'
-                : 'text-[var(--color-danger)] bg-[var(--color-danger)]/10';
+              const color = ACTION_TYPE_COLORS[next.type];
               return (
-                <span className={`flex-none text-[13px] font-semibold rounded-full px-3 py-1 ${colorClass}`}>
+                <span
+                  className="flex-none text-[13px] font-semibold rounded-full px-3 py-1"
+                  style={{ backgroundColor: `${color}15`, color }}
+                >
                   {ACTION_TYPE_LABELS[next.type]} {next.date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
                 </span>
               );
@@ -220,6 +226,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             {company.nextDeadline && (
               <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
                 締切 {company.nextDeadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+              </span>
+            )}
+            {csvDeadlines.length > 0 && (
+              <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                CSV締切 {csvDeadlines[0].deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                {csvDeadlines.length > 1 && ` 他${csvDeadlines.length - 1}件`}
               </span>
             )}
           </div>

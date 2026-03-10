@@ -17,10 +17,14 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedInterviews, setSelectedInterviews] = useState<Interview[]>([]);
   const [selectedActions, setSelectedActions] = useState<ScheduledAction[]>([]);
-  const [showAddInterview, setShowAddInterview] = useState(false);
-  const [addInterviewCompanyId, setAddInterviewCompanyId] = useState('');
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [addEventCompanyId, setAddEventCompanyId] = useState('');
+  const [addEventType, setAddEventType] = useState<ActionType | null>(null);
+  const [actionDate, setActionDate] = useState('');
+  const [actionTime, setActionTime] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<FilterKind>>(new Set(ALL_FILTERS));
   const companies = useAppStore((s) => s.companies);
+  const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
@@ -43,6 +47,25 @@ export default function CalendarPage() {
     setSelectedDate(date);
     setSelectedInterviews(interviews);
     setSelectedActions(actions);
+  };
+
+  const resetAddFlow = () => {
+    setShowAddEvent(false);
+    setAddEventCompanyId('');
+    setAddEventType(null);
+    setActionDate('');
+    setActionTime('');
+  };
+
+  const handleAddAction = () => {
+    if (!addEventCompanyId || !addEventType || !actionDate) return;
+    addScheduledAction({
+      companyId: addEventCompanyId,
+      type: addEventType,
+      date: actionDate,
+      time: actionTime || undefined,
+    });
+    resetAddFlow();
   };
 
   const getCompanyName = (companyId: string): string => {
@@ -222,25 +245,54 @@ export default function CalendarPage() {
 
       <UpcomingList activeFilters={activeFilters} />
 
-      {/* 面接追加フローティングボタン */}
+      {/* 予定追加フローティングボタン */}
       <button
-        onClick={() => setShowAddInterview(true)}
+        onClick={() => setShowAddEvent(true)}
         className="fixed bottom-20 right-5 z-40 w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center ios-tap"
-        aria-label="面接を追加"
+        aria-label="予定を追加"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       </button>
 
-      {showAddInterview && !addInterviewCompanyId && (
+      {/* Step 1: 種別選択 */}
+      {showAddEvent && !addEventType && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowAddInterview(false)} />
+          <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
             <div className="flex justify-center pb-1 md:hidden">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
-            <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">企業を選択</h2>
+            <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">種別を選択</h2>
+            <div className="space-y-2">
+              {(Object.entries(ACTION_TYPE_LABELS) as [ActionType, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setAddEventType(key)}
+                  className="w-full flex items-center gap-3 text-left px-4 py-3 bg-[var(--color-bg)] rounded-xl text-[15px] font-medium text-[var(--color-text)] ios-tap"
+                >
+                  <span className="w-3 h-3 rounded-full flex-none" style={{ backgroundColor: ACTION_TYPE_COLORS[key] }} />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button onClick={resetAddFlow} className="ios-button-secondary">キャンセル</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: 企業選択 */}
+      {showAddEvent && addEventType && !addEventCompanyId && (
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
+          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
+            <div className="flex justify-center pb-1 md:hidden">
+              <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
+            </div>
+            <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">
+              {ACTION_TYPE_LABELS[addEventType]} — 企業を選択
+            </h2>
             {companies.length === 0 ? (
               <p className="text-center text-[var(--color-text-secondary)] text-[14px] py-4">企業が登録されていません</p>
             ) : (
@@ -248,7 +300,7 @@ export default function CalendarPage() {
                 {companies.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => setAddInterviewCompanyId(c.id)}
+                    onClick={() => setAddEventCompanyId(c.id)}
                     className="w-full text-left px-4 py-3 bg-[var(--color-bg)] rounded-xl text-[15px] font-medium text-[var(--color-text)] ios-tap"
                   >
                     {c.name}
@@ -256,16 +308,53 @@ export default function CalendarPage() {
                 ))}
               </div>
             )}
-            <button onClick={() => setShowAddInterview(false)} className="ios-button-secondary">キャンセル</button>
+            <button onClick={() => setAddEventType(null)} className="ios-button-secondary">戻る</button>
           </div>
         </div>
       )}
 
-      {showAddInterview && addInterviewCompanyId && (
+      {/* Step 3a: 面接 → InterviewForm */}
+      {showAddEvent && addEventCompanyId && (addEventType === 'interview' || addEventType === 'final') && (
         <InterviewForm
-          companyId={addInterviewCompanyId}
-          onClose={() => { setShowAddInterview(false); setAddInterviewCompanyId(''); }}
+          companyId={addEventCompanyId}
+          onClose={resetAddFlow}
         />
+      )}
+
+      {/* Step 3b: その他の種別 → 日時入力フォーム */}
+      {showAddEvent && addEventCompanyId && addEventType && addEventType !== 'interview' && addEventType !== 'final' && (
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
+          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
+            <div className="flex justify-center pt-2 pb-0 md:hidden">
+              <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
+            </div>
+            <div className="px-4 pt-4 pb-2">
+              <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">
+                {ACTION_TYPE_LABELS[addEventType]}を追加
+              </h2>
+              <p className="text-[13px] text-center text-[var(--color-text-secondary)] mt-1">
+                {getCompanyName(addEventCompanyId)}
+              </p>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="flex gap-2">
+                <div className="flex-[2]">
+                  <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">日付</label>
+                  <input type="date" value={actionDate} onChange={(e) => setActionDate(e.target.value)} className="ios-input" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">時間</label>
+                  <input type="time" value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" />
+                </div>
+              </div>
+              <button onClick={handleAddAction} disabled={!actionDate} className="ios-button-primary disabled:opacity-40">
+                追加する
+              </button>
+              <button onClick={resetAddFlow} className="ios-button-secondary">キャンセル</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {gradYear !== null && !tutorialFlags.calendar && (
