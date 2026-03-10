@@ -4,16 +4,19 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { INDUSTRIES } from '@/lib/industries';
 import { nanoid } from 'nanoid';
-import { getCompanySuggestions } from '@/lib/companySuggestions';
+import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
+import type { ActionType } from '@/lib/types';
 
 interface BulkRow {
   id: string;
   name: string;
   industry: string;
+  statusId: string;
+  deadline: string;
 }
 
 function createEmptyRow(): BulkRow {
-  return { id: nanoid(6), name: '', industry: '' };
+  return { id: nanoid(6), name: '', industry: '', statusId: '', deadline: '' };
 }
 
 const MAX_ROWS = 20;
@@ -95,6 +98,21 @@ function decodeBuffer(buffer: ArrayBuffer): string {
   }
 }
 
+const mapStageToActionType = (stageName: string): ActionType => {
+  if (stageName === 'ES') return 'es';
+  if (stageName === 'Webテスト') return 'webtest';
+  if (stageName.includes('面接')) return 'interview';
+  return 'other';
+};
+
+const mapStageToSubType = (stageName: string): string | undefined => {
+  if (stageName === '1次面接') return '1次面接';
+  if (stageName === '2次面接') return '2次面接';
+  if (stageName === '3次面接') return '3次面接';
+  if (stageName === '最終面接') return '最終面接';
+  return undefined;
+};
+
 interface BulkImportModalProps {
   statusColumns: { id: string; name: string }[];
   onClose: () => void;
@@ -102,6 +120,7 @@ interface BulkImportModalProps {
 
 export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps) {
   const addCompany = useAppStore((s) => s.addCompany);
+  const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const [selectedStatusId, setSelectedStatusId] = useState(statusColumns[0]?.id ?? '');
   const [rows, setRows] = useState<BulkRow[]>(() =>
     Array.from({ length: INITIAL_ROWS }, createEmptyRow)
@@ -111,6 +130,10 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
   const [filePreview, setFilePreview] = useState<ParsedEntry[]>([]);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Suggestion state: track which row is showing suggestions
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const [rowSuggestions, setRowSuggestions] = useState<CompanySuggestion[]>([]);
 
   const parsedTextRows = useMemo(() => parseTextLines(textInput), [textInput]);
 
@@ -176,8 +199,38 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
     );
   };
 
+  const handleNameChange = (rowId: string, value: string) => {
+    updateRow(rowId, 'name', value);
+    const results = getCompanySuggestions(value);
+    if (results.length > 0) {
+      setActiveRowId(rowId);
+      setRowSuggestions(results);
+    } else {
+      if (activeRowId === rowId) {
+        setActiveRowId(null);
+        setRowSuggestions([]);
+      }
+    }
+  };
+
+  const handleSelectSuggestion = (rowId: string, s: CompanySuggestion) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === rowId
+          ? { ...r, name: s.name, industry: s.industry || r.industry }
+          : r
+      )
+    );
+    setActiveRowId(null);
+    setRowSuggestions([]);
+  };
+
   const removeRow = (id: string) => {
     setRows((prev) => prev.filter((r) => r.id !== id));
+    if (activeRowId === id) {
+      setActiveRowId(null);
+      setRowSuggestions([]);
+    }
   };
 
   const addRow = () => {
@@ -190,11 +243,30 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
   const handleImport = () => {
     if (validRows.length === 0) return;
     validRows.forEach((r) => {
+      const resolvedStatusId = r.statusId || selectedStatusId;
       addCompany({
         name: r.name.trim(),
         industry: r.industry || undefined,
-        statusId: selectedStatusId,
+        statusId: resolvedStatusId,
+        nextDeadline: r.deadline || undefined,
       });
+
+      // Create ScheduledAction if deadline is set
+      if (r.deadline) {
+        const newCompanies = useAppStore.getState().companies;
+        const newCompany = newCompanies[newCompanies.length - 1];
+        if (newCompany) {
+          const selectedStatus = statusColumns.find((s) => s.id === resolvedStatusId);
+          if (selectedStatus) {
+            addScheduledAction({
+              companyId: newCompany.id,
+              type: mapStageToActionType(selectedStatus.name),
+              subType: mapStageToSubType(selectedStatus.name),
+              date: r.deadline,
+            });
+          }
+        }
+      }
     });
     onClose();
   };
@@ -214,7 +286,7 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
 
         <div className="px-5 pb-2 flex-shrink-0">
           <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
-            初期選考段階
+            初期選考段階（共通）
           </label>
           <select
             value={selectedStatusId}
@@ -253,18 +325,66 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                   key={row.id}
                   className="bg-[var(--color-bg)] rounded-xl p-3 space-y-2 border border-[var(--color-border)]"
                 >
+                  {/* Row 1: Number + Company name + Delete */}
                   <div className="flex items-center gap-2">
                     <span className="text-[12px] font-bold text-[var(--color-text-secondary)] w-5 text-center flex-none">
                       {idx + 1}
                     </span>
-                    <input
-                      type="text"
-                      value={row.name}
-                      onChange={(e) => updateRow(row.id, 'name', e.target.value)}
-                      placeholder="企業名"
-                      className="ios-input flex-1 text-[14px] !py-1.5"
-                      autoFocus={idx === 0}
-                    />
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={row.name}
+                        onChange={(e) => handleNameChange(row.id, e.target.value)}
+                        onFocus={() => {
+                          if (row.name.trim()) {
+                            const results = getCompanySuggestions(row.name);
+                            if (results.length > 0) {
+                              setActiveRowId(row.id);
+                              setRowSuggestions(results);
+                            }
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow suggestion click
+                          setTimeout(() => {
+                            if (activeRowId === row.id) {
+                              setActiveRowId(null);
+                              setRowSuggestions([]);
+                            }
+                          }, 150);
+                        }}
+                        placeholder="企業名"
+                        className="ios-input w-full text-[14px] !py-1.5"
+                        autoFocus={idx === 0}
+                      />
+                      {activeRowId === row.id && rowSuggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full mt-1 bg-card rounded-xl shadow-lg ring-1 ring-black/10 dark:ring-white/10 overflow-hidden max-h-40 overflow-y-auto">
+                          {rowSuggestions.map((s) => (
+                            <li
+                              key={s.name}
+                              onPointerDown={(e) => {
+                                e.preventDefault();
+                                handleSelectSuggestion(row.id, s);
+                              }}
+                              className="flex items-center justify-between px-3 py-2 hover:bg-[var(--color-border)] cursor-pointer gap-2"
+                            >
+                              <span className="text-[13px] text-[var(--color-text)] truncate">{s.name}</span>
+                              {s.industry && (
+                                <span
+                                  className="flex-none text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
+                                  style={{
+                                    color: s.color,
+                                    backgroundColor: `${s.color}18`,
+                                  }}
+                                >
+                                  {s.industry}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                     {rows.length > 1 && (
                       <button
                         type="button"
@@ -275,17 +395,38 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                       </button>
                     )}
                   </div>
-                  <div className="flex gap-2 pl-7">
+                  {/* Row 2: Industry + Status */}
+                  <div className="grid grid-cols-2 gap-2 pl-7">
                     <select
                       value={row.industry}
                       onChange={(e) => updateRow(row.id, 'industry', e.target.value)}
-                      className="ios-input flex-1 text-[13px] !py-1.5"
+                      className="ios-input text-[13px] !py-1.5"
                     >
                       <option value="">業界</option>
                       {INDUSTRIES.map((ind) => (
                         <option key={ind} value={ind}>{ind}</option>
                       ))}
                     </select>
+                    <select
+                      value={row.statusId}
+                      onChange={(e) => updateRow(row.id, 'statusId', e.target.value)}
+                      className="ios-input text-[13px] !py-1.5"
+                    >
+                      <option value="">選考段階（共通）</option>
+                      {statusColumns.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* Row 3: Date */}
+                  <div className="pl-7">
+                    <input
+                      type="date"
+                      value={row.deadline}
+                      onChange={(e) => updateRow(row.id, 'deadline', e.target.value)}
+                      className="ios-input w-full text-[13px] !py-1.5"
+                      placeholder="日付"
+                    />
                   </div>
                 </div>
               ))}
@@ -306,9 +447,13 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
         {/* Text paste mode */}
         {mode === 'text' && (
           <div className="px-5 flex-1 overflow-y-auto">
-            <p className="text-[12px] text-[var(--color-text-secondary)] mb-2">
-              1行につき1社。カンマまたはタブで区切ると業界も指定できます。ヘッダー行は自動検出されます。
-            </p>
+            <div className="text-[12px] text-[var(--color-text-secondary)] mb-2 p-2 bg-[var(--color-border)]/20 rounded-lg">
+              <p className="font-medium mb-1">入力方法：</p>
+              <p>1行に1社ずつ企業名を入力してください。</p>
+              <p>業界も入れたい場合はカンマ区切りで入力：</p>
+              <p className="font-mono mt-1">ソニーグループ,メーカー</p>
+              <p className="font-mono">三菱商事,商社</p>
+            </div>
             <textarea
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
@@ -343,9 +488,14 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
         {/* File upload mode */}
         {mode === 'file' && (
           <div className="px-5 flex-1 overflow-y-auto">
-            <p className="text-[12px] text-[var(--color-text-secondary)] mb-3">
-              CSV・TSV・テキストファイルを選択してください。UTF-8・Shift_JIS対応。ヘッダー行は自動検出されます。
-            </p>
+            <div className="text-[12px] text-[var(--color-text-secondary)] mb-2 p-2 bg-[var(--color-border)]/20 rounded-lg">
+              <p className="font-medium mb-1">対応ファイル形式：</p>
+              <p>CSV (.csv) または TSV (.tsv) ファイル</p>
+              <p className="mt-1 font-medium">ファイルの作り方：</p>
+              <p>1. Excelやスプレッドシートを開く</p>
+              <p>2. A列に企業名、B列に業界を入力</p>
+              <p>3.「CSV（カンマ区切り）」で保存</p>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
