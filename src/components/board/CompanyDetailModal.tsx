@@ -16,6 +16,7 @@ import {
   type ActionType,
 } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
+import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 import { format, parseISO, isValid } from 'date-fns';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { ja } from 'date-fns/locale';
@@ -99,6 +100,15 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [nextStageDateTime, setNextStageDateTime] = useState('');
   const [nextStageSubType, setNextStageSubType] = useState<string>('1次面接');
 
+  const FLOW_STAGES = DEFAULT_STATUS_NAMES.filter((s) => s !== '内定' && s !== '見送り');
+  const [enabledStages, setEnabledStages] = useState<Set<string>>(() => {
+    if (company.selectionFlow && company.selectionFlow.length > 0) {
+      return new Set(company.selectionFlow);
+    }
+    return new Set(FLOW_STAGES);
+  });
+  const [showFlowEditor, setShowFlowEditor] = useState(false);
+
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
   const currentStatusIndex = trackStatuses.findIndex((s) => s.id === statusId);
@@ -154,6 +164,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       .sort((a, b) => a.date.localeCompare(b.date));
     const autoDeadline = futureActions[0]?.date;
 
+    const customFlow = FLOW_STAGES.filter((s) => enabledStages.has(s));
+    const isDefaultFlow = customFlow.length === FLOW_STAGES.length;
+
     updateCompany(company.id, {
       name: trimmed,
       industry: industry.trim() || undefined,
@@ -168,6 +181,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       myPageId: myPageId.trim() || undefined,
       myPagePassword: myPagePassword.trim() || undefined,
       tags: tags.length > 0 ? tags : undefined,
+      selectionFlow: isDefaultFlow ? undefined : customFlow,
     });
     onClose();
   };
@@ -453,10 +467,52 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   </div>
                 </div>
               </div>
-              {/* 選考フローカスタマイズ案内 */}
-              <p className="text-[12px] text-[var(--color-text-secondary)] text-center px-2 pb-1">
-                💡 選考フローは企業追加時にカスタマイズできます
-              </p>
+              {/* 選考フロー */}
+              <div className="bg-card rounded-xl overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/5 px-4 py-3">
+                <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">選考フロー</label>
+                <div className="text-[12px] text-[var(--color-text-secondary)] mb-2 leading-relaxed">
+                  {FLOW_STAGES.filter((s) => enabledStages.has(s)).join(' → ')}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFlowEditor(!showFlowEditor)}
+                  className="text-[13px] text-[var(--color-primary)] ios-tap"
+                >
+                  ✏️ {showFlowEditor ? 'フロー編集を閉じる' : '選考フローを変更'}
+                </button>
+                {showFlowEditor && (
+                  <div className="mt-2 bg-[var(--color-border)]/30 rounded-xl p-3 space-y-2">
+                    <p className="text-[12px] text-[var(--color-text-secondary)] mb-2">
+                      不要な段階をOFFにしてください
+                    </p>
+                    {FLOW_STAGES.map((stage) => (
+                      <label key={stage} className="flex items-center gap-2 ios-tap cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enabledStages.has(stage)}
+                          onChange={(e) => {
+                            setEnabledStages((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(stage);
+                              else next.delete(stage);
+                              return next;
+                            });
+                          }}
+                          className="w-4 h-4 accent-[var(--color-primary)]"
+                        />
+                        <span className="text-[14px] text-[var(--color-text)]">{stage}</span>
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setEnabledStages(new Set(FLOW_STAGES))}
+                      className="text-[12px] text-[var(--color-text-secondary)] mt-1 ios-tap"
+                    >
+                      リセット（デフォルトに戻す）
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
