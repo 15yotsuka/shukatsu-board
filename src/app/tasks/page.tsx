@@ -87,6 +87,7 @@ interface TaskCardProps {
   displaySettings: DisplaySettings;
   onOpenDetail: () => void;
   onAdvance: (e: React.MouseEvent) => void;
+  onToggleAwaitingResult: () => void;
 }
 
 function TaskCard({
@@ -100,6 +101,7 @@ function TaskCard({
   displaySettings,
   onOpenDetail,
   onAdvance,
+  onToggleAwaitingResult,
 }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: company.id,
@@ -129,12 +131,20 @@ function TaskCard({
       onClick={onOpenDetail}
       className="relative bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
     >
-      {/* Left color strip (stage color) */}
-      <div
-        className="absolute left-0 top-0 bottom-0 w-2.5 rounded-l-2xl"
-        style={{ backgroundColor: getStageColor(statusName) }}
+      {/* Left color strip (stage color) - tappable to toggle awaitingResult */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleAwaitingResult(); }}
+        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onToggleAwaitingResult(); }}
+        className="absolute left-0 top-0 bottom-0 w-5 rounded-l-2xl transition-opacity"
+        style={{
+          backgroundColor: getStageColor(statusName),
+          opacity: company.awaitingResult ? 0.4 : 1,
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+        }}
+        aria-label="結果待ち切り替え"
       />
-      <div className="pl-5 pr-4 py-3 flex flex-col gap-1.5">
+      <div className="pl-7 pr-4 py-3 flex flex-col gap-1.5">
         {/* Row 1: drag handle + name + status badge + advance button */}
         <div className="flex items-center gap-2">
           {isDraggable && (
@@ -487,6 +497,7 @@ function TasksContent() {
                       displaySettings={displaySettings}
                       onOpenDetail={() => setSelectedCompany(c)}
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
+                      onToggleAwaitingResult={() => toggleAwaitingResult(c.id)}
                     />
                   );
                 })}
