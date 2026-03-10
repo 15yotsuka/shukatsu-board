@@ -20,7 +20,7 @@ export const FILTER_COLORS: Record<FilterKind, string> = {
   other: ACTION_TYPE_COLORS.other,
 };
 
-export const ALL_FILTERS: FilterKind[] = ['interview', 'es', 'webtest', 'deadline', 'other'];
+export const ALL_FILTERS: FilterKind[] = ['es', 'webtest', 'interview', 'deadline', 'other'];
 
 interface FilterChipsProps {
   active: Set<FilterKind>;

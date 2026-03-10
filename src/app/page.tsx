@@ -234,9 +234,9 @@ export default function Home() {
           className="flex-1 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-card text-[var(--color-text)] text-[14px] font-medium"
         >
           <option value="all">すべて</option>
-          <option value="面接">面接</option>
           <option value="ES">ES提出</option>
           <option value="Webテスト">Webテスト</option>
+          <option value="面接">面接</option>
           <option value="締切">締切</option>
           <option value="その他">その他</option>
         </select>

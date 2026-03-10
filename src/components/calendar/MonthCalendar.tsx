@@ -21,7 +21,7 @@ import { ACTION_TYPE_COLORS } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
 
-const DEADLINE_DOT_COLOR = '#9CA3AF';
+const DEADLINE_DOT_COLOR = '#FF3B30';
 
 interface MonthCalendarProps {
   onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
