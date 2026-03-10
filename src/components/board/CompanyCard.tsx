@@ -10,6 +10,7 @@ import type { Company, StatusColumn as StatusColumnType } from '@/lib/types';
 import { TAG_CONFIG, ACTION_TYPE_LABELS, scheduleStageToAction } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { getStageColor, STAGE_COLORS } from '@/lib/stageColors';
+import { formatDateUnified, formatTimeRange } from '@/lib/dateUtils';
 import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 import { INDUSTRIES } from '@/lib/industries';
 import { useToast } from '@/lib/useToast';
@@ -115,7 +116,8 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       .filter((a) => a.companyId === company.id && a.date >= _todayStr)
       .map((a) => ({
         date: a.date,
-        time: a.time,
+        startTime: a.startTime,
+        endTime: a.endTime,
         label: a.subType ?? ACTION_TYPE_LABELS[a.type],
       }));
 
@@ -130,7 +132,8 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         const t = format(dt, 'HH:mm');
         return {
           date: format(dt, 'yyyy-MM-dd'),
-          time: t !== '00:00' ? t : undefined,
+          startTime: t !== '00:00' ? t : undefined,
+          endTime: undefined as string | undefined,
           label: i.type,
         };
       })
@@ -276,7 +279,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         type,
         subType,
         date: nextStageDate,
-        time: nextStageStartTime || undefined,
+        startTime: nextStageStartTime || undefined,
         endTime: nextStageEndTime || undefined,
       });
     }
@@ -424,8 +427,11 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="text-[12px] text-gray-500 dark:text-gray-400">
-                {(() => { const d = parseISO(nextEvent.date); return isValid(d) ? format(d, 'M/d') : nextEvent.date; })()}
-                {nextEvent.time && ` ${nextEvent.time}`} {nextEvent.label}
+                {[
+                  formatDateUnified(nextEvent.date),
+                  formatTimeRange(nextEvent.startTime, nextEvent.endTime),
+                  nextEvent.label,
+                ].filter(Boolean).join(' ')}
               </span>
             </div>
           )}
@@ -573,8 +579,16 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
                   <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
                   <input
                     type="time"
+                    step={300}
                     value={nextStageStartTime}
-                    onChange={(e) => setNextStageStartTime(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setNextStageStartTime(v);
+                      if (v && !nextStageEndTime) {
+                        const [h, m] = v.split(':').map(Number);
+                        setNextStageEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                      }
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
                   />
                 </div>
@@ -582,6 +596,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
                   <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
                   <input
                     type="time"
+                    step={300}
                     value={nextStageEndTime}
                     onChange={(e) => setNextStageEndTime(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"

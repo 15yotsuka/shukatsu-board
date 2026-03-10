@@ -74,7 +74,7 @@ export default function CalendarPage() {
       type,
       subType,
       date: actionDate,
-      time: actionTime || undefined,
+      startTime: actionTime || undefined,
     });
     resetAddFlow();
   };

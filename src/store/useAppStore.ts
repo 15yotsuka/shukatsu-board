@@ -136,7 +136,7 @@ type AppStore = AppState & {
   tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 13;
+const CURRENT_SCHEMA_VERSION = 14;
 
 function normalizeCompanyName(name: string): string {
   return name
@@ -401,7 +401,7 @@ export const useAppStore = create<AppStore>()(
                     ...c,
                     nextActionDate: nextAction?.date,
                     nextActionType: nextAction?.type,
-                    nextActionTime: nextAction?.time,
+                    nextActionTime: nextAction?.startTime,
                     nextDeadline: nextAction?.date,
                     updatedAt: new Date().toISOString(),
                   }
@@ -436,7 +436,7 @@ export const useAppStore = create<AppStore>()(
                     ...c,
                     nextActionDate: nextAction?.date,
                     nextActionType: nextAction?.type,
-                    nextActionTime: nextAction?.time,
+                    nextActionTime: nextAction?.startTime,
                     nextDeadline: nextAction?.date,
                     updatedAt: new Date().toISOString(),
                   }
@@ -639,13 +639,25 @@ export const useAppStore = create<AppStore>()(
           name: normalizeCompanyName(c.name),
         }));
 
+        // v13→v14: rename ScheduledAction.time → startTime
+        const migratedScheduledActionsV14 = migratedScheduledActions.map(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (a: any) => {
+            const { time, ...rest } = a;
+            return {
+              ...rest,
+              startTime: rest.startTime ?? time ?? undefined,
+            };
+          }
+        );
+
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
           companies: normalizedCompanies,
           statusColumns,
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
-          scheduledActions: migratedScheduledActions,
+          scheduledActions: migratedScheduledActionsV14,
           displaySettings,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,

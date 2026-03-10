@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { format, isAfter, startOfDay, parseISO } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { format, isAfter, startOfDay } from 'date-fns';
+import { formatDateUnified } from '@/lib/dateUtils';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS } from '@/lib/types';
 import type { Company } from '@/lib/types';
@@ -45,7 +45,7 @@ export function UpcomingList({ activeFilters }: UpcomingListProps) {
           sortKey: i.datetime,
           companyId: i.companyId,
           label: `${i.type} - ${getCompanyName(i.companyId)}`,
-          sub: format(new Date(i.datetime), 'M/d（E）HH:mm', { locale: ja }),
+          sub: `${formatDateUnified(new Date(i.datetime))} ${format(new Date(i.datetime), 'HH:mm')}`,
           color: ACTION_TYPE_COLORS.interview,
         }))
     : [];
@@ -57,7 +57,7 @@ export function UpcomingList({ activeFilters }: UpcomingListProps) {
       sortKey: a.date,
       companyId: a.companyId,
       label: `${ACTION_TYPE_LABELS[a.type]} - ${getCompanyName(a.companyId)}`,
-      sub: format(parseISO(a.date), 'M/d（E）', { locale: ja }),
+      sub: formatDateUnified(a.date),
       color: ACTION_TYPE_COLORS[a.type],
     }));
 
@@ -69,7 +69,7 @@ export function UpcomingList({ activeFilters }: UpcomingListProps) {
           sortKey: c.nextDeadline! + 'T00:00:00',
           companyId: c.id,
           label: `締切 - ${c.name}`,
-          sub: format(parseISO(c.nextDeadline!), 'M/d（E）', { locale: ja }),
+          sub: formatDateUnified(c.nextDeadline!),
           color: '#FF3B30',
         }))
     : [];

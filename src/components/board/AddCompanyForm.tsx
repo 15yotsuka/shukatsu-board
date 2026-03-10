@@ -102,7 +102,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             type: actionType,
             subType: mapStageToSubType(selectedStatus.name),
             date: deadline.trim(),
-            time: deadlineTime.trim() || undefined,
+            startTime: deadlineTime.trim() || undefined,
           });
         }
       }

@@ -85,7 +85,7 @@ export default function Home() {
           companyName: aData?.name ?? '不明',
           label: ACTION_TYPE_LABELS[a.type] ?? a.type,
           date: a.date,
-          time: a.time,
+          time: a.startTime,
           tags: aData?.tags,
           filterKind: toFilterKind(a.type),
         });
