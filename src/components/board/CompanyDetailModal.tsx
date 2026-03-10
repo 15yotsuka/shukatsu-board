@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
-import { InterviewForm } from '@/components/calendar/InterviewForm';
+
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { fireConfetti } from '@/lib/confetti';
 import { useToast } from '@/lib/useToast';
@@ -82,7 +82,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [url, setUrl] = useState(company.url ?? '');
   const [statusId, setStatusId] = useState(company.statusId);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showInterviewForm, setShowInterviewForm] = useState(false);
   const [nameError, setNameError] = useState('');
 
   const [myPageUrl, setMyPageUrl] = useState(company.myPageUrl ?? '');
@@ -269,7 +268,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             )}
             {csvDeadlines.length > 0 && (
               <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
-                CSV締切 {csvDeadlines[0].deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                締切 {csvDeadlines[0].deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
                 {csvDeadlines.length > 1 && ` 他${csvDeadlines.length - 1}件`}
               </span>
             )}
@@ -324,54 +323,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 </div>
               </div>
 
-              {/* 面接予定 */}
-              <div>
-                <div className="mb-2 px-1">
-                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">面接予定</h3>
-                </div>
-                {companyInterviews.length > 0 && (
-                  <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5 mb-2">
-                    {companyInterviews.map((interview) => (
-                      <div key={interview.id} className="px-4 py-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-[15px] font-medium text-[var(--color-text)]">{interview.type}</p>
-                          <p className="text-[13px] text-[var(--color-text-secondary)]">
-                            {new Date(interview.datetime).toLocaleString('ja-JP', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                            {interview.endTime && `〜${interview.endTime}`}
-                            {interview.location && ` / ${interview.location}`}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => deleteInterview(interview.id)}
-                          className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={() => setShowInterviewForm(true)}
-                  className="w-full py-3 border-2 border-dashed border-[var(--color-primary)]/40 rounded-xl text-[var(--color-primary)] font-medium text-[14px] hover:bg-[var(--color-primary-light)] transition-colors flex items-center justify-center gap-2 ios-tap"
-                >
-                  <span className="text-lg">+</span>
-                  面接予定を追加
-                </button>
-              </div>
-
-              {/* 予定アクション */}
+              {/* 選考予定 */}
               <div>
                 <div className="flex items-center justify-between mb-2 px-1">
-                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">予定アクション</h3>
+                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">選考予定</h3>
                 </div>
+
+                {/* Add form */}
                 <div className="space-y-2 mb-3">
                   <div className="flex gap-2 flex-wrap">
                     <select value={newActionType} onChange={(e) => { setNewActionType(e.target.value as ActionType); }} className="ios-input flex-none w-auto text-[13px] py-2">
@@ -411,25 +369,61 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     + 追加
                   </button>
                 </div>
-                {scheduledActions.length > 0 && (
-                  <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                    {[...scheduledActions].sort((a, b) => a.date.localeCompare(b.date)).map((action) => (
-                      <div key={action.id} className="flex items-center justify-between px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: ACTION_TYPE_COLORS[action.type] }} />
-                          <span className="text-[14px] font-medium text-[var(--color-text)]">{action.subType ?? ACTION_TYPE_LABELS[action.type]}</span>
-                          <span className="text-[13px] text-[var(--color-text-secondary)]">
-                            {(() => { const d = parseISO(action.date); return isValid(d) ? format(d, 'M/d(E)', { locale: ja }) : action.date; })()}
-                            {action.time && ` ${action.time}`}
-                          </span>
+
+                {/* Unified list: interviews + scheduled actions */}
+                {(() => {
+                  const items: { id: string; kind: 'interview' | 'action'; label: string; date: string; time?: string; color: string }[] = [];
+
+                  for (const iv of companyInterviews) {
+                    const dt = new Date(iv.datetime);
+                    items.push({
+                      id: iv.id,
+                      kind: 'interview',
+                      label: iv.type,
+                      date: iv.datetime.slice(0, 10),
+                      time: dt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+                      color: '#F97316',
+                    });
+                  }
+
+                  for (const a of scheduledActions) {
+                    items.push({
+                      id: a.id,
+                      kind: 'action',
+                      label: a.subType ?? ACTION_TYPE_LABELS[a.type],
+                      date: a.date,
+                      time: a.time,
+                      color: ACTION_TYPE_COLORS[a.type],
+                    });
+                  }
+
+                  items.sort((a, b) => a.date.localeCompare(b.date));
+
+                  if (items.length === 0) return null;
+
+                  return (
+                    <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: item.color }} />
+                            <span className="text-[14px] font-medium text-[var(--color-text)]">{item.label}</span>
+                            <span className="text-[13px] text-[var(--color-text-secondary)]">
+                              {(() => { const d = parseISO(item.date); return isValid(d) ? format(d, 'M/d(E)', { locale: ja }) : item.date; })()}
+                              {item.time && ` ${item.time}`}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => item.kind === 'interview' ? deleteInterview(item.id) : deleteScheduledAction(item.id)}
+                            className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
                         </div>
-                        <button onClick={() => deleteScheduledAction(action.id)} className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
             </div>
@@ -542,7 +536,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       {gradYear !== null && !tutorialFlags.detail && (
         <TutorialModal
           steps={[
-            { title: '企業詳細の使い方', body: '選考詳細タブで面接予定やアクションを管理\nメモタブでES・面接ログを記録\nマイページタブでログイン情報を保存' },
+            { title: '企業詳細の使い方', body: '選考詳細タブで選考予定を管理\nメモタブでES・面接ログを記録\nマイページタブでログイン情報を保存' },
           ]}
           onComplete={() => markTutorialSeen('detail')}
         />
@@ -629,12 +623,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         </div>
       )}
 
-      {showInterviewForm && (
-        <InterviewForm
-          companyId={company.id}
-          onClose={() => setShowInterviewForm(false)}
-        />
-      )}
     </div>
   );
 }

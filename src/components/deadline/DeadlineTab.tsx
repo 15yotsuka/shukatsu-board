@@ -280,7 +280,7 @@ export default function DeadlineTab() {
           steps={[
             {
               title: '締切一覧の使い方',
-              body: 'CSVから取得した締切情報が表示されます\n卒年タブで対象年度を切り替えられます\n\n業界フィルターやソート順で\n必要な情報をすばやく確認できます',
+              body: '登録済みの締切情報が表示されます\n卒年タブで対象年度を切り替えられます\n\n業界フィルターやソート順で\n必要な情報をすばやく確認できます',
             },
           ]}
           onComplete={() => markTutorialSeen('deadline')}
