@@ -22,7 +22,8 @@
       "Bash(venv/Scripts/python:*)",
       "Bash(npm audit)",
       "Bash(grep:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(npx cap:*)"
     ]
   }
 }
