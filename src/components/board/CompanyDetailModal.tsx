@@ -459,6 +459,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   </div>
                 </div>
               </div>
+              {/* 選考フローカスタマイズ案内 */}
+              <p className="text-[12px] text-[var(--color-text-secondary)] text-center px-2 pb-1">
+                💡 選考フローは企業追加時にカスタマイズできます
+              </p>
             </div>
           )}
 
@@ -542,6 +546,72 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           ]}
           onComplete={() => markTutorialSeen('detail')}
         />
+      )}
+
+      {/* 次の段階へポップアップ */}
+      {showNextStagePopup && nextStatus && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowNextStagePopup(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl p-4 mx-4 max-w-sm w-full shadow-xl">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-[16px]">
+              {nextStatus.name}の日程を設定
+            </h3>
+            {nextStageIsInterview && (
+              <select
+                value={nextStageSubType}
+                onChange={(e) => setNextStageSubType(e.target.value)}
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 mb-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
+              >
+                <option value="1次面接">1次面接</option>
+                <option value="2次面接">2次面接</option>
+                <option value="3次面接">3次面接</option>
+                <option value="最終面接">最終面接</option>
+              </select>
+            )}
+            <input
+              type="datetime-local"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
+              value={nextStageDateTime}
+              onChange={(e) => setNextStageDateTime(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setStatusId(nextStatus.id);
+                  if (company.awaitingResult) {
+                    updateCompany(company.id, { awaitingResult: false });
+                  }
+                  setShowNextStagePopup(false);
+                }}
+                className="flex-1 py-2.5 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap"
+              >
+                スキップ
+              </button>
+              <button
+                onClick={() => {
+                  if (!nextStageDateTime) return;
+                  setStatusId(nextStatus.id);
+                  if (company.awaitingResult) {
+                    updateCompany(company.id, { awaitingResult: false });
+                  }
+                  const [datePart, timePart] = nextStageDateTime.split('T');
+                  addScheduledAction({
+                    companyId: company.id,
+                    type: nextStageActionType,
+                    subType: nextStageIsInterview ? nextStageSubType : undefined,
+                    date: datePart,
+                    time: timePart || undefined,
+                  });
+                  setShowNextStagePopup(false);
+                }}
+                disabled={!nextStageDateTime}
+                className="flex-1 py-2.5 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40"
+              >
+                設定
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 削除確認ダイアログ */}
