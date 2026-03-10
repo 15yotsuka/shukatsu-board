@@ -11,7 +11,7 @@ import { BulkImportModal } from '@/components/board/BulkImportModal';
 import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
-import { createSampleCompanies, SAMPLE_INTERVIEWS } from '@/lib/sampleData';
+import { createSampleCompanies, SAMPLE_SCHEDULED_ACTIONS } from '@/lib/sampleData';
 import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, scheduleStageToAction, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
@@ -263,26 +263,21 @@ function TasksContent() {
 
   const trackStatuses = useMemo(() => [...statusColumns].sort((a, b) => a.order - b.order), [statusColumns]);
 
-  const addInterview = useAppStore((s) => s.addInterview);
-
   const handleSeed = () => {
     const samples = createSampleCompanies(statusColumns);
-    const addedCompanies: { name: string; id?: string }[] = [];
-    samples.forEach((c) => {
-      addCompany(c);
-      addedCompanies.push({ name: c.name });
-    });
-    // Get freshly added companies to link interviews
+    samples.forEach((c) => addCompany(c));
+    // Link ScheduledActions to freshly added companies
     const freshCompanies = useAppStore.getState().companies;
-    SAMPLE_INTERVIEWS.forEach((si) => {
-      const target = freshCompanies.find((c) => c.name === si.companyName);
+    SAMPLE_SCHEDULED_ACTIONS.forEach((sa) => {
+      const target = freshCompanies.find((c) => c.name === sa.companyName);
       if (!target) return;
-      addInterview({
+      addScheduledAction({
         companyId: target.id,
-        datetime: `${si.date}T${si.startTime}:00`,
-        endTime: si.endTime,
-        type: si.type,
-        location: si.location,
+        type: sa.type,
+        subType: sa.subType,
+        date: sa.date,
+        startTime: sa.startTime,
+        endTime: sa.endTime,
       });
     });
   };

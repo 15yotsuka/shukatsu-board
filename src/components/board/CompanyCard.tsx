@@ -251,8 +251,9 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   }, [miokuri]);
 
   // ---- Color strip tap ----
-  const handleColorStripClick = useCallback((e: React.MouseEvent) => {
+  const handleColorStripClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     toggleAwaitingResult(company.id);
   }, [toggleAwaitingResult, company.id]);
 
@@ -362,12 +363,14 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         {/* Color strip */}
         <button
           onClick={handleColorStripClick}
-          className="absolute left-0 top-0 bottom-0 z-10 rounded-l-xl transition-opacity flex items-center justify-start"
+          onTouchEnd={handleColorStripClick}
+          className="absolute left-0 top-0 bottom-0 z-10 rounded-l-xl transition-opacity"
           style={{
             backgroundColor: stageColor,
             opacity: company.awaitingResult ? 0.4 : 1,
             width: '44px',
             WebkitTapHighlightColor: 'transparent',
+            touchAction: 'none',
           }}
           aria-label="結果待ち切り替え"
         />
