@@ -63,6 +63,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   // Touch swipe refs
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const touchDirectionRef = useRef<'none' | 'horizontal' | 'vertical'>('none');
+  const swipeOffsetRef = useRef(0); // ref to avoid stale closure in touchEnd
 
   // ---- Derived data ----
   const sortedStatuses = useMemo(() => {
@@ -147,6 +148,9 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // Forward to dnd-kit so drag still works
+    listeners?.onPointerDown?.(e);
+
     pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
     didMoveRef.current = false;
     longPressFiredRef.current = false;
@@ -154,7 +158,6 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     longPressTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         longPressFiredRef.current = true;
-        // Open quick edit
         setEditName(company.name);
         setEditStatusId(company.statusId);
         setEditDeadline(company.nextDeadline || '');
@@ -162,13 +165,13 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         setShowQuickEdit(true);
       }
     }, 500);
-  }, [company.name, company.statusId, company.nextDeadline, company.industry]);
+  }, [listeners, company.name, company.statusId, company.nextDeadline, company.industry]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (pointerStartRef.current) {
       const dx = Math.abs(e.clientX - pointerStartRef.current.x);
       const dy = Math.abs(e.clientY - pointerStartRef.current.y);
-      if (dx > 6 || dy > 6) {
+      if (dx > 12 || dy > 12) { // increased from 6 to 12 (mobile finger wobble)
         didMoveRef.current = true;
         clearLongPress();
       }
@@ -203,18 +206,22 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
 
     if (touchDirectionRef.current === 'horizontal' && dx < 0) {
       // Left swipe only
-      setSwipeOffset(Math.min(Math.abs(dx), 200));
+      const newOffset = Math.min(Math.abs(dx), 200);
+      swipeOffsetRef.current = newOffset;
+      setSwipeOffset(newOffset);
     }
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    if (swipeOffset > 100 && miokuri) {
+    // Use ref (not state) to avoid stale closure - state update may not have flushed yet
+    if (swipeOffsetRef.current > 100 && miokuri) {
       setShowDismissConfirm(true);
     }
+    swipeOffsetRef.current = 0;
     setSwipeOffset(0);
     touchStartRef.current = null;
     touchDirectionRef.current = 'none';
-  }, [swipeOffset, miokuri]);
+  }, [miokuri]);
 
   // ---- Color strip tap ----
   const handleColorStripClick = useCallback((e: React.MouseEvent) => {
@@ -296,6 +303,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       ? `${baseTransform || ''} translateX(-${swipeOffset}px)`
       : baseTransform || undefined,
     transition: swipeOffset > 0 ? 'none' : transition,
+    touchAction: 'pan-y' as const, // allow vertical scroll, let JS handle horizontal swipe
   };
 
   return (
@@ -550,10 +558,11 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       {showQuickEdit && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setShowQuickEdit(false)}
+          onPointerDown={() => setShowQuickEdit(false)}
         >
           <div
             className="bg-card rounded-2xl p-6 mx-6 max-w-sm w-full shadow-xl space-y-4"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-[16px] font-semibold text-[var(--color-text)] text-center">
