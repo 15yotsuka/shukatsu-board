@@ -93,7 +93,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
       {gradYear !== null && !tutorialFlags.settings && (
         <TutorialModal
-          steps={[{ title: 'データを守りましょう', body: 'データタブからバックアップ（JSON）を\nエクスポートしておくと安心です\n機種変更やブラウザ変更時に復元できます' }]}
+          steps={[{ title: '⚙️ 設定でできること', body: '・選考段階の管理：選考ステップの追加・削除・並び替え\n・表示設定：カードに表示する情報のON/OFF\n・データ管理：バックアップ・復元・企業の一括追加\n・機種変更時はJSONエクスポート→新端末でインポート' }]}
           onComplete={() => markTutorialSeen('settings')}
         />
       )}
