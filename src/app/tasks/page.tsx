@@ -50,6 +50,7 @@ const FILTER_GROUPS: Record<string, string[]> = {
 const FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'すべて' },
   { value: 'active', label: '進行中' },
+  { value: 'awaiting', label: '結果待ち' },
   { value: 'entry', label: 'エントリー' },
   { value: 'interview', label: '面接中' },
   { value: 'intern', label: 'インターン' },
@@ -169,6 +170,11 @@ function TaskCard({
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap flex-none ${getBadgeStyle(statusName)}`}>
             {statusName}
           </span>
+          {company.awaitingResult && (
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 whitespace-nowrap flex-none">
+              結果待ち
+            </span>
+          )}
           <button
             onClick={onAdvance}
             className="flex-none text-[12px] px-2 py-1 rounded-lg bg-blue-500/20 text-blue-500 font-medium whitespace-nowrap ios-tap"
@@ -199,10 +205,10 @@ function TaskCard({
           })}
         </div>
 
-        {/* Tags */}
-        {company.tags && company.tags.length > 0 && (
+        {/* Tags (excluding 結果待ち which is shown in Row 1) */}
+        {company.tags && company.tags.filter((t) => t !== '結果待ち').length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {company.tags.map((tag) => TAG_CONFIG[tag] && (
+            {company.tags.filter((t) => t !== '結果待ち').map((tag) => TAG_CONFIG[tag] && (
               <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${TAG_CONFIG[tag].className}`}>
                 {TAG_CONFIG[tag].label}
               </span>
@@ -387,6 +393,7 @@ function TasksContent() {
 
   const filtered = filter
     ? sortedAll.filter((c) => {
+        if (filter === 'awaiting') return c.awaitingResult === true;
         const name = getStatusName(c.statusId);
         if (FILTER_GROUPS[filter]) return FILTER_GROUPS[filter].includes(name);
         return name === filter || name.includes(filter);
