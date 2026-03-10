@@ -25,21 +25,27 @@ const INITIAL_ROWS = 3;
 // ヘッダー行判定用キーワード
 const NAME_HEADERS = ['企業名', '会社名', 'name', 'Name', '名前', '社名', 'company'];
 const INDUSTRY_HEADERS = ['業界', 'industry', 'Industry', '業種', 'セクター'];
+const STATUS_HEADERS = ['選考段階', '段階', 'status', 'Status', '状態'];
+const DEADLINE_HEADERS = ['日時', '締切日', '締切', 'deadline', 'Deadline', '日付', 'date', 'Date'];
 
 function isHeaderRow(fields: string[]): boolean {
   const first = fields[0]?.trim().toLowerCase() ?? '';
   return NAME_HEADERS.some((h) => first === h.toLowerCase());
 }
 
-function detectNameAndIndustryColumns(fields: string[]): { nameCol: number; industryCol: number } {
+function detectColumns(fields: string[]): { nameCol: number; industryCol: number; statusCol: number; deadlineCol: number } {
   let nameCol = 0;
   let industryCol = -1;
+  let statusCol = -1;
+  let deadlineCol = -1;
   fields.forEach((f, i) => {
     const lower = f.trim().toLowerCase();
     if (NAME_HEADERS.some((h) => lower === h.toLowerCase())) nameCol = i;
     if (INDUSTRY_HEADERS.some((h) => lower === h.toLowerCase())) industryCol = i;
+    if (STATUS_HEADERS.some((h) => lower === h.toLowerCase())) statusCol = i;
+    if (DEADLINE_HEADERS.some((h) => lower === h.toLowerCase())) deadlineCol = i;
   });
-  return { nameCol, industryCol };
+  return { nameCol, industryCol, statusCol, deadlineCol };
 }
 
 function splitLine(line: string): string[] {
@@ -51,6 +57,8 @@ function splitLine(line: string): string[] {
 interface ParsedEntry {
   name: string;
   industry: string;
+  statusName?: string;
+  deadline?: string;
 }
 
 function parseTextLines(text: string): ParsedEntry[] {
@@ -60,9 +68,9 @@ function parseTextLines(text: string): ParsedEntry[] {
   // 1行目がヘッダーかチェック
   const firstFields = splitLine(lines[0]);
   const hasHeader = isHeaderRow(firstFields);
-  const { nameCol, industryCol } = hasHeader
-    ? detectNameAndIndustryColumns(firstFields)
-    : { nameCol: 0, industryCol: firstFields.length > 1 ? 1 : -1 };
+  const { nameCol, industryCol, statusCol, deadlineCol } = hasHeader
+    ? detectColumns(firstFields)
+    : { nameCol: 0, industryCol: firstFields.length > 1 ? 1 : -1, statusCol: -1, deadlineCol: -1 };
 
   const startIdx = hasHeader ? 1 : 0;
   const results: ParsedEntry[] = [];
@@ -73,7 +81,9 @@ function parseTextLines(text: string): ParsedEntry[] {
     const fields = splitLine(trimmed);
     const name = fields[nameCol]?.trim() ?? '';
     const industry = industryCol >= 0 ? (fields[industryCol]?.trim() ?? '') : '';
-    if (name) results.push({ name, industry });
+    const statusName = statusCol >= 0 ? (fields[statusCol]?.trim() || undefined) : undefined;
+    const deadline = deadlineCol >= 0 ? (fields[deadlineCol]?.trim() || undefined) : undefined;
+    if (name) results.push({ name, industry, statusName, deadline });
   }
   return results;
 }
@@ -142,6 +152,12 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
     return suggestions[0]?.industry || '';
   };
 
+  const resolveStatusId = (statusName: string | undefined): string => {
+    if (!statusName) return selectedStatusId;
+    const match = statusColumns.find((s) => s.name === statusName);
+    return match?.id || selectedStatusId;
+  };
+
   const isValidIndustry = (industry: string): boolean => {
     return (INDUSTRIES as readonly string[]).includes(industry);
   };
@@ -156,15 +172,30 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
 
   const handleTextImport = () => {
     if (parsedTextRows.length === 0) return;
-    let autoCount = 0;
     parsedTextRows.forEach((r) => {
-      const { industry, autoDetected } = resolveIndustry(r.name, r.industry);
-      if (autoDetected) autoCount++;
+      const { industry } = resolveIndustry(r.name, r.industry);
+      const resolvedStatusId = resolveStatusId(r.statusName);
       addCompany({
         name: r.name,
         industry: industry || undefined,
-        statusId: selectedStatusId,
+        statusId: resolvedStatusId,
+        nextDeadline: r.deadline || undefined,
       });
+      if (r.deadline) {
+        const newCompanies = useAppStore.getState().companies;
+        const newCompany = newCompanies[newCompanies.length - 1];
+        if (newCompany) {
+          const selectedStatus = statusColumns.find((s) => s.id === resolvedStatusId);
+          if (selectedStatus) {
+            addScheduledAction({
+              companyId: newCompany.id,
+              type: mapStageToActionType(selectedStatus.name),
+              subType: mapStageToSubType(selectedStatus.name),
+              date: r.deadline,
+            });
+          }
+        }
+      }
     });
     onClose();
   };
@@ -184,11 +215,28 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
     if (filePreview.length === 0) return;
     filePreview.forEach((r) => {
       const { industry } = resolveIndustry(r.name, r.industry);
+      const resolvedStatusId = resolveStatusId(r.statusName);
       addCompany({
         name: r.name,
         industry: industry || undefined,
-        statusId: selectedStatusId,
+        statusId: resolvedStatusId,
+        nextDeadline: r.deadline || undefined,
       });
+      if (r.deadline) {
+        const newCompanies = useAppStore.getState().companies;
+        const newCompany = newCompanies[newCompanies.length - 1];
+        if (newCompany) {
+          const selectedStatus = statusColumns.find((s) => s.id === resolvedStatusId);
+          if (selectedStatus) {
+            addScheduledAction({
+              companyId: newCompany.id,
+              type: mapStageToActionType(selectedStatus.name),
+              subType: mapStageToSubType(selectedStatus.name),
+              date: r.deadline,
+            });
+          }
+        }
+      }
     });
     onClose();
   };
@@ -467,11 +515,13 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                 </p>
                 <div className="max-h-32 overflow-y-auto rounded-lg border border-[var(--color-border)]">
                   {parsedTextRows.slice(0, 20).map((r, i) => (
-                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-[13px] border-b border-[var(--color-border)] last:border-0">
-                      <span className="text-[var(--color-text)] truncate">{r.name}</span>
-                      <span className="text-[var(--color-text-secondary)] flex-none ml-2">
+                    <div key={i} className="flex items-center gap-2 px-3 py-1.5 text-[13px] border-b border-[var(--color-border)] last:border-0">
+                      <span className="text-[var(--color-text)] truncate flex-1">{r.name}</span>
+                      <span className="text-[var(--color-text-secondary)] flex-none text-[11px]">
                         {r.industry || autoIndustry(r.name) || '—'}
                       </span>
+                      {r.statusName && <span className="text-[var(--color-primary)] flex-none text-[11px]">{r.statusName}</span>}
+                      {r.deadline && <span className="text-[var(--color-danger)] flex-none text-[11px]">{r.deadline}</span>}
                     </div>
                   ))}
                   {parsedTextRows.length > 20 && (
@@ -493,8 +543,10 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
               <p>CSV (.csv) または TSV (.tsv) ファイル</p>
               <p className="mt-1 font-medium">ファイルの作り方：</p>
               <p>1. Excelやスプレッドシートを開く</p>
-              <p>2. A列に企業名、B列に業界を入力</p>
-              <p>3.「CSV（カンマ区切り）」で保存</p>
+              <p>2. 1行目にヘッダー（企業名・業界・選考段階・締切日）を入力</p>
+              <p>3. 2行目以降にデータを入力</p>
+              <p>4.「CSV（カンマ区切り）」で保存</p>
+              <p className="mt-1 font-mono">例：企業名,業界,選考段階,締切日</p>
             </div>
             <input
               ref={fileInputRef}
@@ -524,11 +576,13 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
                 </p>
                 <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--color-border)]">
                   {filePreview.slice(0, 30).map((r, i) => (
-                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-[13px] border-b border-[var(--color-border)] last:border-0">
-                      <span className="text-[var(--color-text)] truncate">{r.name}</span>
-                      <span className="text-[var(--color-text-secondary)] flex-none ml-2">
+                    <div key={i} className="flex items-center gap-2 px-3 py-1.5 text-[13px] border-b border-[var(--color-border)] last:border-0">
+                      <span className="text-[var(--color-text)] truncate flex-1">{r.name}</span>
+                      <span className="text-[var(--color-text-secondary)] flex-none text-[11px]">
                         {r.industry || autoIndustry(r.name) || '—'}
                       </span>
+                      {r.statusName && <span className="text-[var(--color-primary)] flex-none text-[11px]">{r.statusName}</span>}
+                      {r.deadline && <span className="text-[var(--color-danger)] flex-none text-[11px]">{r.deadline}</span>}
                     </div>
                   ))}
                   {filePreview.length > 30 && (
