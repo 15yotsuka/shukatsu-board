@@ -42,6 +42,8 @@ export interface Company {
   // カスタム選考ステップ（未設定の場合はデフォルトを使用）
   customMilestones?: string[];
   awaitingResult?: boolean;
+  // 企業ごとカスタム選考フロー（undefinedならデフォルト9段階を使用）
+  selectionFlow?: string[];
 }
 
 // ============================
@@ -119,21 +121,21 @@ export interface AppState {
 // ============================
 // 予定アクション（締切・面接など）
 // ============================
-export type ActionType = 'es' | 'webtest' | 'interview' | 'final' | 'other';
+export type ActionType = 'es' | 'webtest' | 'gd' | 'interview' | 'other';
 
 export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   es: 'ES提出',
   webtest: 'Webテスト',
+  gd: 'GD',
   interview: '面接',
-  final: '最終面接',
   other: 'その他',
 };
 
 export const ACTION_TYPE_COLORS: Record<ActionType, string> = {
   es: '#8B5CF6',
   webtest: '#3B82F6',
+  gd: '#EC4899',
   interview: '#F97316',
-  final: '#F97316',
   other: '#8E8E93',
 };
 
@@ -141,6 +143,7 @@ export interface ScheduledAction {
   id: string;
   companyId: string;
   type: ActionType;
+  subType?: string; // 面接時: '1次面接'|'2次面接'|'3次面接'|'最終面接'
   date: string; // "2026-03-15"
   time?: string; // "HH:mm"
   note?: string;

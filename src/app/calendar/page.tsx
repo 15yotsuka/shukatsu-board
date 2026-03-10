@@ -75,7 +75,6 @@ export default function CalendarPage() {
   const toFilterKind = (type: string | undefined): FilterKind => {
     if (type === 'es') return 'es';
     if (type === 'webtest') return 'webtest';
-    if (type === 'final') return 'interview';
     if (type === 'interview') return 'interview';
     return 'other';
   };
@@ -314,7 +313,7 @@ export default function CalendarPage() {
       )}
 
       {/* Step 3a: 面接 → InterviewForm */}
-      {showAddEvent && addEventCompanyId && (addEventType === 'interview' || addEventType === 'final') && (
+      {showAddEvent && addEventCompanyId && addEventType === 'interview' && (
         <InterviewForm
           companyId={addEventCompanyId}
           onClose={resetAddFlow}
@@ -322,7 +321,7 @@ export default function CalendarPage() {
       )}
 
       {/* Step 3b: その他の種別 → 日時入力フォーム */}
-      {showAddEvent && addEventCompanyId && addEventType && addEventType !== 'interview' && addEventType !== 'final' && (
+      {showAddEvent && addEventCompanyId && addEventType && addEventType !== 'interview' && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">

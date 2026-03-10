@@ -127,7 +127,7 @@ export function createSampleCompanies(
       statusId: getStatus('最終面接'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 10), 'yyyy-MM-dd'),
-      nextActionType: 'final' as ActionType,
+      nextActionType: 'interview' as ActionType,
     },
     {
       name: '伊藤忠商事',
@@ -135,7 +135,7 @@ export function createSampleCompanies(
       statusId: getStatus('最終面接'),
       selectionType: 'main' as SelectionType,
       nextActionDate: format(addDays(now, 13), 'yyyy-MM-dd'),
-      nextActionType: 'final' as ActionType,
+      nextActionType: 'interview' as ActionType,
     },
     // インターン選考中
     {

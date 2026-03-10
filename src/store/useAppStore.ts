@@ -132,7 +132,7 @@ type AppStore = AppState & {
   tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 11;
+const CURRENT_SCHEMA_VERSION = 12;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -603,13 +603,24 @@ export const useAppStore = create<AppStore>()(
           showProgressBar: existingDisplay.showProgressBar ?? true,
         };
 
+        // v11→v12: migrate 'final' ActionType → 'interview' with subType='最終面接'
+        const migratedScheduledActions = (state.scheduledActions ?? []).map(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (a: any) => {
+            if (a.type === 'final') {
+              return { ...a, type: 'interview', subType: '最終面接' };
+            }
+            return a;
+          }
+        );
+
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,
           companies,
           statusColumns,
           interviews: state.interviews ?? [],
           esEntries: state.esEntries ?? [],
-          scheduledActions: state.scheduledActions ?? [],
+          scheduledActions: migratedScheduledActions,
           displaySettings,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notificationSettings: (state as any).notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
