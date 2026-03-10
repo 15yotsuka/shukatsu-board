@@ -344,7 +344,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         />
 
         {/* Card content */}
-        <div className="pl-5 pr-3.5 py-3 relative bg-card rounded-xl">
+        <div className="pl-5 pr-3.5 py-3">
           {/* Row 1: Name + tag */}
           <div className="flex items-start justify-between gap-1.5 mb-0.5">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">
