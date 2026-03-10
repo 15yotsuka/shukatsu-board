@@ -352,7 +352,10 @@ export default function Home() {
 
       {gradYear !== null && !tutorialFlags.home && (
         <TutorialModal
-          steps={[{ title: '色は選考段階を表します', body: '🟣 ES　🔵 Webテスト　🟠 面接　🟢 内定\nカードの左端の色帯で一目で分かります' }]}
+          steps={[{
+            title: '色は選考段階を表します',
+            body: '🟣 ES　🔵 Webテスト　🟠 面接　🟢 内定\nカードの左端の色帯で一目で分かります\n\n💡 色帯をタップすると「結果待ち」に切り替わります\n結果が出たら「次の段階へ→」で自動解除されます'
+          }]}
           onComplete={() => markTutorialSeen('home')}
         />
       )}

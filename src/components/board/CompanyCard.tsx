@@ -362,16 +362,18 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
         {/* Color strip */}
         <button
           onClick={handleColorStripClick}
-          className="absolute left-0 top-0 bottom-0 w-2.5 z-10 rounded-l-xl transition-opacity"
+          className="absolute left-0 top-0 bottom-0 z-10 rounded-l-xl transition-opacity flex items-center justify-start"
           style={{
             backgroundColor: stageColor,
             opacity: company.awaitingResult ? 0.4 : 1,
+            width: '44px',
+            WebkitTapHighlightColor: 'transparent',
           }}
           aria-label="結果待ち切り替え"
         />
 
         {/* Card content */}
-        <div className="pl-5 pr-3.5 py-3">
+        <div className="pl-14 pr-3.5 py-3">
           {/* Row 1: Name + tag */}
           <div className="flex items-start justify-between gap-1.5 mb-0.5">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate flex-1">
