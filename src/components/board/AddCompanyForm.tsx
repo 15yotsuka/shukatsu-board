@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
-import { TAG_CONFIG, type Tag, type ActionType } from '@/lib/types';
+import { TAG_CONFIG, type Tag, type ActionType, getDateLabel, needsTimeInput } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
@@ -30,11 +30,14 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [tags, setTags] = useState<Tag[]>([]);
   const [memo, setMemo] = useState('');
+  const [deadlineTime, setDeadlineTime] = useState('');
   const [flowStages, setFlowStages] = useState<string[]>(DEFAULT_FLOW_STAGES);
   const [showFlowEditor, setShowFlowEditor] = useState(false);
   const [nameError, setNameError] = useState('');
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const selectedStageName = trackStatuses.find(s => s.id === statusId)?.name || '';
 
   const { deadlines } = useDeadlines();
 
@@ -99,6 +102,7 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             type: actionType,
             subType: mapStageToSubType(selectedStatus.name),
             date: deadline.trim(),
+            time: deadlineTime.trim() || undefined,
           });
         }
       }
@@ -221,15 +225,26 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             </select>
           </div>
 
-          {/* 締切日 */}
+          {/* 日付（ラベルは選考段階に連動） */}
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">締切日</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">{getDateLabel(selectedStageName)}</label>
             <input
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
               className="ios-input"
             />
+            {needsTimeInput(selectedStageName) && (
+              <div className="mt-2">
+                <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">時間（任意）</label>
+                <input
+                  type="time"
+                  value={deadlineTime}
+                  onChange={(e) => setDeadlineTime(e.target.value)}
+                  className="ios-input"
+                />
+              </div>
+            )}
             {deadlineSuggestions.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {deadlineSuggestions.map((d, i) => (
@@ -276,15 +291,18 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
             </div>
           </div>
 
-          {/* 選考フロー */}
+          {/* 選考フロー（常時表示） */}
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">選考フロー</label>
+            <div className="text-[13px] text-[var(--color-text)] leading-relaxed mb-1.5">
+              {flowStages.join(' → ')}
+            </div>
             <button
               type="button"
               onClick={() => setShowFlowEditor(!showFlowEditor)}
               className="text-[13px] text-[var(--color-primary)] ios-tap mb-2"
             >
-              ✏️ {showFlowEditor ? 'フロー編集を閉じる' : '選考フローを変更'}
+              {showFlowEditor ? 'フロー編集を閉じる' : '変更する'}
             </button>
             {showFlowEditor && (
               <div className="bg-[var(--color-border)]/30 rounded-xl p-3">

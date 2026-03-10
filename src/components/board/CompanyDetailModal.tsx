@@ -12,6 +12,10 @@ import {
   TAG_CONFIG,
   ACTION_TYPE_LABELS,
   ACTION_TYPE_COLORS,
+  SCHEDULE_STAGE_OPTIONS,
+  scheduleStageToAction,
+  getDateLabel,
+  needsTimeInput,
   type Tag,
   type ActionType,
 } from '@/lib/types';
@@ -92,15 +96,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [tags, setTags] = useState<Tag[]>(company.tags ?? []);
-  const [newActionType, setNewActionType] = useState<ActionType>('es');
+  const [newScheduleStage, setNewScheduleStage] = useState<string>('ES');
   const [newActionDate, setNewActionDate] = useState('');
   const [newActionTime, setNewActionTime] = useState('');
-  const [newActionSubType, setNewActionSubType] = useState<string>('1次面接');
   const [showNextStagePopup, setShowNextStagePopup] = useState(false);
   const [nextStageDate, setNextStageDate] = useState('');
   const [nextStageStartTime, setNextStageStartTime] = useState('');
   const [nextStageEndTime, setNextStageEndTime] = useState('');
-  const [nextStageSubType, setNextStageSubType] = useState<string>('1次面接');
 
   const [flowStages, setFlowStages] = useState<string[]>(() =>
     company.selectionFlow && company.selectionFlow.length > 0
@@ -116,22 +118,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
     ? trackStatuses[currentStatusIndex + 1]
     : null;
 
-  const STAGE_TO_ACTION_TYPE: Record<string, ActionType> = {
-    'ES': 'es',
-    'Webテスト': 'webtest',
-    '1次面接': 'interview',
-    '2次面接': 'interview',
-    '3次面接': 'interview',
-    '最終面接': 'interview',
-  };
-  const STAGE_TO_SUBTYPE: Record<string, string> = {
-    '1次面接': '1次面接',
-    '2次面接': '2次面接',
-    '3次面接': '3次面接',
-    '最終面接': '最終面接',
-  };
-  const nextStageActionType = nextStatus ? (STAGE_TO_ACTION_TYPE[nextStatus.name] ?? 'other') : 'other';
-  const nextStageIsInterview = nextStageActionType === 'interview';
+  // scheduleStageToAction from types.ts handles ActionType + subType mapping
 
   const toggleTag = (tag: Tag) => {
     setTags((prev) =>
@@ -250,8 +237,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             {nextStatus && nextStatus.name !== '見送り' && (
               <button
                 onClick={() => {
-                  const defaultSub = nextStatus ? (STAGE_TO_SUBTYPE[nextStatus.name] ?? '1次面接') : '1次面接';
-                  setNextStageSubType(defaultSub);
                   setNextStageDate('');
                   setNextStageStartTime('');
                   setNextStageEndTime('');
@@ -346,34 +331,37 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">選考予定</h3>
                 </div>
 
-                {/* Add form */}
+                {/* Add form (flat stage selector) */}
                 <div className="space-y-2 mb-3">
-                  <div className="flex gap-2 flex-wrap">
-                    <select value={newActionType} onChange={(e) => { setNewActionType(e.target.value as ActionType); }} className="ios-input flex-none w-auto text-[13px] py-2">
-                      <option value="es">ES提出</option>
-                      <option value="webtest">Webテスト</option>
-                      <option value="gd">GD</option>
-                      <option value="interview">面接</option>
-                      <option value="other">その他</option>
-                    </select>
-                    {newActionType === 'interview' && (
-                      <select value={newActionSubType} onChange={(e) => setNewActionSubType(e.target.value)} className="ios-input flex-none w-auto text-[13px] py-2">
-                        <option value="1次面接">1次面接</option>
-                        <option value="2次面接">2次面接</option>
-                        <option value="3次面接">3次面接</option>
-                        <option value="最終面接">最終面接</option>
-                      </select>
-                    )}
-                    <input type="date" value={newActionDate} onChange={(e) => setNewActionDate(e.target.value)} className="ios-input flex-1 text-[13px] py-2 min-w-[130px]" />
-                    <input type="time" value={newActionTime} onChange={(e) => setNewActionTime(e.target.value)} className="ios-input w-[7rem] flex-none text-[13px] py-2" />
-                  </div>
+                  <select value={newScheduleStage} onChange={(e) => setNewScheduleStage(e.target.value)} className="ios-input text-[13px] py-2">
+                    {SCHEDULE_STAGE_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {newScheduleStage && (
+                    <div className="space-y-2">
+                      <label className="block text-[12px] text-[var(--color-text-secondary)]">
+                        {getDateLabel(newScheduleStage)}はありますか？（任意）
+                      </label>
+                      <div className="flex gap-2">
+                        <input type="date" value={newActionDate} onChange={(e) => setNewActionDate(e.target.value)} className="ios-input flex-1 text-[13px] py-2 min-w-[130px]" />
+                        {needsTimeInput(newScheduleStage) && (
+                          <input type="time" value={newActionTime} onChange={(e) => setNewActionTime(e.target.value)} className="ios-input w-[7rem] flex-none text-[13px] py-2" />
+                        )}
+                        {!needsTimeInput(newScheduleStage) && (
+                          <input type="time" value={newActionTime} onChange={(e) => setNewActionTime(e.target.value)} className="ios-input w-[7rem] flex-none text-[13px] py-2" placeholder="時間" />
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <button
                     onClick={() => {
                       if (!newActionDate) return;
+                      const { type, subType } = scheduleStageToAction(newScheduleStage);
                       addScheduledAction({
                         companyId: company.id,
-                        type: newActionType,
-                        subType: newActionType === 'interview' ? newActionSubType : undefined,
+                        type,
+                        subType,
                         date: newActionDate,
                         time: newActionTime || undefined,
                       });
@@ -588,18 +576,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-[16px]">
               {nextStatus.name}の日程を設定
             </h3>
-            {nextStageIsInterview && (
-              <select
-                value={nextStageSubType}
-                onChange={(e) => setNextStageSubType(e.target.value)}
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 mb-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
-              >
-                <option value="1次面接">1次面接</option>
-                <option value="2次面接">2次面接</option>
-                <option value="3次面接">3次面接</option>
-                <option value="最終面接">最終面接</option>
-              </select>
-            )}
+            <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-2">
+              {getDateLabel(nextStatus.name)}はありますか？（任意）
+            </label>
             <div className="space-y-2 mb-4">
               <input
                 type="date"
@@ -607,26 +586,28 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 value={nextStageDate}
                 onChange={(e) => setNextStageDate(e.target.value)}
               />
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
-                  <input
-                    type="time"
-                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
-                    value={nextStageStartTime}
-                    onChange={(e) => setNextStageStartTime(e.target.value)}
-                  />
+              {needsTimeInput(nextStatus.name) && (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
+                    <input
+                      type="time"
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                      value={nextStageStartTime}
+                      onChange={(e) => setNextStageStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
+                    <input
+                      type="time"
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                      value={nextStageEndTime}
+                      onChange={(e) => setNextStageEndTime(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
-                  <input
-                    type="time"
-                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
-                    value={nextStageEndTime}
-                    onChange={(e) => setNextStageEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -648,10 +629,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   if (company.awaitingResult) {
                     updateCompany(company.id, { awaitingResult: false });
                   }
+                  const { type, subType } = scheduleStageToAction(nextStatus.name);
                   addScheduledAction({
                     companyId: company.id,
-                    type: nextStageActionType,
-                    subType: nextStageIsInterview ? nextStageSubType : undefined,
+                    type,
+                    subType,
                     date: nextStageDate,
                     time: nextStageStartTime || undefined,
                     endTime: nextStageEndTime || undefined,

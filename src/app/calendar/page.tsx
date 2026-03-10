@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
-import { FilterChips, ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
+import { ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
-import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, type ActionType } from '@/lib/types';
+import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, SCHEDULE_STAGE_OPTIONS, scheduleStageToAction, getDateLabel, needsTimeInput, type ActionType } from '@/lib/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useDeadlines } from '@/contexts/DeadlineContext';
@@ -18,10 +18,10 @@ export default function CalendarPage() {
   const [selectedActions, setSelectedActions] = useState<ScheduledAction[]>([]);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [addEventCompanyId, setAddEventCompanyId] = useState('');
-  const [addEventType, setAddEventType] = useState<ActionType | null>(null);
+  const [addEventStage, setAddEventStage] = useState<string | null>(null);
   const [actionDate, setActionDate] = useState('');
   const [actionTime, setActionTime] = useState('');
-  const [activeFilters, setActiveFilters] = useState<Set<FilterKind>>(new Set(ALL_FILTERS));
+  const [filterValue, setFilterValue] = useState<string>('all');
   const companies = useAppStore((s) => s.companies);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
@@ -48,19 +48,31 @@ export default function CalendarPage() {
     setSelectedActions(actions);
   };
 
+  // Convert dropdown filter to Set<FilterKind> for sub-components
+  const activeFilters = (() => {
+    if (filterValue === 'all') return new Set(ALL_FILTERS);
+    const map: Record<string, FilterKind> = {
+      'ES': 'es', 'Webテスト': 'webtest', '面接': 'interview', '締切': 'deadline', 'その他': 'other',
+    };
+    const kind = map[filterValue];
+    return kind ? new Set([kind]) : new Set(ALL_FILTERS);
+  })();
+
   const resetAddFlow = () => {
     setShowAddEvent(false);
     setAddEventCompanyId('');
-    setAddEventType(null);
+    setAddEventStage(null);
     setActionDate('');
     setActionTime('');
   };
 
   const handleAddAction = () => {
-    if (!addEventCompanyId || !addEventType || !actionDate) return;
+    if (!addEventCompanyId || !addEventStage || !actionDate) return;
+    const { type, subType } = scheduleStageToAction(addEventStage);
     addScheduledAction({
       companyId: addEventCompanyId,
-      type: addEventType,
+      type,
+      subType,
       date: actionDate,
       time: actionTime || undefined,
     });
@@ -87,7 +99,27 @@ export default function CalendarPage() {
 
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
-      <FilterChips active={activeFilters} onChange={setActiveFilters} />
+      {/* 色凡例 */}
+      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
+      </div>
+
+      {/* プルダウン絞り込み */}
+      <select
+        value={filterValue}
+        onChange={(e) => setFilterValue(e.target.value)}
+        className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-card text-[var(--color-text)] text-[14px] font-medium"
+      >
+        <option value="all">すべて</option>
+        <option value="ES">ES</option>
+        <option value="Webテスト">Webテスト</option>
+        <option value="面接">面接</option>
+        <option value="締切">締切</option>
+        <option value="その他">その他</option>
+      </select>
       <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} />
 
       {selectedDate && activeFilters.has('interview') && selectedInterviews.length > 0 && (
@@ -254,8 +286,8 @@ export default function CalendarPage() {
         </svg>
       </button>
 
-      {/* Step 1: 種別選択 */}
-      {showAddEvent && !addEventType && (
+      {/* Step 1: 種別選択（フラット） */}
+      {showAddEvent && !addEventStage && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
@@ -264,16 +296,19 @@ export default function CalendarPage() {
             </div>
             <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">種別を選択</h2>
             <div className="space-y-2">
-              {(Object.entries(ACTION_TYPE_LABELS) as [ActionType, string][]).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setAddEventType(key)}
-                  className="w-full flex items-center gap-3 text-left px-4 py-3 bg-[var(--color-bg)] rounded-xl text-[15px] font-medium text-[var(--color-text)] ios-tap"
-                >
-                  <span className="w-3 h-3 rounded-full flex-none" style={{ backgroundColor: ACTION_TYPE_COLORS[key] }} />
-                  {label}
-                </button>
-              ))}
+              {SCHEDULE_STAGE_OPTIONS.map((stage) => {
+                const { type } = scheduleStageToAction(stage);
+                return (
+                  <button
+                    key={stage}
+                    onClick={() => setAddEventStage(stage)}
+                    className="w-full flex items-center gap-3 text-left px-4 py-3 bg-[var(--color-bg)] rounded-xl text-[15px] font-medium text-[var(--color-text)] ios-tap"
+                  >
+                    <span className="w-3 h-3 rounded-full flex-none" style={{ backgroundColor: ACTION_TYPE_COLORS[type] }} />
+                    {stage}
+                  </button>
+                );
+              })}
             </div>
             <button onClick={resetAddFlow} className="ios-button-secondary">キャンセル</button>
           </div>
@@ -281,7 +316,7 @@ export default function CalendarPage() {
       )}
 
       {/* Step 2: 企業選択 */}
-      {showAddEvent && addEventType && !addEventCompanyId && (
+      {showAddEvent && addEventStage && !addEventCompanyId && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
@@ -289,7 +324,7 @@ export default function CalendarPage() {
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
             <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">
-              {ACTION_TYPE_LABELS[addEventType]} — 企業を選択
+              {addEventStage} — 企業を選択
             </h2>
             {companies.length === 0 ? (
               <p className="text-center text-[var(--color-text-secondary)] text-[14px] py-4">企業が登録されていません</p>
@@ -306,13 +341,13 @@ export default function CalendarPage() {
                 ))}
               </div>
             )}
-            <button onClick={() => setAddEventType(null)} className="ios-button-secondary">戻る</button>
+            <button onClick={() => setAddEventStage(null)} className="ios-button-secondary">戻る</button>
           </div>
         </div>
       )}
 
-      {/* Step 3: 日時入力フォーム（全種別共通） */}
-      {showAddEvent && addEventCompanyId && addEventType && (
+      {/* Step 3: 日時入力フォーム */}
+      {showAddEvent && addEventCompanyId && addEventStage && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
@@ -321,22 +356,30 @@ export default function CalendarPage() {
             </div>
             <div className="px-4 pt-4 pb-2">
               <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">
-                {ACTION_TYPE_LABELS[addEventType]}を追加
+                {addEventStage}を追加
               </h2>
               <p className="text-[13px] text-center text-[var(--color-text-secondary)] mt-1">
                 {getCompanyName(addEventCompanyId)}
               </p>
             </div>
             <div className="p-4 space-y-4">
+              <label className="block text-[13px] text-[var(--color-text-secondary)]">
+                {getDateLabel(addEventStage)}はありますか？（任意）
+              </label>
               <div className="flex gap-2">
                 <div className="flex-[2]">
-                  <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">日付</label>
                   <input type="date" value={actionDate} onChange={(e) => setActionDate(e.target.value)} className="ios-input" />
                 </div>
-                <div className="flex-1">
-                  <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">時間</label>
-                  <input type="time" value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" />
-                </div>
+                {needsTimeInput(addEventStage) && (
+                  <div className="flex-1">
+                    <input type="time" value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" />
+                  </div>
+                )}
+                {!needsTimeInput(addEventStage) && (
+                  <div className="flex-1">
+                    <input type="time" value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" placeholder="時間" />
+                  </div>
+                )}
               </div>
               <button onClick={handleAddAction} disabled={!actionDate} className="ios-button-primary disabled:opacity-40">
                 追加する

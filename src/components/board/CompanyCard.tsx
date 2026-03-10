@@ -7,7 +7,7 @@ import { useShallow } from 'zustand/shallow';
 import { useAppStore } from '@/store/useAppStore';
 import { isAfter, isBefore, startOfDay, format, parseISO, isValid } from 'date-fns';
 import type { Company, StatusColumn as StatusColumnType } from '@/lib/types';
-import { TAG_CONFIG } from '@/lib/types';
+import { TAG_CONFIG, ACTION_TYPE_LABELS, scheduleStageToAction } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { getStageColor, STAGE_COLORS } from '@/lib/stageColors';
 import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
@@ -25,6 +25,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const statusColumns = useAppStore((s) => s.statusColumns);
   const moveCompany = useAppStore((s) => s.moveCompany);
   const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
+  const allScheduledActions = useAppStore((s) => s.scheduledActions);
   const updateCompany = useAppStore((s) => s.updateCompany);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const { deadlines } = useDeadlines();
@@ -105,18 +106,39 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       .sort((a, b) => a.deadline.localeCompare(b.deadline))[0] || null;
   }, [deadlines, company.name]);
 
-  const nextInterview = useMemo(() => {
+  // Merged next event from ScheduledActions + Interviews (deduped)
+  const nextEvent = useMemo(() => {
     const _today = startOfDay(new Date());
     const _todayStr = format(_today, 'yyyy-MM-dd');
-    return interviews
-      .filter(
-        (i) =>
-          i.companyId === company.id &&
-          (isAfter(new Date(i.datetime), _today) ||
-            format(new Date(i.datetime), 'yyyy-MM-dd') === _todayStr)
+
+    const fromActions = allScheduledActions
+      .filter((a) => a.companyId === company.id && a.date >= _todayStr)
+      .map((a) => ({
+        date: a.date,
+        time: a.time,
+        label: a.subType ?? ACTION_TYPE_LABELS[a.type],
+      }));
+
+    const fromInterviews = interviews
+      .filter((i) =>
+        i.companyId === company.id &&
+        (isAfter(new Date(i.datetime), _today) ||
+          format(new Date(i.datetime), 'yyyy-MM-dd') === _todayStr)
       )
-      .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0] || null;
-  }, [interviews, company.id]);
+      .map((i) => {
+        const dt = new Date(i.datetime);
+        const t = format(dt, 'HH:mm');
+        return {
+          date: format(dt, 'yyyy-MM-dd'),
+          time: t !== '00:00' ? t : undefined,
+          label: i.type,
+        };
+      })
+      .filter((iv) => !fromActions.some((a) => a.date === iv.date && a.label === iv.label));
+
+    return [...fromActions, ...fromInterviews]
+      .sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+  }, [allScheduledActions, interviews, company.id]);
 
   const updatedDate = new Date(company.updatedAt).toLocaleDateString('ja-JP', {
     month: 'short',
@@ -248,13 +270,14 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     }
     moveCompany(company.id, nextStatus.id, 0);
     if (withDate && nextStageDate) {
+      const { type, subType } = scheduleStageToAction(nextStatus.name);
       addScheduledAction({
         companyId: company.id,
-        type: 'other',
+        type,
+        subType,
         date: nextStageDate,
         time: nextStageStartTime || undefined,
         endTime: nextStageEndTime || undefined,
-        note: nextStatus.name,
       });
     }
     showToast(`『${company.name}』を【${nextStatus.name}】に更新しました。`);
@@ -305,6 +328,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       : baseTransform || undefined,
     transition: swipeOffset > 0 ? 'none' : transition,
     touchAction: 'pan-y' as const, // allow vertical scroll, let JS handle horizontal swipe
+    WebkitTouchCallout: 'none' as const,
   };
 
   return (
@@ -357,10 +381,14 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
             )}
           </div>
 
-          {/* Awaiting result label */}
-          {company.awaitingResult && (
-            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+          {/* Status label: 選考中 or 結果待ち */}
+          {company.awaitingResult ? (
+            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded">
               結果待ち
+            </span>
+          ) : !['エントリー前', '内定', '見送り'].includes(statusName) && (
+            <span className="text-xs text-blue-500 dark:text-blue-400 font-medium">
+              選考中
             </span>
           )}
 
@@ -389,14 +417,15 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
             </p>
           )}
 
-          {/* Next interview */}
-          {displaySettings.showNextInterview && nextInterview && (
+          {/* Next event (merged: ScheduledAction + Interview) */}
+          {displaySettings.showNextInterview && nextEvent && (
             <div className="flex items-center gap-1 mt-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" style={{ color: stageColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-[12px] text-[var(--color-primary)]">
-                {format(new Date(nextInterview.datetime), 'M/d HH:mm')} {nextInterview.type}
+              <span className="text-[12px]" style={{ color: stageColor }}>
+                {(() => { const d = parseISO(nextEvent.date); return isValid(d) ? format(d, 'M/d') : nextEvent.date; })()}
+                {nextEvent.time && ` ${nextEvent.time}`} {nextEvent.label}
               </span>
             </div>
           )}

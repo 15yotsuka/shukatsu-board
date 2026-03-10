@@ -139,6 +139,34 @@ export const ACTION_TYPE_COLORS: Record<ActionType, string> = {
   other: '#8E8E93',
 };
 
+// フラット化された選考予定の種別オプション
+export const SCHEDULE_STAGE_OPTIONS = [
+  'エントリー前', 'ES', 'Webテスト', 'GD', '1次面接', '2次面接', '3次面接', '最終面接',
+] as const;
+
+export function scheduleStageToAction(stage: string): { type: ActionType; subType?: string } {
+  switch (stage) {
+    case 'ES': return { type: 'es' };
+    case 'Webテスト': return { type: 'webtest' };
+    case 'GD': return { type: 'gd' };
+    case '1次面接': return { type: 'interview', subType: '1次面接' };
+    case '2次面接': return { type: 'interview', subType: '2次面接' };
+    case '3次面接': return { type: 'interview', subType: '3次面接' };
+    case '最終面接': return { type: 'interview', subType: '最終面接' };
+    default: return { type: 'other' };
+  }
+}
+
+export function getDateLabel(stage: string): string {
+  if (['エントリー前', 'ES', 'Webテスト'].includes(stage)) return '締切日';
+  if (stage.includes('面接') || stage === 'GD') return '面接日時';
+  return '日付';
+}
+
+export function needsTimeInput(stage: string): boolean {
+  return stage.includes('面接') || stage === 'GD';
+}
+
 export interface ScheduledAction {
   id: string;
   companyId: string;

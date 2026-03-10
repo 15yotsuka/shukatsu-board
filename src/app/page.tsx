@@ -99,6 +99,12 @@ export default function Home() {
       .forEach((i) => {
         const dt = parseISO(i.datetime);
         const dateStr = format(dt, 'yyyy-MM-dd');
+        // Dedup: skip if a ScheduledAction already covers this event
+        const isDuplicate = scheduledActions.some(
+          (a) => a.companyId === i.companyId && a.date === dateStr &&
+            (a.type === 'interview' || a.subType === i.type)
+        );
+        if (isDuplicate) return;
         const timeStr = format(dt, 'HH:mm');
         const iData = companyMap.get(i.companyId);
         items.push({
