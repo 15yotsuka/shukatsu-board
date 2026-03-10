@@ -33,7 +33,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-type SortField = 'deadline' | 'status' | 'priority' | 'industry' | 'manual';
+type SortField = 'deadline' | 'status' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
@@ -54,8 +54,6 @@ const FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'offer', label: '内定' },
   { value: 'rejected', label: 'お見送り' },
 ];
-
-const TAG_ORDER: Tag[] = ['優遇あり', '早期選考', 'リクルーター面談', '結果待ち', 'インターン参加済み'];
 
 const getBadgeStyle = (statusName: string): string => {
   if (statusName.includes('面接')) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
@@ -214,7 +212,6 @@ function TaskCard({
 const SORT_BUTTONS: { field: SortField; label: string }[] = [
   { field: 'deadline', label: '締切日' },
   { field: 'status', label: '選考段階' },
-  { field: 'priority', label: '優先度' },
   { field: 'industry', label: '業界' },
   { field: 'manual', label: '手動' },
 ];
@@ -322,14 +319,6 @@ function TasksContent() {
         const aIdx = cols.findIndex((c) => c.id === a.statusId);
         const bIdx = cols.findIndex((c) => c.id === b.statusId);
         return (aIdx - bIdx) * dir;
-      }
-      if (sortField === 'priority') {
-        const aFirst = a.tags?.[0];
-        const bFirst = b.tags?.[0];
-        const aIdx = aFirst ? TAG_ORDER.indexOf(aFirst) : TAG_ORDER.length;
-        const bIdx = bFirst ? TAG_ORDER.indexOf(bFirst) : TAG_ORDER.length;
-        if (aIdx !== bIdx) return (aIdx - bIdx) * dir;
-        return ((b.tags?.length ?? 0) - (a.tags?.length ?? 0)) * dir;
       }
       if (sortField === 'industry') {
         const aInd = a.industry ?? '';

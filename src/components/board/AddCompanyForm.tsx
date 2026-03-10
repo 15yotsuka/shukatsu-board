@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { getCompanySuggestions, type CompanySuggestion } from '@/lib/companySuggestions';
-import { TAG_CONFIG, type Tag } from '@/lib/types';
+import { TAG_CONFIG, type Tag, type ActionType } from '@/lib/types';
 import { INDUSTRIES } from '@/lib/industries';
 import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 import { useDeadlines } from '@/contexts/DeadlineContext';
@@ -16,6 +16,7 @@ interface AddCompanyFormProps {
 
 export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
   const addCompany = useAppStore((s) => s.addCompany);
+  const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const statusColumns = useAppStore((s) => s.statusColumns);
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
@@ -49,6 +50,21 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       .slice(0, 5);
   }, [name, deadlines]);
 
+  const mapStageToActionType = (stageName: string): ActionType => {
+    if (stageName === 'ES') return 'es';
+    if (stageName === 'Webテスト') return 'webtest';
+    if (stageName.includes('面接')) return 'interview';
+    return 'other';
+  };
+
+  const mapStageToSubType = (stageName: string): string | undefined => {
+    if (stageName === '1次面接') return '1次面接';
+    if (stageName === '2次面接') return '2次面接';
+    if (stageName === '3次面接') return '3次面接';
+    if (stageName === '最終面接') return '最終面接';
+    return undefined;
+  };
+
   const handleSubmit = () => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -69,6 +85,25 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
       selectionMemo: memo.trim() || undefined,
       selectionFlow: isDefault ? undefined : customFlow,
     });
+
+    // Create ScheduledAction if deadline is set
+    if (deadline.trim()) {
+      const newCompanies = useAppStore.getState().companies;
+      const newCompany = newCompanies[newCompanies.length - 1];
+      if (newCompany) {
+        const selectedStatus = trackStatuses.find(s => s.id === statusId);
+        if (selectedStatus) {
+          const actionType = mapStageToActionType(selectedStatus.name);
+          addScheduledAction({
+            companyId: newCompany.id,
+            type: actionType,
+            subType: mapStageToSubType(selectedStatus.name),
+            date: deadline.trim(),
+          });
+        }
+      }
+    }
+
     onClose();
   };
 
