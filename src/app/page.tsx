@@ -12,7 +12,7 @@ import { ACTION_TYPE_LABELS, TAG_CONFIG } from '@/lib/types';
 import type { Company, Tag } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { FilterChips, ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
+import type { FilterKind } from '@/components/calendar/FilterChips';
 
 interface TodoItem {
   id: string;
@@ -47,7 +47,7 @@ export default function Home() {
 
   const router = useRouter();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [activeFilters, setActiveFilters] = useState<Set<FilterKind>>(new Set(ALL_FILTERS));
+  const [filterValue, setFilterValue] = useState<string>('all');
   const [sortKind, setSortKind] = useState<SortKind>('asc');
   const [showSortSheet, setShowSortSheet] = useState(false);
 
@@ -129,7 +129,17 @@ export default function Home() {
   }, [scheduledActions, interviews, companies, companyMap, today]);
 
   const filteredSortedItems = useMemo(() => {
-    const filtered = todoItems.filter((item) => activeFilters.has(item.filterKind));
+    const filtered = filterValue === 'all'
+      ? todoItems
+      : filterValue === '面接'
+        ? todoItems.filter((item) => item.filterKind === 'interview')
+        : filterValue === 'ES'
+          ? todoItems.filter((item) => item.filterKind === 'es')
+          : filterValue === 'Webテスト'
+            ? todoItems.filter((item) => item.filterKind === 'webtest')
+            : filterValue === '締切'
+              ? todoItems.filter((item) => item.filterKind === 'deadline')
+              : todoItems.filter((item) => item.filterKind === 'other');
     if (sortKind === 'desc') {
       return [...filtered].sort((a, b) => {
         const dc = b.date.localeCompare(a.date);
@@ -142,7 +152,7 @@ export default function Home() {
       return [...filtered].sort((a, b) => a.companyName.localeCompare(b.companyName, 'ja'));
     }
     return filtered; // asc: already sorted in todoItems useMemo
-  }, [todoItems, activeFilters, sortKind]);
+  }, [todoItems, filterValue, sortKind]);
 
   const isDefaultSort = sortKind === 'asc';
   const todayItems    = isDefaultSort ? filteredSortedItems.filter((i) => i.date === today) : [];
@@ -218,12 +228,21 @@ export default function Home() {
 
       {/* フィルター + 並べ替え */}
       <div className="flex items-center gap-2 mb-4">
-        <div className="flex-1 min-w-0">
-          <FilterChips active={activeFilters} onChange={setActiveFilters} />
-        </div>
+        <select
+          value={filterValue}
+          onChange={(e) => setFilterValue(e.target.value)}
+          className="flex-1 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-card text-[var(--color-text)] text-[14px] font-medium"
+        >
+          <option value="all">すべて</option>
+          <option value="面接">面接</option>
+          <option value="ES">ES提出</option>
+          <option value="Webテスト">Webテスト</option>
+          <option value="締切">締切</option>
+          <option value="その他">その他</option>
+        </select>
         <button
           onClick={() => setShowSortSheet(true)}
-          className="flex-none flex items-center gap-1 px-3 py-1.5 bg-[var(--color-border)] rounded-full text-[12px] font-semibold text-[var(--color-text-secondary)] ios-tap"
+          className="flex-none flex items-center gap-1 px-3 py-2 bg-[var(--color-border)] rounded-xl text-[13px] font-semibold text-[var(--color-text-secondary)] ios-tap"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />

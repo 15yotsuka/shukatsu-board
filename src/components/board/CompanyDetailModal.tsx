@@ -242,14 +242,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               <button
                 key={label}
                 onClick={() => setActiveTab(i as TabIndex)}
-                className={`flex-1 pb-2.5 pt-1 text-[12px] font-semibold transition-colors relative ${
+                className={`flex-1 pb-2.5 pt-1 text-[12px] font-semibold relative ${
                   activeTab === i ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'
                 }`}
               >
                 {label}
                 {activeTab === i && (
-                  <motion.div
-                    layoutId="modal-tab-indicator"
+                  <div
                     className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--color-primary)] rounded-t-full"
                   />
                 )}
