@@ -1,0 +1,24 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useAppStore } from '@/store/useAppStore';
+import { useShallow } from 'zustand/shallow';
+import { requestNotificationPermission, scheduleLocalNotifications } from '@/lib/notifications';
+
+export function NotificationScheduler() {
+  const companies = useAppStore((s) => s.companies);
+  const scheduledActions = useAppStore((s) => s.scheduledActions);
+  const notificationSettings = useAppStore(useShallow((s) => s.notificationSettings));
+
+  // 初回マウント時に通知許可を要求
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  // companies・scheduledActions・notificationSettings が変わるたびに再スケジュール
+  useEffect(() => {
+    scheduleLocalNotifications(companies, scheduledActions, notificationSettings);
+  }, [companies, scheduledActions, notificationSettings]);
+
+  return null;
+}

@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ToastDisplay } from "@/components/layout/ToastDisplay";
 import { PageTransition } from "@/components/layout/PageTransition";
+import { NotificationScheduler } from "@/components/layout/NotificationScheduler";
 import { DeadlineProvider } from "@/contexts/DeadlineContext";
 import GradYearSelectModal from "@/components/onboarding/GradYearSelectModal";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
             <BottomNav />
             <ToastDisplay />
             <GradYearSelectModal />
+            <NotificationScheduler />
           </DeadlineProvider>
         </ThemeProvider>
       </body>

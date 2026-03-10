@@ -329,16 +329,6 @@ function NotificationTab() {
 
   return (
     <div className="space-y-4">
-      {/* 案内バナー */}
-      <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="text-[13px] text-amber-700 dark:text-amber-300">
-          通知機能はアプリ版で利用可能になります（現在準備中）。設定内容は保存されます。
-        </p>
-      </div>
-
       {/* リマインダー有効/無効 */}
       <div className="bg-card rounded-xl">
         <div className="flex items-center justify-between px-4 py-3 min-h-[52px]">
