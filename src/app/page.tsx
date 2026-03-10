@@ -8,8 +8,8 @@ import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
 import { ErrorBoundary } from '@/components/board/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
-import { ACTION_TYPE_LABELS, TAG_CONFIG } from '@/lib/types';
-import type { Company, Tag } from '@/lib/types';
+import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, TAG_CONFIG } from '@/lib/types';
+import type { Company, Tag, ActionType } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import type { FilterKind } from '@/components/calendar/FilterChips';
@@ -33,6 +33,18 @@ function toFilterKind(type: string | undefined): FilterKind {
   if (type === 'final') return 'interview';
   if (type === 'interview') return 'interview';
   return 'other';
+}
+
+function filterKindToColor(kind: FilterKind): string {
+  const map: Record<string, string> = {
+    es: ACTION_TYPE_COLORS.es,
+    webtest: ACTION_TYPE_COLORS.webtest,
+    interview: ACTION_TYPE_COLORS.interview,
+    gd: ACTION_TYPE_COLORS.gd,
+    other: ACTION_TYPE_COLORS.other,
+    deadline: '#EF4444',
+  };
+  return map[kind] ?? ACTION_TYPE_COLORS.other;
 }
 
 export default function Home() {
@@ -101,23 +113,6 @@ export default function Home() {
         });
       });
 
-    // 企業の直接締切日（nextActionDate）
-    companies.forEach((c) => {
-      if (!c.nextActionDate || c.nextActionDate < today) return;
-      const d = parseISO(c.nextActionDate);
-      if (!isValid(d)) return;
-      items.push({
-        id: `deadline-${c.id}`,
-        companyId: c.id,
-        companyName: c.name,
-        label: ACTION_TYPE_LABELS[c.nextActionType ?? 'other'] ?? 'アクション',
-        date: c.nextActionDate,
-        time: c.nextActionTime,
-        tags: c.tags,
-        filterKind: toFilterKind(c.nextActionType),
-      });
-    });
-
     items.sort((a, b) => {
       const dc = a.date.localeCompare(b.date);
       if (dc !== 0) return dc;
@@ -178,13 +173,16 @@ export default function Home() {
   const renderTodoItem = (item: TodoItem) => {
     const d = parseISO(item.date);
     const dateStr = isValid(d) ? format(d, 'M/d(E)', { locale: ja }) : item.date;
+    const stripColor = filterKindToColor(item.filterKind);
     return (
       <button
         key={item.id}
         onClick={() => handleItemClick(item.companyId)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-card rounded-2xl shadow-sm border border-[var(--color-border)] text-left ios-tap active:scale-[0.98] transition-transform"
+        className="w-full flex items-center gap-3 pr-4 py-3 bg-card rounded-2xl shadow-sm border border-[var(--color-border)] text-left ios-tap active:scale-[0.98] transition-transform overflow-hidden relative"
       >
-        <div className="flex-1 min-w-0">
+        {/* Left color strip */}
+        <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl" style={{ backgroundColor: stripColor }} />
+        <div className="pl-5 flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-[15px] font-semibold text-[var(--color-text)] truncate">{item.companyName}</p>
             {displaySettings.showTag && item.tags && item.tags.map((tag) => TAG_CONFIG[tag] && (

@@ -97,7 +97,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [newActionTime, setNewActionTime] = useState('');
   const [newActionSubType, setNewActionSubType] = useState<string>('1次面接');
   const [showNextStagePopup, setShowNextStagePopup] = useState(false);
-  const [nextStageDateTime, setNextStageDateTime] = useState('');
+  const [nextStageDate, setNextStageDate] = useState('');
+  const [nextStageStartTime, setNextStageStartTime] = useState('');
+  const [nextStageEndTime, setNextStageEndTime] = useState('');
   const [nextStageSubType, setNextStageSubType] = useState<string>('1次面接');
 
   const [flowStages, setFlowStages] = useState<string[]>(() =>
@@ -250,7 +252,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 onClick={() => {
                   const defaultSub = nextStatus ? (STAGE_TO_SUBTYPE[nextStatus.name] ?? '1次面接') : '1次面接';
                   setNextStageSubType(defaultSub);
-                  setNextStageDateTime('');
+                  setNextStageDate('');
+                  setNextStageStartTime('');
+                  setNextStageEndTime('');
                   setShowNextStagePopup(true);
                 }}
                 className="flex-none text-[12px] font-semibold rounded-full px-3 py-1 bg-[var(--color-primary)]/10 text-[var(--color-primary)] ios-tap"
@@ -579,8 +583,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       {/* 次の段階へポップアップ */}
       {showNextStagePopup && nextStatus && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowNextStagePopup(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-xl p-4 mx-4 max-w-sm w-full shadow-xl">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowNextStagePopup(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl p-4 mx-4 max-w-sm w-full shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-[16px]">
               {nextStatus.name}の日程を設定
             </h3>
@@ -596,12 +600,34 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 <option value="最終面接">最終面接</option>
               </select>
             )}
-            <input
-              type="datetime-local"
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
-              value={nextStageDateTime}
-              onChange={(e) => setNextStageDateTime(e.target.value)}
-            />
+            <div className="space-y-2 mb-4">
+              <input
+                type="date"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
+                value={nextStageDate}
+                onChange={(e) => setNextStageDate(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
+                  <input
+                    type="time"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                    value={nextStageStartTime}
+                    onChange={(e) => setNextStageStartTime(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
+                  <input
+                    type="time"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                    value={nextStageEndTime}
+                    onChange={(e) => setNextStageEndTime(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -617,22 +643,22 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               </button>
               <button
                 onClick={() => {
-                  if (!nextStageDateTime) return;
+                  if (!nextStageDate) return;
                   setStatusId(nextStatus.id);
                   if (company.awaitingResult) {
                     updateCompany(company.id, { awaitingResult: false });
                   }
-                  const [datePart, timePart] = nextStageDateTime.split('T');
                   addScheduledAction({
                     companyId: company.id,
                     type: nextStageActionType,
                     subType: nextStageIsInterview ? nextStageSubType : undefined,
-                    date: datePart,
-                    time: timePart || undefined,
+                    date: nextStageDate,
+                    time: nextStageStartTime || undefined,
+                    endTime: nextStageEndTime || undefined,
                   });
                   setShowNextStagePopup(false);
                 }}
-                disabled={!nextStageDateTime}
+                disabled={!nextStageDate}
                 className="flex-1 py-2.5 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40"
               >
                 設定

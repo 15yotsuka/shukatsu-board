@@ -145,7 +145,8 @@ export interface ScheduledAction {
   type: ActionType;
   subType?: string; // 面接時: '1次面接'|'2次面接'|'3次面接'|'最終面接'
   date: string; // "2026-03-15"
-  time?: string; // "HH:mm"
+  time?: string; // "HH:mm" 開始時間
+  endTime?: string; // "HH:mm" 終了時間
   note?: string;
 }
 

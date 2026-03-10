@@ -43,10 +43,12 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showDismissConfirm, setShowDismissConfirm] = useState(false);
   const [showNextStagePopup, setShowNextStagePopup] = useState(false);
-  const [nextStageDateTime, setNextStageDateTime] = useState('');
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [showInlineDateInput, setShowInlineDateInput] = useState(false);
   const [inlineDeadlineValue, setInlineDeadlineValue] = useState('');
+  const [nextStageDate, setNextStageDate] = useState('');
+  const [nextStageStartTime, setNextStageStartTime] = useState('');
+  const [nextStageEndTime, setNextStageEndTime] = useState('');
 
   // Quick edit state
   const [editName, setEditName] = useState(company.name);
@@ -233,7 +235,9 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const handleNextStageClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLastStage || !nextStatus) return;
-    setNextStageDateTime('');
+    setNextStageDate('');
+    setNextStageStartTime('');
+    setNextStageEndTime('');
     setShowNextStagePopup(true);
   }, [isLastStage, nextStatus]);
 
@@ -243,22 +247,19 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       toggleAwaitingResult(company.id);
     }
     moveCompany(company.id, nextStatus.id, 0);
-    if (withDate && nextStageDateTime) {
-      // Parse datetime-local value
-      const dt = new Date(nextStageDateTime);
-      const dateStr = format(dt, 'yyyy-MM-dd');
-      const timeStr = format(dt, 'HH:mm');
+    if (withDate && nextStageDate) {
       addScheduledAction({
         companyId: company.id,
         type: 'other',
-        date: dateStr,
-        time: timeStr,
+        date: nextStageDate,
+        time: nextStageStartTime || undefined,
+        endTime: nextStageEndTime || undefined,
         note: nextStatus.name,
       });
     }
     showToast(`『${company.name}』を【${nextStatus.name}】に更新しました。`);
     setShowNextStagePopup(false);
-  }, [nextStatus, company, nextStageDateTime, moveCompany, toggleAwaitingResult, addScheduledAction, showToast]);
+  }, [nextStatus, company, nextStageDate, nextStageStartTime, nextStageEndTime, moveCompany, toggleAwaitingResult, addScheduledAction, showToast]);
 
   // ---- Dismiss to 見送り ----
   const handleDismissConfirm = useCallback(() => {
@@ -518,24 +519,47 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
       {showNextStagePopup && nextStatus && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setShowNextStagePopup(false)}
+          onPointerDown={() => setShowNextStagePopup(false)}
         >
           <div
             className="bg-card rounded-2xl p-6 mx-6 max-w-sm w-full shadow-xl"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-[16px] font-semibold text-[var(--color-text)] text-center mb-2">
               {nextStatus.name}
             </p>
             <p className="text-[13px] text-[var(--color-text-secondary)] text-center mb-4">
-              次の選考の日時を設定してください
+              次の選考の日程を設定してください
             </p>
-            <input
-              type="datetime-local"
-              value={nextStageDateTime}
-              onChange={(e) => setNextStageDateTime(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px] mb-4"
-            />
+            <div className="space-y-2 mb-4">
+              <input
+                type="date"
+                value={nextStageDate}
+                onChange={(e) => setNextStageDate(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
+              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
+                  <input
+                    type="time"
+                    value={nextStageStartTime}
+                    onChange={(e) => setNextStageStartTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
+                  <input
+                    type="time"
+                    value={nextStageEndTime}
+                    onChange={(e) => setNextStageEndTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
+                  />
+                </div>
+              </div>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => advanceToNextStage(false)}
@@ -545,7 +569,8 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
               </button>
               <button
                 onClick={() => advanceToNextStage(true)}
-                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-primary)] text-white min-h-[44px]"
+                disabled={!nextStageDate}
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-primary)] text-white min-h-[44px] disabled:opacity-40"
               >
                 設定
               </button>
