@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MonthCalendar } from '@/components/calendar/MonthCalendar';
 import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
@@ -23,6 +23,7 @@ export default function CalendarPage() {
   const [actionTime, setActionTime] = useState('');
   const [filterValue, setFilterValue] = useState<string>('all');
   const companies = useAppStore((s) => s.companies);
+  const statusColumns = useAppStore((s) => s.statusColumns);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteInterview = useAppStore((s) => s.deleteInterview);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
@@ -48,9 +49,24 @@ export default function CalendarPage() {
     setSelectedActions(actions);
   };
 
+  const INACTIVE_STAGES = ['エントリー前', '内定', '見送り'];
+
+  // 選考中企業のIDセット（選考中フィルター用）
+  const activeCompanyIds = useMemo(() => {
+    if (filterValue !== '選考中') return undefined;
+    return new Set(
+      companies
+        .filter((c) => {
+          const col = statusColumns.find((s) => s.id === c.statusId);
+          return col && !INACTIVE_STAGES.includes(col.name);
+        })
+        .map((c) => c.id)
+    );
+  }, [companies, statusColumns, filterValue]);
+
   // Convert dropdown filter to Set<FilterKind> for sub-components
   const activeFilters = (() => {
-    if (filterValue === 'all') return new Set(ALL_FILTERS);
+    if (filterValue === 'all' || filterValue === '選考中') return new Set(ALL_FILTERS);
     const map: Record<string, FilterKind> = {
       'ES': 'es', 'Webテスト': 'webtest', '面接': 'interview', '締切': 'deadline', 'その他': 'other',
     };
@@ -114,13 +130,14 @@ export default function CalendarPage() {
         className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-card text-[var(--color-text)] text-[14px] font-medium"
       >
         <option value="all">すべて</option>
+        <option value="選考中">選考中企業のみ</option>
         <option value="ES">ES</option>
         <option value="Webテスト">Webテスト</option>
         <option value="面接">面接</option>
         <option value="締切">締切</option>
         <option value="その他">その他</option>
       </select>
-      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} />
+      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} />
 
       {selectedDate && activeFilters.has('interview') && selectedInterviews.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
@@ -273,7 +290,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <UpcomingList activeFilters={activeFilters} />
+      <UpcomingList activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} />
 
       {/* 予定追加フローティングボタン */}
       <button

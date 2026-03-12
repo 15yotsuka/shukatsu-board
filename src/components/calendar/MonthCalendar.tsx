@@ -27,11 +27,12 @@ interface MonthCalendarProps {
   onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
   selectedDate?: Date | null;
   activeFilters?: Set<FilterKind>;
+  activeCompanyIds?: Set<string>;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
-export function MonthCalendar({ onDateSelect, selectedDate, activeFilters }: MonthCalendarProps) {
+export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activeCompanyIds }: MonthCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
@@ -39,6 +40,7 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters }: Mon
   const { deadlines } = useDeadlines();
 
   const filters = activeFilters ?? new Set(ALL_FILTERS);
+  const inCompanyFilter = (companyId: string) => !activeCompanyIds || activeCompanyIds.has(companyId);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -54,13 +56,13 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters }: Mon
 
   const getInterviewsForDate = (date: Date): Interview[] => {
     return interviews.filter((interview) =>
-      isSameDay(new Date(interview.datetime), date)
+      isSameDay(new Date(interview.datetime), date) && inCompanyFilter(interview.companyId)
     );
   };
 
   const getActionsForDate = (date: Date): ScheduledAction[] => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return scheduledActions.filter((a) => a.date === dateStr);
+    return scheduledActions.filter((a) => a.date === dateStr && inCompanyFilter(a.companyId));
   };
 
   const toFilterKind = (type: string | undefined): FilterKind => {
@@ -122,7 +124,7 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters }: Mon
 
           const hasDeadline =
             filters.has('deadline') &&
-            (companies.some((c) => c.nextDeadline === dateStr || c.nextActionDate === dateStr) ||
+            (companies.some((c) => (c.nextDeadline === dateStr || c.nextActionDate === dateStr) && inCompanyFilter(c.id)) ||
               deadlines.some((dd) => dd.deadline === dateStr));
           if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
 

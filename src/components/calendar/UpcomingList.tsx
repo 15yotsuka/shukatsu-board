@@ -15,10 +15,12 @@ type UnifiedItem =
 
 interface UpcomingListProps {
   activeFilters?: Set<FilterKind>;
+  activeCompanyIds?: Set<string>;
 }
 
-export function UpcomingList({ activeFilters }: UpcomingListProps) {
+export function UpcomingList({ activeFilters, activeCompanyIds }: UpcomingListProps) {
   const filters = activeFilters ?? new Set(ALL_FILTERS);
+  const inCompanyFilter = (companyId: string) => !activeCompanyIds || activeCompanyIds.has(companyId);
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const companies = useAppStore((s) => s.companies);
@@ -39,7 +41,7 @@ export function UpcomingList({ activeFilters }: UpcomingListProps) {
 
   const interviewItems: UnifiedItem[] = filters.has('interview')
     ? interviews
-        .filter((i) => isAfter(new Date(i.datetime), today) || format(new Date(i.datetime), 'yyyy-MM-dd') === todayStr)
+        .filter((i) => (isAfter(new Date(i.datetime), today) || format(new Date(i.datetime), 'yyyy-MM-dd') === todayStr) && inCompanyFilter(i.companyId))
         .map((i) => ({
           kind: 'interview' as const,
           sortKey: i.datetime,
@@ -51,7 +53,7 @@ export function UpcomingList({ activeFilters }: UpcomingListProps) {
     : [];
 
   const actionItems: UnifiedItem[] = scheduledActions
-    .filter((a) => a.date >= todayStr && filters.has(toFilterKind(a.type)))
+    .filter((a) => a.date >= todayStr && filters.has(toFilterKind(a.type)) && inCompanyFilter(a.companyId))
     .map((a) => ({
       kind: 'action' as const,
       sortKey: a.date,
@@ -63,7 +65,7 @@ export function UpcomingList({ activeFilters }: UpcomingListProps) {
 
   const deadlineItems: UnifiedItem[] = filters.has('deadline')
     ? companies
-        .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr)
+        .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr && inCompanyFilter(c.id))
         .map((c) => ({
           kind: 'action' as const,
           sortKey: c.nextDeadline! + 'T00:00:00',

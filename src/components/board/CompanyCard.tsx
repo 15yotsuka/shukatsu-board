@@ -29,6 +29,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
   const allScheduledActions = useAppStore((s) => s.scheduledActions);
   const updateCompany = useAppStore((s) => s.updateCompany);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
+  const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const { deadlines } = useDeadlines();
   const showToast = useToast((s) => s.show);
 
@@ -272,6 +273,12 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     if (company.awaitingResult) {
       toggleAwaitingResult(company.id);
     }
+    // 現在ステージの選考予定を削除（ホーム画面のtodoリストをクリアする）
+    const currentStageName = currentStatus?.name ?? '';
+    const { type: currentType } = scheduleStageToAction(currentStageName);
+    allScheduledActions
+      .filter((a) => a.companyId === company.id && a.type === currentType)
+      .forEach((a) => deleteScheduledAction(a.id));
     moveCompany(company.id, nextStatus.id, 0);
     if (withDate && nextStageDate) {
       const { type, subType } = scheduleStageToAction(nextStatus.name);
@@ -286,7 +293,7 @@ export function CompanyCard({ company, onTap }: CompanyCardProps) {
     }
     showToast(`『${company.name}』を【${nextStatus.name}】に更新しました。`);
     setShowNextStagePopup(false);
-  }, [nextStatus, company, nextStageDate, nextStageStartTime, nextStageEndTime, moveCompany, toggleAwaitingResult, addScheduledAction, showToast]);
+  }, [nextStatus, company, nextStageDate, nextStageStartTime, nextStageEndTime, moveCompany, toggleAwaitingResult, addScheduledAction, deleteScheduledAction, allScheduledActions, currentStatus, showToast]);
 
   // ---- Dismiss to 見送り ----
   const handleDismissConfirm = useCallback(() => {

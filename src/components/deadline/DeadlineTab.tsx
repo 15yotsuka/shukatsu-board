@@ -26,9 +26,19 @@ export default function DeadlineTab() {
   const setGradYear = useAppStore((state) => state.setGradYear);
   const tutorialFlags = useAppStore((state) => state.tutorialFlags);
   const markTutorialSeen = useAppStore((state) => state.markTutorialSeen);
+  const companies = useAppStore((state) => state.companies);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [sortMode, setSortMode] = useState<SortMode>('deadline-asc');
   const [expiredCollapsed, setExpiredCollapsed] = useState(true);
+
+  const companyUrlMap = useMemo(() => {
+    const map = new Map<string, string>();
+    companies.forEach((c) => {
+      const url = c.myPageUrl || c.url;
+      if (url) map.set(c.name, url);
+    });
+    return map;
+  }, [companies]);
 
   const industries = useMemo(() => {
     const set = new Set<string>();
@@ -219,13 +229,59 @@ export default function DeadlineTab() {
                 </button>
                 {!expiredCollapsed && (
                   <div className="space-y-1">
-                    {section.items.map((entry, idx) => (
-                      <div
-                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                        className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
-                      >
+                    {section.items.map((entry, idx) => {
+                      const hp = companyUrlMap.get(entry.company_name);
+                      const inner = (
+                        <>
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium truncate ${hp ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
+                              {entry.company_name}
+                            </div>
+                            <div className="text-xs text-[var(--color-text-secondary)] truncate">
+                              {entry.label}
+                              {entry.job_type ? ` / ${entry.job_type}` : ''}
+                              {entry.industry ? ` • ${entry.industry}` : ''}
+                            </div>
+                          </div>
+                          <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
+                            {entry.deadline}
+                          </div>
+                        </>
+                      );
+                      return hp ? (
+                        <a
+                          key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                          href={hp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between px-3 py-2 bg-card rounded-lg ios-tap active:opacity-70"
+                        >
+                          {inner}
+                        </a>
+                      ) : (
+                        <div
+                          key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                          className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
+                        >
+                          {inner}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div key={section.title}>
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
+                  {section.title}
+                </h3>
+                <div className="space-y-1">
+                  {section.items.map((entry, idx) => {
+                    const hp = companyUrlMap.get(entry.company_name);
+                    const inner = (
+                      <>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-[var(--color-text)] truncate">
+                          <div className={`font-medium truncate ${hp ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
                             {entry.company_name}
                           </div>
                           <div className="text-xs text-[var(--color-text-secondary)] truncate">
@@ -237,37 +293,27 @@ export default function DeadlineTab() {
                         <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
                           {entry.deadline}
                         </div>
+                      </>
+                    );
+                    return hp ? (
+                      <a
+                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                        href={hp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between px-3 py-2 bg-card rounded-lg ios-tap active:opacity-70"
+                      >
+                        {inner}
+                      </a>
+                    ) : (
+                      <div
+                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                        className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
+                      >
+                        {inner}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div key={section.title}>
-                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
-                  {section.title}
-                </h3>
-                <div className="space-y-1">
-                  {section.items.map((entry, idx) => (
-                    <div
-                      key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                      className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-[var(--color-text)] truncate">
-                          {entry.company_name}
-                        </div>
-                        <div className="text-xs text-[var(--color-text-secondary)] truncate">
-                          {entry.label}
-                          {entry.job_type ? ` / ${entry.job_type}` : ''}
-                          {entry.industry ? ` • ${entry.industry}` : ''}
-                        </div>
-                      </div>
-                      <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
-                        {entry.deadline}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )
