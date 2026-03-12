@@ -641,6 +641,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   if (company.awaitingResult) {
                     updateCompany(company.id, { awaitingResult: false });
                   }
+                  const currentStageName = trackStatuses[currentStatusIndex]?.name ?? '';
+                  const { type: currentType } = scheduleStageToAction(currentStageName);
+                  allScheduledActions
+                    .filter((a) => a.companyId === company.id && a.type === currentType)
+                    .forEach((a) => deleteScheduledAction(a.id));
                   const { type, subType } = scheduleStageToAction(nextStatus.name);
                   addScheduledAction({
                     companyId: company.id,
