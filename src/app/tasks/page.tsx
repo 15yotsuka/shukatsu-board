@@ -440,6 +440,16 @@ function TasksContent() {
 
   return (
     <div className="pb-24 px-4 pt-4">
+      {/* 色凡例 */}
+      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#6B7280'}} />見送り</span>
+      </div>
+
       {/* Header row with bulk action buttons */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex gap-2 ml-auto">
