@@ -94,6 +94,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [tags, setTags] = useState<Tag[]>(company.tags ?? []);
   const [showStagePicker, setShowStagePicker] = useState(false);
+  const [stagePickerSelectedId, setStagePickerSelectedId] = useState<string | null>(null);
+  const [stagePickerDate, setStagePickerDate] = useState('');
+  const [stagePickerStartTime, setStagePickerStartTime] = useState('');
+  const [stagePickerEndTime, setStagePickerEndTime] = useState('');
   const [showNextStagePopup, setShowNextStagePopup] = useState(false);
   const [nextStageDate, setNextStageDate] = useState('');
   const [nextStageStartTime, setNextStageStartTime] = useState('');
@@ -450,8 +454,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         />
       )}
 
-      {/* 選考段階ピッカー */}
-      {showStagePicker && (
+      {/* 選考段階ピッカー — Step 1: 段階選択 */}
+      {showStagePicker && !stagePickerSelectedId && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStagePicker(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 pb-10 shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
@@ -460,9 +464,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               <button
                 key={s.id}
                 onClick={() => {
-                  setStatusId(s.id);
-                  updateCompany(company.id, { statusId: s.id });
-                  setShowStagePicker(false);
+                  setStagePickerSelectedId(s.id);
+                  setStagePickerDate('');
+                  setStagePickerStartTime('');
+                  setStagePickerEndTime('');
                 }}
                 className={`w-full text-left px-4 py-3 rounded-xl mb-1 text-[15px] ios-tap ${
                   s.id === statusId
@@ -476,6 +481,105 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           </div>
         </div>
       )}
+
+      {/* 選考段階ピッカー — Step 2: 日時入力 */}
+      {showStagePicker && stagePickerSelectedId && (() => {
+        const pickedStatus = trackStatuses.find((s) => s.id === stagePickerSelectedId);
+        if (!pickedStatus) return null;
+        return (
+          <div className="fixed inset-0 z-[70] flex items-end justify-center">
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => { setShowStagePicker(false); setStagePickerSelectedId(null); }} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 pb-10 shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setStagePickerSelectedId(null)}
+                className="text-[13px] text-gray-500 dark:text-gray-400 mb-3 ios-tap"
+              >
+                ← 戻る
+              </button>
+              <h3 className="font-bold text-[16px] text-gray-900 dark:text-gray-100 mb-1">
+                {pickedStatus.name}
+              </h3>
+              <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-3">
+                {getDateLabel(pickedStatus.name)}はありますか？（任意）
+              </label>
+              <div className="space-y-2 mb-4">
+                <input
+                  type="date"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
+                  value={stagePickerDate}
+                  onChange={(e) => setStagePickerDate(e.target.value)}
+                />
+                {needsTimeInput(pickedStatus.name) && (
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
+                      <input
+                        type="time"
+                        step={300}
+                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                        value={stagePickerStartTime}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setStagePickerStartTime(v);
+                          if (v && !stagePickerEndTime) {
+                            const [h, m] = v.split(':').map(Number);
+                            setStagePickerEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
+                      <input
+                        type="time"
+                        step={300}
+                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[13px]"
+                        value={stagePickerEndTime}
+                        onChange={(e) => setStagePickerEndTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setStatusId(pickedStatus.id);
+                    updateCompany(company.id, { statusId: pickedStatus.id });
+                    setShowStagePicker(false);
+                    setStagePickerSelectedId(null);
+                  }}
+                  className="flex-1 py-2.5 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap"
+                >
+                  スキップ
+                </button>
+                <button
+                  onClick={() => {
+                    if (!stagePickerDate) return;
+                    setStatusId(pickedStatus.id);
+                    updateCompany(company.id, { statusId: pickedStatus.id });
+                    const { type, subType } = scheduleStageToAction(pickedStatus.name);
+                    addScheduledAction({
+                      companyId: company.id,
+                      type,
+                      subType,
+                      date: stagePickerDate,
+                      startTime: stagePickerStartTime || undefined,
+                      endTime: stagePickerEndTime || undefined,
+                    });
+                    setShowStagePicker(false);
+                    setStagePickerSelectedId(null);
+                  }}
+                  disabled={!stagePickerDate}
+                  className="flex-1 py-2.5 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40"
+                >
+                  設定
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 次の段階へポップアップ */}
       {showNextStagePopup && nextStatus && (
