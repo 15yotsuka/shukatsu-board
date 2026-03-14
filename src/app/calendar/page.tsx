@@ -33,25 +33,10 @@ export default function CalendarPage() {
   const { deadlines } = useDeadlines();
 
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
-  const selectedDeadlineCompanies = selectedDate
-    ? companies.filter((c) => c.nextDeadline === selectedDateStr)
-    : [];
-  const selectedActionCompanies = selectedDate
-    ? companies.filter((c) => c.nextActionDate === selectedDateStr && c.nextActionDate !== c.nextDeadline)
-    : [];
-  const selectedCsvDeadlines = selectedDate
-    ? deadlines.filter((d) => d.deadline === selectedDateStr)
-    : [];
-
-  const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
-    setSelectedDate(date);
-    setSelectedInterviews(interviews);
-    setSelectedActions(actions);
-  };
 
   const INACTIVE_STAGES = ['エントリー前', '内定', '見送り'];
 
-  // 選考中企業のIDセット（選考中フィルター用）
+  // 選考中企業のIDセット（選考中フィルター用）— 詳細リストにも使うためここで計算
   const activeCompanyIds = useMemo(() => {
     if (filterValue !== '選考中') return undefined;
     return new Set(
@@ -63,6 +48,32 @@ export default function CalendarPage() {
         .map((c) => c.id)
     );
   }, [companies, statusColumns, filterValue]);
+
+  const selectedDeadlineCompanies = selectedDate
+    ? companies.filter((c) =>
+        c.nextDeadline === selectedDateStr &&
+        (!activeCompanyIds || activeCompanyIds.has(c.id))
+      )
+    : [];
+  const selectedActionCompanies = selectedDate
+    ? companies.filter((c) =>
+        c.nextActionDate === selectedDateStr &&
+        c.nextActionDate !== c.nextDeadline &&
+        (!activeCompanyIds || activeCompanyIds.has(c.id))
+      )
+    : [];
+  const selectedCsvDeadlines = selectedDate
+    ? deadlines.filter((d) =>
+        d.deadline === selectedDateStr &&
+        (!activeCompanyIds || companies.some((c) => c.name === d.company_name && activeCompanyIds.has(c.id)))
+      )
+    : [];
+
+  const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
+    setSelectedDate(date);
+    setSelectedInterviews(interviews);
+    setSelectedActions(actions);
+  };
 
   // Convert dropdown filter to Set<FilterKind> for sub-components
   const activeFilters = (() => {
