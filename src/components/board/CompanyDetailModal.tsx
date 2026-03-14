@@ -255,17 +255,17 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 </span>
               );
             })()}
-            {company.nextDeadline && (
-              <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
-                締切 {formatDateUnified(company.nextDeadline)}
-              </span>
-            )}
-            {csvDeadlines.length > 0 && (
-              <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
-                締切 {formatDateUnified(csvDeadlines[0].deadline)}
-                {csvDeadlines.length > 1 && ` 他${csvDeadlines.length - 1}件`}
-              </span>
-            )}
+            {(() => {
+              const today = format(new Date(), 'yyyy-MM-dd');
+              const futureCsvDeadlines = csvDeadlines.filter((d) => d.deadline >= today);
+              if (futureCsvDeadlines.length === 0) return null;
+              return (
+                <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                  締切 {formatDateUnified(futureCsvDeadlines[0].deadline)}
+                  {futureCsvDeadlines.length > 1 && ` 他${futureCsvDeadlines.length - 1}件`}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Segmented control — 4 tabs */}
