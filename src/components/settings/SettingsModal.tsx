@@ -384,6 +384,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
       statusColumns: state.statusColumns,
       interviews: state.interviews,
       esEntries: state.esEntries,
+      scheduledActions: state.scheduledActions,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -412,7 +413,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
           escape(c.name),
           escape(c.industry || ''),
           escape(statusMap[c.statusId] || ''),
-          escape(c.memo || ''),
+          escape(c.selectionMemo || ''),
           c.createdAt || '',
         ].join(',')
       )
