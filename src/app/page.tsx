@@ -149,9 +149,7 @@ export default function Home() {
           ? todoItems.filter((item) => item.filterKind === 'es')
           : filterValue === 'Webテスト'
             ? todoItems.filter((item) => item.filterKind === 'webtest')
-            : filterValue === '締切'
-              ? todoItems.filter((item) => item.filterKind === 'deadline')
-              : todoItems.filter((item) => item.filterKind === 'other');
+            : todoItems.filter((item) => item.filterKind === 'other');
     if (sortKind === 'desc') {
       return [...filtered].sort((a, b) => {
         const dc = b.date.localeCompare(a.date);
@@ -252,7 +250,6 @@ export default function Home() {
           <option value="ES">ES提出</option>
           <option value="Webテスト">Webテスト</option>
           <option value="面接">面接</option>
-          <option value="締切">締切</option>
           <option value="その他">その他</option>
         </select>
         <button

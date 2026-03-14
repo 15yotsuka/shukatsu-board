@@ -92,13 +92,20 @@ export default function CalendarPage() {
 
   const handleAddAction = () => {
     if (!addEventCompanyId || !addEventStage || !actionDate) return;
+    if (needsTimeInput(addEventStage) && !actionTime) return;
     const { type, subType } = scheduleStageToAction(addEventStage);
+    let endTime: string | undefined;
+    if (actionTime) {
+      const [h, m] = actionTime.split(':').map(Number);
+      endTime = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
     addScheduledAction({
       companyId: addEventCompanyId,
       type,
       subType,
       date: actionDate,
       startTime: actionTime || undefined,
+      endTime,
     });
     resetAddFlow();
   };
@@ -406,7 +413,7 @@ export default function CalendarPage() {
                   </div>
                 )}
               </div>
-              <button onClick={handleAddAction} disabled={!actionDate} className="ios-button-primary disabled:opacity-40">
+              <button onClick={handleAddAction} disabled={!actionDate || (needsTimeInput(addEventStage!) && !actionTime)} className="ios-button-primary disabled:opacity-40">
                 追加する
               </button>
               <button onClick={resetAddFlow} className="ios-button-secondary">キャンセル</button>

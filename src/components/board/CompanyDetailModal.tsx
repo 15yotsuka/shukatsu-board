@@ -12,7 +12,6 @@ import {
   TAG_CONFIG,
   ACTION_TYPE_LABELS,
   ACTION_TYPE_COLORS,
-  SCHEDULE_STAGE_OPTIONS,
   scheduleStageToAction,
   getDateLabel,
   needsTimeInput,
@@ -66,8 +65,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const gradYear = useAppStore((s) => s.gradYear);
-  const interviews = useAppStore((s) => s.interviews);
-  const deleteInterview = useAppStore((s) => s.deleteInterview);
   const allScheduledActions = useAppStore((s) => s.scheduledActions);
   const scheduledActions = allScheduledActions.filter((a) => a.companyId === company.id);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
@@ -96,9 +93,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
   const [memo, setMemo] = useState<MemoData>(() => parseMemo(company.selectionMemo));
   const [tags, setTags] = useState<Tag[]>(company.tags ?? []);
-  const [newScheduleStage, setNewScheduleStage] = useState<string>('ES');
-  const [newActionDate, setNewActionDate] = useState('');
-  const [newActionTime, setNewActionTime] = useState('');
+  const [showStagePicker, setShowStagePicker] = useState(false);
   const [showNextStagePopup, setShowNextStagePopup] = useState(false);
   const [nextStageDate, setNextStageDate] = useState('');
   const [nextStageStartTime, setNextStageStartTime] = useState('');
@@ -125,10 +120,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
-
-  const companyInterviews = interviews
-    .filter((i) => i.companyId === company.id)
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -225,9 +216,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
           {/* Status + deadline row */}
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className="flex-1 min-w-0 text-[14px] font-semibold bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-full px-3 py-1">
-              {statusColumns.find((s) => s.id === statusId)?.name ?? ''}
-            </span>
+            <button
+              onClick={() => setShowStagePicker(true)}
+              className="flex-1 min-w-0 text-[14px] font-semibold bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-full px-3 py-1 ios-tap text-left"
+            >
+              {statusColumns.find((s) => s.id === statusId)?.name ?? ''} ▾
+            </button>
             {nextStatus && nextStatus.name !== '見送り' && (
               <button
                 onClick={() => {
@@ -317,121 +311,6 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* 選考予定 */}
-              <div>
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <h3 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">選考予定</h3>
-                </div>
-
-                {/* Add form (flat stage selector) */}
-                <div className="space-y-2 mb-3">
-                  <select value={newScheduleStage} onChange={(e) => setNewScheduleStage(e.target.value)} className="ios-input text-[13px] py-2">
-                    {SCHEDULE_STAGE_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  {newScheduleStage && (
-                    <div className="space-y-2">
-                      <label className="block text-[12px] text-[var(--color-text-secondary)]">
-                        {getDateLabel(newScheduleStage)}はありますか？（任意）
-                      </label>
-                      <div className="flex gap-2">
-                        <input type="date" value={newActionDate} onChange={(e) => setNewActionDate(e.target.value)} className="ios-input flex-1 text-[13px] py-2 min-w-[130px]" />
-                        <input
-                          type="time"
-                          step={300}
-                          value={newActionTime}
-                          onChange={(e) => setNewActionTime(e.target.value)}
-                          className="ios-input w-[7rem] flex-none text-[13px] py-2"
-                          placeholder="時間"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => {
-                      if (!newActionDate) return;
-                      const { type, subType } = scheduleStageToAction(newScheduleStage);
-                      addScheduledAction({
-                        companyId: company.id,
-                        type,
-                        subType,
-                        date: newActionDate,
-                        startTime: newActionTime || undefined,
-                      });
-                      // Auto-update status to match the stage
-                      const matchingStatus = statusColumns.find((s) => s.name === newScheduleStage);
-                      if (matchingStatus) {
-                        setStatusId(matchingStatus.id);
-                      }
-                      setNewActionDate('');
-                      setNewActionTime('');
-                    }}
-                    disabled={!newActionDate}
-                    className="w-full px-3 py-2 bg-[var(--color-primary)] text-white rounded-xl text-[13px] font-semibold ios-tap disabled:opacity-40"
-                  >
-                    + 追加
-                  </button>
-                </div>
-
-                {/* Unified list: interviews + scheduled actions */}
-                {(() => {
-                  const items: { id: string; kind: 'interview' | 'action'; label: string; date: string; startTime?: string; endTime?: string; color: string }[] = [];
-
-                  for (const iv of companyInterviews) {
-                    const dt = new Date(iv.datetime);
-                    const t = format(dt, 'HH:mm');
-                    items.push({
-                      id: iv.id,
-                      kind: 'interview',
-                      label: iv.type,
-                      date: iv.datetime.slice(0, 10),
-                      startTime: t !== '00:00' ? t : undefined,
-                      color: '#F97316',
-                    });
-                  }
-
-                  for (const a of scheduledActions) {
-                    items.push({
-                      id: a.id,
-                      kind: 'action',
-                      label: a.subType ?? ACTION_TYPE_LABELS[a.type],
-                      date: a.date,
-                      startTime: a.startTime,
-                      endTime: a.endTime,
-                      color: ACTION_TYPE_COLORS[a.type],
-                    });
-                  }
-
-                  items.sort((a, b) => a.date.localeCompare(b.date));
-
-                  if (items.length === 0) return null;
-
-                  return (
-                    <div className="bg-card rounded-xl divide-y divide-[var(--color-border)] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                      {items.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between px-4 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full flex-none" style={{ backgroundColor: item.color }} />
-                            <span className="text-[14px] font-medium text-[var(--color-text)]">{item.label}</span>
-                            <span className="text-[13px] text-[var(--color-text-secondary)]">
-                              {formatDateUnified(item.date)}
-                              {item.startTime && ` ${formatTimeRange(item.startTime, item.endTime)}`}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => item.kind === 'interview' ? deleteInterview(item.id) : deleteScheduledAction(item.id)}
-                            className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
               </div>
 
             </div>
@@ -571,6 +450,33 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         />
       )}
 
+      {/* 選考段階ピッカー */}
+      {showStagePicker && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStagePicker(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 pb-10 shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-center text-[16px] text-gray-900 dark:text-gray-100 mb-3">選考段階を変更</h3>
+            {trackStatuses.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  setStatusId(s.id);
+                  updateCompany(company.id, { statusId: s.id });
+                  setShowStagePicker(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-xl mb-1 text-[15px] ios-tap ${
+                  s.id === statusId
+                    ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-semibold'
+                    : 'text-[var(--color-text)]'
+                }`}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 次の段階へポップアップ */}
       {showNextStagePopup && nextStatus && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
@@ -625,12 +531,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               <button
                 onClick={() => {
                   setStatusId(nextStatus.id);
-                  if (company.awaitingResult) {
-                    updateCompany(company.id, {
+                  updateCompany(company.id, {
+                    statusId: nextStatus.id,
+                    ...(company.awaitingResult ? {
                       awaitingResult: false,
                       tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
-                    });
-                  }
+                    } : {}),
+                  });
                   setShowNextStagePopup(false);
                 }}
                 className="flex-1 py-2.5 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap"
@@ -641,12 +548,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 onClick={() => {
                   if (!nextStageDate) return;
                   setStatusId(nextStatus.id);
-                  if (company.awaitingResult) {
-                    updateCompany(company.id, {
+                  updateCompany(company.id, {
+                    statusId: nextStatus.id,
+                    ...(company.awaitingResult ? {
                       awaitingResult: false,
                       tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
-                    });
-                  }
+                    } : {}),
+                  });
                   const currentStageName = trackStatuses[currentStatusIndex]?.name ?? '';
                   const { type: currentType } = scheduleStageToAction(currentStageName);
                   allScheduledActions
