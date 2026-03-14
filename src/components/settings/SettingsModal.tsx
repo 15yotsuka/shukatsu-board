@@ -398,6 +398,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
   const resetTutorials = useAppStore((s) => s.resetTutorials);
 
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showCsvHelp, setShowCsvHelp] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const csvImportRef = useRef<HTMLInputElement>(null);
 
@@ -562,7 +563,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
             <div className="text-[12px] text-[var(--color-text-secondary)]">企業名・業界・選考段階・メモ（Excel対応）</div>
           </div>
         </button>
-        <button onClick={() => csvImportRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap">
+        <button onClick={() => setShowCsvHelp(true)} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
@@ -641,6 +642,104 @@ function DataTab({ onClose }: { onClose: () => void }) {
 
       {showBulkImport && (
         <BulkImportModal statusColumns={trackStatuses} onClose={() => setShowBulkImport(false)} />
+      )}
+
+      {showCsvHelp && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowCsvHelp(false)} />
+          <div className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--color-border)] shrink-0">
+              <h3 className="text-[17px] font-bold text-[var(--color-text)]">CSVインポートの使い方</h3>
+              <button onClick={() => setShowCsvHelp(false)} className="w-9 h-9 flex items-center justify-center rounded-full text-[var(--color-text-secondary)] ios-tap">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 space-y-4">
+
+              {/* おすすめ */}
+              <div className="bg-blue-50 dark:bg-blue-950/40 rounded-xl px-4 py-3">
+                <p className="text-[13px] font-semibold text-blue-600 dark:text-blue-400 mb-1">まず「CSVエクスポート」を試してみよう</p>
+                <p className="text-[12px] text-blue-500 dark:text-blue-300 leading-relaxed">
+                  アプリからエクスポートしたCSVをExcelで編集して再インポートするのが一番簡単です。列の順番・名前が自動的に正しい形式になります。
+                </p>
+              </div>
+
+              {/* 列の説明 */}
+              <div className="bg-card rounded-xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-[var(--color-border)]">
+                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">列の構成（1行目はヘッダー）</span>
+                </div>
+                <div className="divide-y divide-[var(--color-border)]">
+                  {[
+                    { col: '1列目', name: '企業名', required: true,  note: '必須。空白行はスキップされます' },
+                    { col: '2列目', name: '業界',   required: false, note: '任意。省略可' },
+                    { col: '3列目', name: '選考段階', required: false, note: '任意。アプリの段階名と一致する必要あり' },
+                    { col: '4列目', name: 'メモ',   required: false, note: '任意。省略可' },
+                    { col: '5列目', name: '作成日', required: false, note: '任意。無視されます（自動設定）' },
+                  ].map(({ col, name, required, note }) => (
+                    <div key={col} className="px-4 py-2.5 flex items-start gap-3">
+                      <span className="text-[11px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded px-1.5 py-0.5 shrink-0 mt-0.5">{col}</span>
+                      <div className="min-w-0">
+                        <span className="text-[14px] font-medium text-[var(--color-text)]">{name}</span>
+                        {required && <span className="ml-1.5 text-[11px] font-bold text-red-500">必須</span>}
+                        <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{note}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 記載例 */}
+              <div className="bg-card rounded-xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-[var(--color-border)]">
+                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">記載例</span>
+                </div>
+                <div className="px-4 py-3 overflow-x-auto">
+                  <pre className="text-[11px] text-[var(--color-text)] font-mono leading-relaxed whitespace-pre">{`企業名,業界,選考段階,メモ
+トヨタ自動車,メーカー,ES,
+三菱UFJ銀行,金融,Webテスト,
+ソニー,メーカー,1次面接,志望動機メモ`}</pre>
+                </div>
+              </div>
+
+              {/* 注意事項 */}
+              <div className="bg-card rounded-xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-[var(--color-border)]">
+                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">注意事項</span>
+                </div>
+                <div className="px-4 py-3 space-y-2">
+                  {[
+                    '既存のデータは消えません。インポートした企業が追記されます。',
+                    '選考段階はアプリの段階名と完全一致が必要です（例：「1次面接」「Webテスト」）。一致しない場合は「' + (trackStatuses[0]?.name ?? 'エントリー前') + '」として追加されます。',
+                    '選考予定・面接日程はCSVに含まれません。追加後に各企業の詳細画面から設定してください。',
+                    'ExcelでCSVを編集する際は「CSV UTF-8（BOM付き）」形式で保存してください。',
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-[var(--color-text-secondary)] text-[12px] mt-0.5 shrink-0">•</span>
+                      <p className="text-[13px] text-[var(--color-text)] leading-relaxed">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-4 border-t border-[var(--color-border)] shrink-0 space-y-2">
+              <button
+                onClick={() => { setShowCsvHelp(false); csvImportRef.current?.click(); }}
+                className="ios-button-primary"
+              >
+                ファイルを選択してインポート
+              </button>
+              <button onClick={() => setShowCsvHelp(false)} className="ios-button-secondary">
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
