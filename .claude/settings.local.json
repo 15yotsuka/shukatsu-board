@@ -23,7 +23,8 @@
       "Bash(npm audit)",
       "Bash(grep:*)",
       "Bash(gh api:*)",
-      "Bash(npx cap:*)"
+      "Bash(npx cap:*)",
+      "Bash(cd /c/Users/15yot/shukatsu-board && rm src/lib/storage.ts src/components/calendar/InterviewForm.tsx)"
     ]
   }
 }

@@ -21,7 +21,6 @@ export interface Company {
   createdAt: string;
   updatedAt: string;
   interviews?: Interview[];
-  esEntries?: ESEntry[];
   noteUrl?: string;
   memo?: string;
   myPageUrl?: string;
@@ -93,20 +92,6 @@ export interface Interview {
 }
 
 // ============================
-// ES（Phase 3）
-// ============================
-export interface ESEntry {
-  id: string;
-  companyId: string;
-  question: string;
-  answer: string;
-  charLimit?: number;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ============================
 // アプリ全体のストア
 // ============================
 export interface AppState {
@@ -114,7 +99,6 @@ export interface AppState {
   companies: Company[];
   statusColumns: StatusColumn[];
   interviews: Interview[];
-  esEntries: ESEntry[];
   scheduledActions: ScheduledAction[];
 }
 
@@ -198,6 +182,5 @@ export interface StorageData {
   companies: Company[];
   statusColumns: StatusColumn[];
   interviews: Interview[];
-  esEntries: ESEntry[];
   scheduledActions: ScheduledAction[];
 }

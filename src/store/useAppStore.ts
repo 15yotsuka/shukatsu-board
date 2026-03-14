@@ -6,7 +6,6 @@ import type {
   Company,
   StatusColumn,
   Interview,
-  ESEntry,
   ScheduledAction,
   Tag,
 } from '@/lib/types';
@@ -94,12 +93,6 @@ interface AppActions {
   updateInterview: (id: string, updates: Partial<Omit<Interview, 'id'>>) => void;
   deleteInterview: (id: string) => void;
 
-  // ES CRUD (Phase 3)
-  addESEntry: (entry: Omit<ESEntry, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateESEntry: (id: string, updates: Partial<Omit<ESEntry, 'id'>>) => void;
-  deleteESEntry: (id: string) => void;
-  reorderESEntries: (companyId: string, orderedIds: string[]) => void;
-
   // Reorder companies (manual sort)
   reorderCompanies: (orderedIds: string[]) => void;
 
@@ -155,7 +148,6 @@ export const useAppStore = create<AppStore>()(
       companies: [],
       statusColumns: createAllDefaultStatuses(),
       interviews: [],
-      esEntries: [],
       scheduledActions: [],
       displaySettings: DEFAULT_DISPLAY_SETTINGS,
       notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
@@ -199,13 +191,12 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           companies: state.companies.filter((c) => c.id !== id),
           interviews: state.interviews.filter((i) => i.companyId !== id),
-          esEntries: state.esEntries.filter((e) => e.companyId !== id),
           scheduledActions: state.scheduledActions.filter((a) => a.companyId !== id),
         }));
       },
 
       deleteAllCompanies: () => {
-        set({ companies: [], interviews: [], esEntries: [], scheduledActions: [] });
+        set({ companies: [], interviews: [], scheduledActions: [] });
       },
 
       moveCompany: (companyId, newStatusId, newOrder) => {
@@ -326,46 +317,6 @@ export const useAppStore = create<AppStore>()(
       deleteInterview: (id) => {
         set((state) => ({
           interviews: state.interviews.filter((i) => i.id !== id),
-        }));
-      },
-
-      // ES CRUD
-      addESEntry: (entry) => {
-        const now = new Date().toISOString();
-        const newEntry: ESEntry = {
-          ...entry,
-          id: nanoid(),
-          createdAt: now,
-          updatedAt: now,
-        };
-        set((state) => ({
-          esEntries: [...state.esEntries, newEntry],
-        }));
-      },
-
-      updateESEntry: (id, updates) => {
-        set((state) => ({
-          esEntries: state.esEntries.map((e) =>
-            e.id === id
-              ? { ...e, ...updates, updatedAt: new Date().toISOString() }
-              : e
-          ),
-        }));
-      },
-
-      deleteESEntry: (id) => {
-        set((state) => ({
-          esEntries: state.esEntries.filter((e) => e.id !== id),
-        }));
-      },
-
-      reorderESEntries: (companyId, orderedIds) => {
-        set((state) => ({
-          esEntries: state.esEntries.map((e) => {
-            if (e.companyId !== companyId) return e;
-            const newOrder = orderedIds.indexOf(e.id);
-            return newOrder >= 0 ? { ...e, order: newOrder } : e;
-          }),
         }));
       },
 
@@ -502,7 +453,6 @@ export const useAppStore = create<AppStore>()(
           companies: data.companies ?? [],
           statusColumns: data.statusColumns ?? createAllDefaultStatuses(),
           interviews: data.interviews ?? [],
-          esEntries: data.esEntries ?? [],
           scheduledActions: (data as AppState).scheduledActions ?? [],
         });
       },
@@ -656,7 +606,6 @@ export const useAppStore = create<AppStore>()(
           companies: normalizedCompanies,
           statusColumns,
           interviews: state.interviews ?? [],
-          esEntries: state.esEntries ?? [],
           scheduledActions: migratedScheduledActionsV14,
           displaySettings,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

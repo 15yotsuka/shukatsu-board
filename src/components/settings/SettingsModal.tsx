@@ -411,7 +411,6 @@ function DataTab({ onClose }: { onClose: () => void }) {
       companies: state.companies,
       statusColumns: state.statusColumns,
       interviews: state.interviews,
-      esEntries: state.esEntries,
       scheduledActions: state.scheduledActions,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
