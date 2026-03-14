@@ -626,7 +626,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 onClick={() => {
                   setStatusId(nextStatus.id);
                   if (company.awaitingResult) {
-                    updateCompany(company.id, { awaitingResult: false });
+                    updateCompany(company.id, {
+                      awaitingResult: false,
+                      tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+                    });
                   }
                   setShowNextStagePopup(false);
                 }}
@@ -639,7 +642,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   if (!nextStageDate) return;
                   setStatusId(nextStatus.id);
                   if (company.awaitingResult) {
-                    updateCompany(company.id, { awaitingResult: false });
+                    updateCompany(company.id, {
+                      awaitingResult: false,
+                      tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+                    });
                   }
                   const currentStageName = trackStatuses[currentStatusIndex]?.name ?? '';
                   const { type: currentType } = scheduleStageToAction(currentStageName);

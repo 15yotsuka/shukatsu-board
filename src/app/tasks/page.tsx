@@ -186,7 +186,7 @@ function TaskCard({
         </div>
 
         {/* Row 2: dot progress bar (blue=本選考, green=インターン) */}
-        <div className="flex items-center gap-1">
+        {displaySettings.showProgressBar && <div className="flex items-center gap-1">
           {milestones.map((_, i) => {
             const isIntern = company.selectionType === 'intern';
             const filled = isIntern ? 'bg-emerald-500' : 'bg-blue-500';
@@ -205,10 +205,10 @@ function TaskCard({
               />
             );
           })}
-        </div>
+        </div>}
 
         {/* Tags (excluding 結果待ち which is shown in Row 1) */}
-        {company.tags && company.tags.filter((t) => t !== '結果待ち').length > 0 && (
+        {displaySettings.showTag && company.tags && company.tags.filter((t) => t !== '結果待ち').length > 0 && (
           <div className="flex flex-wrap gap-1">
             {company.tags.filter((t) => t !== '結果待ち').map((tag) => TAG_CONFIG[tag] && (
               <span key={tag} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${TAG_CONFIG[tag].className}`}>
