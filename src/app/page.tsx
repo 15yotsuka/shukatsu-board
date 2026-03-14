@@ -75,8 +75,19 @@ export default function Home() {
   const todoItems = useMemo((): TodoItem[] => {
     const items: TodoItem[] = [];
 
+    // 内定・見送り企業を除外
+    const excludedStages = new Set(['内定', '見送り']);
+    const activeCompanyIds = new Set(
+      companies
+        .filter((c) => {
+          const col = statusColumns.find((s) => s.id === c.statusId);
+          return col && !excludedStages.has(col.name);
+        })
+        .map((c) => c.id)
+    );
+
     scheduledActions
-      .filter((a) => a.date >= today)
+      .filter((a) => a.date >= today && activeCompanyIds.has(a.companyId))
       .forEach((a) => {
         const aData = companyMap.get(a.companyId);
         items.push({
@@ -94,7 +105,7 @@ export default function Home() {
     interviews
       .filter((i) => {
         const dt = parseISO(i.datetime);
-        return isValid(dt) && format(dt, 'yyyy-MM-dd') >= today;
+        return isValid(dt) && format(dt, 'yyyy-MM-dd') >= today && activeCompanyIds.has(i.companyId);
       })
       .forEach((i) => {
         const dt = parseISO(i.datetime);
@@ -127,7 +138,7 @@ export default function Home() {
     });
 
     return items;
-  }, [scheduledActions, interviews, companies, companyMap, today]);
+  }, [scheduledActions, interviews, companies, companyMap, statusColumns, today]);
 
   const filteredSortedItems = useMemo(() => {
     const filtered = filterValue === 'all'
