@@ -364,15 +364,42 @@ function NotificationTab() {
 
 // ─── データ管理タブ ───────────────────────────────────────────────
 
+// RFC 4180準拠の1行CSVパーサー（quoted fields対応）
+function parseCSVRow(line: string): string[] {
+  const cols: string[] = [];
+  let i = 0;
+  while (i <= line.length) {
+    if (line[i] === '"') {
+      let field = '';
+      i++;
+      while (i < line.length) {
+        if (line[i] === '"' && line[i + 1] === '"') { field += '"'; i += 2; }
+        else if (line[i] === '"') { i++; break; }
+        else { field += line[i++]; }
+      }
+      cols.push(field);
+      if (line[i] === ',') i++;
+    } else {
+      const end = line.indexOf(',', i);
+      if (end === -1) { cols.push(line.slice(i)); break; }
+      cols.push(line.slice(i, end));
+      i = end + 1;
+    }
+  }
+  return cols;
+}
+
 function DataTab({ onClose }: { onClose: () => void }) {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
   const loadBackup = useAppStore((s) => s.loadBackup);
+  const addCompany = useAppStore((s) => s.addCompany);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
   const resetTutorials = useAppStore((s) => s.resetTutorials);
 
   const [showBulkImport, setShowBulkImport] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const csvImportRef = useRef<HTMLInputElement>(null);
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
@@ -445,6 +472,54 @@ function DataTab({ onClose }: { onClose: () => void }) {
     e.target.value = '';
   };
 
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        let text = ev.target?.result as string;
+        if (text.startsWith('\uFEFF')) text = text.slice(1); // BOM除去
+        const lines = text.split(/\r?\n/).filter((l) => l.trim());
+        if (lines.length < 2) { alert('インポートするデータがありません。'); return; }
+
+        const unknownStages: string[] = [];
+        const toImport: { name: string; statusId: string; industry?: string; selectionMemo?: string }[] = [];
+
+        for (const line of lines.slice(1)) { // ヘッダー行スキップ
+          const cols = parseCSVRow(line);
+          const name = cols[0]?.trim();
+          if (!name) continue;
+          const industry = cols[1]?.trim() || undefined;
+          const stageName = cols[2]?.trim() || '';
+          const selectionMemo = cols[3]?.trim() || undefined;
+          const matched = trackStatuses.find((s) => s.name === stageName);
+          if (!matched && stageName && !unknownStages.includes(stageName)) {
+            unknownStages.push(stageName);
+          }
+          const statusId = matched?.id ?? trackStatuses[0]?.id;
+          if (!statusId) continue;
+          toImport.push({ name, statusId, industry, selectionMemo });
+        }
+
+        if (toImport.length === 0) { alert('有効な企業データがありませんでした。'); return; }
+
+        let msg = `${toImport.length}社を既存データに追加しますか？`;
+        if (unknownStages.length > 0) {
+          msg += `\n\n⚠️ 不明な選考段階（「${trackStatuses[0]?.name ?? 'エントリー前'}」として追加）:\n${unknownStages.join(', ')}`;
+        }
+        if (!window.confirm(msg)) return;
+
+        for (const c of toImport) addCompany(c);
+        alert(`${toImport.length}社をインポートしました。`);
+      } catch {
+        alert('CSVファイルの読み込みに失敗しました。\nファイル形式を確認してください。');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
+
   return (
     <div className="space-y-4">
       {/* バックアップ */}
@@ -473,20 +548,30 @@ function DataTab({ onClose }: { onClose: () => void }) {
         <input ref={importRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden" />
       </div>
 
-      {/* CSVエクスポート */}
+      {/* CSV */}
       <div className="bg-card rounded-xl overflow-hidden">
         <div className="px-4 py-2 border-b border-[var(--color-border)]">
-          <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">CSVエクスポート</span>
+          <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">CSV</span>
         </div>
-        <button onClick={handleExportCSV} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap">
+        <button onClick={handleExportCSV} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap border-b border-[var(--color-border)]">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-primary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           <div>
-            <div className="text-[15px] text-[var(--color-text)]">企業データをCSVで書き出し</div>
+            <div className="text-[15px] text-[var(--color-text)]">CSVエクスポート</div>
             <div className="text-[12px] text-[var(--color-text-secondary)]">企業名・業界・選考段階・メモ（Excel対応）</div>
           </div>
         </button>
+        <button onClick={() => csvImportRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          <div>
+            <div className="text-[15px] text-[var(--color-text)]">CSVインポート</div>
+            <div className="text-[12px] text-[var(--color-text-secondary)]">CSVから企業を追加（既存データに追記）</div>
+          </div>
+        </button>
+        <input ref={csvImportRef} type="file" accept=".csv,text/csv" onChange={handleImportCSV} className="hidden" />
       </div>
 
       {/* 企業データ */}
