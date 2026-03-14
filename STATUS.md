@@ -20,6 +20,13 @@
 - タグ欄「結果待ち」タグ削除（awaitingResultフラグと二重管理になっている）
 - App Store Connect提出（Xcodeビルド → 提出）
 
+## 直近修正済みバグ（2026-03-14）
+- showProgressBar/showTag が TaskCard に未適用 → 修正済み
+- awaitingResult解除時にタグ「結果待ち」が残る → 修正済み
+- FILTER_GROUPSのステータス名が古くフィルターが全機能しない → 修正済み
+- 企業一覧「次の段階へ」で旧ScheduledActionが残りホーム・カレンダー未更新 → 修正済み
+- カレンダー「選考中」フィルターがCSV締切・日付詳細リストに未適用 → 修正済み
+
 ## 技術スタック
 - Next.js 16.1.6 (App Router, output:'export'), TypeScript, Tailwind CSS v4
 - Zustand v5+persist (schemaVersion=14), @dnd-kit/core v6, date-fns v4, framer-motion v12
@@ -41,11 +48,3 @@
 - `src/lib/notifications.ts` — scheduleLocalNotifications() / requestNotificationPermission()
 - `public/deadlines-27.csv`, `public/deadlines-28.csv` — 締切情報CSVデータ
 
-## 未使用コンポーネント（削除候補）
-- `src/components/board/KanbanBoard.tsx` — TaskCardで置き換わり・未使用
-- `src/components/board/CompanyCard.tsx` — KanbanBoard用・未使用
-- `src/components/board/StatusColumn.tsx` — KanbanBoard関連・未使用
-- `src/components/board/MiniWeekCalendar.tsx` — 参照なし
-- `src/components/board/HeroCardCarousel.tsx` — 参照なし
-- `src/components/board/DeadlineReminder.tsx` — 参照なし
-- `src/components/status/StatusEditor.tsx` — SelectionFlowEditorで統合済み・未使用

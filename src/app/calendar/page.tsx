@@ -62,11 +62,8 @@ export default function CalendarPage() {
         (!activeCompanyIds || activeCompanyIds.has(c.id))
       )
     : [];
-  const selectedCsvDeadlines = selectedDate
-    ? deadlines.filter((d) =>
-        d.deadline === selectedDateStr &&
-        (!activeCompanyIds || companies.some((c) => c.name === d.company_name && activeCompanyIds.has(c.id)))
-      )
+  const selectedCsvDeadlines = selectedDate && filterValue !== '選考中'
+    ? deadlines.filter((d) => d.deadline === selectedDateStr)
     : [];
 
   const handleDateSelect = (date: Date, interviews: Interview[], actions: ScheduledAction[]) => {
