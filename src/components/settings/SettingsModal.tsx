@@ -484,16 +484,29 @@ function DataTab({ onClose }: { onClose: () => void }) {
         const lines = text.split(/\r?\n/).filter((l) => l.trim());
         if (lines.length < 2) { alert('インポートするデータがありません。'); return; }
 
+        // ヘッダー行からカラム位置を特定
+        const headers = parseCSVRow(lines[0]).map((h) => h.trim());
+        const idx = {
+          name:     headers.indexOf('企業名'),
+          industry: headers.indexOf('業界'),
+          stage:    headers.indexOf('選考段階'),
+          memo:     headers.indexOf('メモ'),
+        };
+        if (idx.name === -1) {
+          alert('「企業名」列が見つかりません。\n1行目にヘッダー行が必要です（例：企業名,業界,選考段階,メモ）');
+          return;
+        }
+
         const unknownStages: string[] = [];
         const toImport: { name: string; statusId: string; industry?: string; selectionMemo?: string }[] = [];
 
-        for (const line of lines.slice(1)) { // ヘッダー行スキップ
+        for (const line of lines.slice(1)) {
           const cols = parseCSVRow(line);
-          const name = cols[0]?.trim();
+          const name = cols[idx.name]?.trim();
           if (!name) continue;
-          const industry = cols[1]?.trim() || undefined;
-          const stageName = cols[2]?.trim() || '';
-          const selectionMemo = cols[3]?.trim() || undefined;
+          const industry  = idx.industry >= 0 ? cols[idx.industry]?.trim() || undefined : undefined;
+          const stageName = idx.stage    >= 0 ? cols[idx.stage]?.trim()    || ''        : '';
+          const selectionMemo = idx.memo >= 0 ? cols[idx.memo]?.trim()     || undefined : undefined;
           const matched = trackStatuses.find((s) => s.name === stageName);
           if (!matched && stageName && !unknownStages.includes(stageName)) {
             unknownStages.push(stageName);
@@ -669,38 +682,64 @@ function DataTab({ onClose }: { onClose: () => void }) {
               {/* 列の説明 */}
               <div className="bg-card rounded-xl overflow-hidden">
                 <div className="px-4 py-2 border-b border-[var(--color-border)]">
-                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">列の構成（1行目はヘッダー）</span>
+                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">使用できる列（順番は自由）</span>
                 </div>
                 <div className="divide-y divide-[var(--color-border)]">
                   {[
-                    { col: '1列目', name: '企業名', required: true,  note: '必須。空白行はスキップされます' },
-                    { col: '2列目', name: '業界',   required: false, note: '任意。省略可' },
-                    { col: '3列目', name: '選考段階', required: false, note: '任意。アプリの段階名と一致する必要あり' },
-                    { col: '4列目', name: 'メモ',   required: false, note: '任意。省略可' },
-                    { col: '5列目', name: '作成日', required: false, note: '任意。無視されます（自動設定）' },
-                  ].map(({ col, name, required, note }) => (
+                    { col: '企業名', required: true,  note: '必須。この列がないとインポートできません' },
+                    { col: '業界',   required: false, note: '任意。省略可' },
+                    { col: '選考段階', required: false, note: '任意。アプリの段階名と完全一致が必要' },
+                    { col: 'メモ',   required: false, note: '任意。省略可' },
+                    { col: '作成日', required: false, note: '任意。書いても無視されます（自動設定）' },
+                  ].map(({ col, required, note }) => (
                     <div key={col} className="px-4 py-2.5 flex items-start gap-3">
-                      <span className="text-[11px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded px-1.5 py-0.5 shrink-0 mt-0.5">{col}</span>
+                      <span className="text-[12px] font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded px-2 py-0.5 shrink-0 mt-0.5 font-mono">{col}</span>
                       <div className="min-w-0">
-                        <span className="text-[14px] font-medium text-[var(--color-text)]">{name}</span>
-                        {required && <span className="ml-1.5 text-[11px] font-bold text-red-500">必須</span>}
-                        <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{note}</p>
+                        {required && <span className="text-[11px] font-bold text-red-500 mr-1">必須</span>}
+                        <span className="text-[12px] text-[var(--color-text-secondary)]">{note}</span>
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className="px-4 py-2.5 bg-[var(--color-border)]/30">
+                  <p className="text-[12px] text-[var(--color-text-secondary)]">1行目はヘッダー行（列名）にしてください。列の順番はA・B・C…どこでも構いません。</p>
                 </div>
               </div>
 
               {/* 記載例 */}
               <div className="bg-card rounded-xl overflow-hidden">
                 <div className="px-4 py-2 border-b border-[var(--color-border)]">
-                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">記載例</span>
+                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">記載例（列順変更もOK）</span>
                 </div>
-                <div className="px-4 py-3 overflow-x-auto">
-                  <pre className="text-[11px] text-[var(--color-text)] font-mono leading-relaxed whitespace-pre">{`企業名,業界,選考段階,メモ
+                <div className="px-4 py-3 overflow-x-auto space-y-3">
+                  <div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] mb-1">例①　標準の並び</p>
+                    <pre className="text-[11px] text-[var(--color-text)] font-mono leading-relaxed whitespace-pre bg-[var(--color-border)]/30 rounded-lg p-2">{`企業名,業界,選考段階,メモ
 トヨタ自動車,メーカー,ES,
 三菱UFJ銀行,金融,Webテスト,
 ソニー,メーカー,1次面接,志望動機メモ`}</pre>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] mb-1">例②　列順を変えてもOK（企業名さえあればよい）</p>
+                    <pre className="text-[11px] text-[var(--color-text)] font-mono leading-relaxed whitespace-pre bg-[var(--color-border)]/30 rounded-lg p-2">{`選考段階,企業名,メモ
+ES,トヨタ自動車,
+1次面接,ソニー,志望動機メモ`}</pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* 選考段階の一覧 */}
+              <div className="bg-card rounded-xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-[var(--color-border)]">
+                  <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">使用できる選考段階名</span>
+                </div>
+                <div className="px-4 py-3 flex flex-wrap gap-1.5">
+                  {trackStatuses.map((s) => (
+                    <span key={s.id} className="text-[12px] font-medium bg-[var(--color-border)] text-[var(--color-text)] rounded-full px-2.5 py-1 font-mono">{s.name}</span>
+                  ))}
+                </div>
+                <div className="px-4 py-2.5 border-t border-[var(--color-border)] bg-[var(--color-border)]/30">
+                  <p className="text-[12px] text-[var(--color-text-secondary)]">上記以外の名前が入力された場合は「{trackStatuses[0]?.name ?? 'エントリー前'}」として追加されます。</p>
                 </div>
               </div>
 
@@ -712,7 +751,6 @@ function DataTab({ onClose }: { onClose: () => void }) {
                 <div className="px-4 py-3 space-y-2">
                   {[
                     '既存のデータは消えません。インポートした企業が追記されます。',
-                    '選考段階はアプリの段階名と完全一致が必要です（例：「1次面接」「Webテスト」）。一致しない場合は「' + (trackStatuses[0]?.name ?? 'エントリー前') + '」として追加されます。',
                     '選考予定・面接日程はCSVに含まれません。追加後に各企業の詳細画面から設定してください。',
                     'ExcelでCSVを編集する際は「CSV UTF-8（BOM付き）」形式で保存してください。',
                   ].map((text, i) => (
