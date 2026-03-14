@@ -125,7 +125,10 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
           const hasDeadline =
             filters.has('deadline') &&
             (companies.some((c) => (c.nextDeadline === dateStr || c.nextActionDate === dateStr) && inCompanyFilter(c.id)) ||
-              deadlines.some((dd) => dd.deadline === dateStr));
+              deadlines.some((dd) => dd.deadline === dateStr && (
+                !activeCompanyIds ||
+                companies.some((c) => c.name === dd.company_name && inCompanyFilter(c.id))
+              )));
           if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
 
           if (filters.has('interview') && dateInterviews.length > 0) dots.push('#F97316');

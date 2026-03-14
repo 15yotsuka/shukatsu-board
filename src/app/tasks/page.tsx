@@ -39,13 +39,12 @@ type SortField = 'deadline' | 'status' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
 
 const FILTER_GROUPS: Record<string, string[]> = {
-  'active': ['ES作成中', 'ES提出済', 'Webテスト受検済', '1次面接', '2次面接', '最終面接', 'インターン選考中'],
+  'active': ['ES', 'Webテスト', '1次面接', '2次面接', '3次面接', '最終面接'],
   'entry_before': ['エントリー前'],
-  'entry': ['未エントリー', 'ES作成中', 'ES提出済', 'Webテスト受検済'],
-  'interview': ['1次面接', '2次面接', '最終面接'],
-  'intern': ['インターン選考中'],
+  'entry': ['ES', 'Webテスト'],
+  'interview': ['1次面接', '2次面接', '3次面接', '最終面接'],
   'offer': ['内定'],
-  'rejected': ['お見送り'],
+  'rejected': ['見送り'],
 };
 
 const FILTER_OPTIONS: { value: string; label: string }[] = [
@@ -53,11 +52,10 @@ const FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'active', label: '進行中' },
   { value: 'awaiting', label: '結果待ち' },
   { value: 'entry_before', label: 'エントリー前' },
-  { value: 'entry', label: 'エントリー' },
+  { value: 'entry', label: 'ES/Webテスト' },
   { value: 'interview', label: '面接中' },
-  { value: 'intern', label: 'インターン' },
   { value: 'offer', label: '内定' },
-  { value: 'rejected', label: 'お見送り' },
+  { value: 'rejected', label: '見送り' },
 ];
 
 const getBadgeStyle = (statusName: string): string => {
@@ -259,6 +257,8 @@ function TasksContent() {
   const addCompany = useAppStore((s) => s.addCompany);
   const updateCompany = useAppStore((s) => s.updateCompany);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
+  const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
+  const scheduledActions = useAppStore((s) => s.scheduledActions);
   const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
@@ -346,6 +346,14 @@ function TasksContent() {
     const { company, nextName, nextColumnId } = nextStageTarget;
     if (company.awaitingResult) toggleAwaitingResult(company.id);
     updateCompany(company.id, { statusId: nextColumnId });
+    // 現在の選考段階のScheduledActionを削除（CompanyDetailModalと同じ処理）
+    const currentStatus = statusColumns.find((s) => s.id === company.statusId);
+    if (currentStatus) {
+      const { type: currentType } = scheduleStageToAction(currentStatus.name);
+      scheduledActions
+        .filter((a) => a.companyId === company.id && a.type === currentType)
+        .forEach((a) => deleteScheduledAction(a.id));
+    }
     if (withDate && nextStageDate) {
       const { type, subType } = scheduleStageToAction(nextName);
       addScheduledAction({
@@ -416,8 +424,8 @@ function TasksContent() {
     return list;
   }, [sortedAll, filter, selectedIndustry]);
 
-  const active = filtered.filter((c) => !getStatusName(c.statusId).includes('お見送り'));
-  const archived = filtered.filter((c) => getStatusName(c.statusId).includes('お見送り'));
+  const active = filtered.filter((c) => getStatusName(c.statusId) !== '見送り');
+  const archived = filtered.filter((c) => getStatusName(c.statusId) === '見送り');
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (sortField !== 'manual') return;
