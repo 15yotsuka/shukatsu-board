@@ -65,7 +65,8 @@ export function UpcomingList({ activeFilters, activeCompanyIds }: UpcomingListPr
 
   const deadlineItems: UnifiedItem[] = filters.has('deadline')
     ? companies
-        .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr && inCompanyFilter(c.id))
+        .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr && inCompanyFilter(c.id) &&
+          !scheduledActions.some((a) => a.companyId === c.id && a.date === c.nextDeadline))
         .map((c) => ({
           kind: 'action' as const,
           sortKey: c.nextDeadline! + 'T00:00:00',

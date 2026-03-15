@@ -52,7 +52,8 @@ export default function CalendarPage() {
   const selectedDeadlineCompanies = selectedDate
     ? companies.filter((c) =>
         c.nextDeadline === selectedDateStr &&
-        (!activeCompanyIds || activeCompanyIds.has(c.id))
+        (!activeCompanyIds || activeCompanyIds.has(c.id)) &&
+        !selectedActions.some((a) => a.companyId === c.id)
       )
     : [];
   const selectedActionCompanies = selectedDate
