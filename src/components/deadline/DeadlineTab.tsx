@@ -3,8 +3,11 @@
 import { useMemo, useState } from 'react';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { GRAD_YEARS, type GradYear } from '@/lib/gradYears';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, normalizeCompanyName } from '@/store/useAppStore';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
+import { CompanyDetailModal } from '@/components/board/CompanyDetailModal';
+import { AddCompanyForm } from '@/components/board/AddCompanyForm';
+import type { Company } from '@/lib/types';
 import {
   parseISO,
   isValid,
@@ -30,15 +33,28 @@ export default function DeadlineTab() {
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [sortMode, setSortMode] = useState<SortMode>('deadline-asc');
   const [expiredCollapsed, setExpiredCollapsed] = useState(true);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [addFormData, setAddFormData] = useState<{ name: string; industry: string; deadline: string } | null>(null);
 
-  const companyUrlMap = useMemo(() => {
-    const map = new Map<string, string>();
-    companies.forEach((c) => {
-      const url = c.myPageUrl || c.url;
-      if (url) map.set(c.name, url);
-    });
+  const companyMap = useMemo(() => {
+    const map = new Map<string, Company>();
+    companies.forEach((c) => map.set(normalizeCompanyName(c.name), c));
     return map;
   }, [companies]);
+
+  const handleEntryTap = (entry: { company_name: string; industry?: string; deadline: string }) => {
+    const normalized = normalizeCompanyName(entry.company_name);
+    const found = companyMap.get(normalized);
+    if (found) {
+      setSelectedCompany(found);
+    } else {
+      setAddFormData({
+        name: entry.company_name,
+        industry: entry.industry || '',
+        deadline: entry.deadline,
+      });
+    }
+  };
 
   const industries = useMemo(() => {
     const set = new Set<string>();
@@ -230,11 +246,15 @@ export default function DeadlineTab() {
                 {!expiredCollapsed && (
                   <div className="space-y-1">
                     {section.items.map((entry, idx) => {
-                      const hp = companyUrlMap.get(entry.company_name);
-                      const inner = (
-                        <>
+                      const registered = companyMap.has(normalizeCompanyName(entry.company_name));
+                      return (
+                        <button
+                          key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                          onClick={() => handleEntryTap(entry)}
+                          className="w-full flex items-center justify-between px-3 py-2 bg-card rounded-lg ios-tap active:opacity-70 text-left"
+                        >
                           <div className="flex-1 min-w-0">
-                            <div className={`font-medium truncate ${hp ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
+                            <div className={`font-medium truncate ${registered ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
                               {entry.company_name}
                             </div>
                             <div className="text-xs text-[var(--color-text-secondary)] truncate">
@@ -246,25 +266,7 @@ export default function DeadlineTab() {
                           <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
                             {entry.deadline}
                           </div>
-                        </>
-                      );
-                      return hp ? (
-                        <a
-                          key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                          href={hp}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between px-3 py-2 bg-card rounded-lg ios-tap active:opacity-70"
-                        >
-                          {inner}
-                        </a>
-                      ) : (
-                        <div
-                          key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                          className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
-                        >
-                          {inner}
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -277,11 +279,15 @@ export default function DeadlineTab() {
                 </h3>
                 <div className="space-y-1">
                   {section.items.map((entry, idx) => {
-                    const hp = companyUrlMap.get(entry.company_name);
-                    const inner = (
-                      <>
+                    const registered = companyMap.has(normalizeCompanyName(entry.company_name));
+                    return (
+                      <button
+                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
+                        onClick={() => handleEntryTap(entry)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-card rounded-lg ios-tap active:opacity-70 text-left"
+                      >
                         <div className="flex-1 min-w-0">
-                          <div className={`font-medium truncate ${hp ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
+                          <div className={`font-medium truncate ${registered ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
                             {entry.company_name}
                           </div>
                           <div className="text-xs text-[var(--color-text-secondary)] truncate">
@@ -293,25 +299,7 @@ export default function DeadlineTab() {
                         <div className="text-sm font-mono whitespace-nowrap ml-3 text-[var(--color-text-secondary)]">
                           {entry.deadline}
                         </div>
-                      </>
-                    );
-                    return hp ? (
-                      <a
-                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                        href={hp}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between px-3 py-2 bg-card rounded-lg ios-tap active:opacity-70"
-                      >
-                        {inner}
-                      </a>
-                    ) : (
-                      <div
-                        key={`${entry.company_name}-${entry.deadline}-${idx}`}
-                        className="flex items-center justify-between px-3 py-2 bg-card rounded-lg"
-                      >
-                        {inner}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -319,6 +307,22 @@ export default function DeadlineTab() {
             )
           ))}
         </div>
+      )}
+
+      {selectedCompany && (
+        <CompanyDetailModal
+          company={selectedCompany}
+          onClose={() => setSelectedCompany(null)}
+        />
+      )}
+
+      {addFormData && (
+        <AddCompanyForm
+          onClose={() => setAddFormData(null)}
+          initialName={addFormData.name}
+          initialIndustry={addFormData.industry}
+          initialDeadline={addFormData.deadline}
+        />
       )}
 
       {gradYear !== null && !tutorialFlags.deadline && (

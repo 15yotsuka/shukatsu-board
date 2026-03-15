@@ -12,9 +12,12 @@ import { SelectionFlowEditor, DEFAULT_FLOW_STAGES } from '@/components/board/Sel
 
 interface AddCompanyFormProps {
   onClose: () => void;
+  initialName?: string;
+  initialIndustry?: string;
+  initialDeadline?: string;
 }
 
-export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
+export function AddCompanyForm({ onClose, initialName, initialIndustry, initialDeadline }: AddCompanyFormProps) {
   const addCompany = useAppStore((s) => s.addCompany);
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const statusColumns = useAppStore((s) => s.statusColumns);
@@ -23,10 +26,10 @@ export function AddCompanyForm({ onClose }: AddCompanyFormProps) {
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
 
-  const [name, setName] = useState('');
-  const [industry, setIndustry] = useState('');
+  const [name, setName] = useState(initialName ?? '');
+  const [industry, setIndustry] = useState(initialIndustry ?? '');
   const [url, setUrl] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [deadline, setDeadline] = useState(initialDeadline ?? '');
   const [statusId, setStatusId] = useState(trackStatuses[0]?.id ?? '');
   const [tags, setTags] = useState<Tag[]>([]);
   const [memo, setMemo] = useState('');

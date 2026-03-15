@@ -131,7 +131,7 @@ type AppStore = AppState & {
 
 const CURRENT_SCHEMA_VERSION = 14;
 
-function normalizeCompanyName(name: string): string {
+export function normalizeCompanyName(name: string): string {
   return name
     .replace(/^株式会社\s*/u, '')
     .replace(/\s*株式会社$/u, '')
