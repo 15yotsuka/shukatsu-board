@@ -764,7 +764,7 @@ function TasksContent() {
       {/* 次の段階へ 日時設定ポップアップ */}
       {nextStageTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40"
           onPointerDown={() => setNextStageTarget(null)}
         >
           <div

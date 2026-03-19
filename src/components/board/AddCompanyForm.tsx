@@ -146,7 +146,7 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
           <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">企業を追加</h2>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="p-4 space-y-4 overflow-y-auto flex-1" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))', WebkitOverflowScrolling: 'touch' }}>
           {/* 企業名 + サジェスト */}
           <div className="relative">
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">

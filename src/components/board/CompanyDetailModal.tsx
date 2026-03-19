@@ -175,7 +175,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -189,7 +189,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 24, opacity: 0 }}
         transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-        className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
+        className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
+        style={{ maxHeight: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
       >
         {/* Fixed header */}
         <div className="bg-card px-4 pt-4 pb-0 flex-shrink-0 border-b border-[var(--color-border)]">
@@ -433,7 +434,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         </div>
 
         {/* Fixed footer */}
-        <div className="flex-shrink-0 px-4 pb-6 pt-3 border-t border-[var(--color-border)] bg-card space-y-2">
+        <div className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] bg-card space-y-2" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
           <button onClick={handleSave} className="ios-button-primary shadow-sm hover:opacity-90 transition-opacity">
             保存
           </button>

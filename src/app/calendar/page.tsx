@@ -324,7 +324,7 @@ export default function CalendarPage() {
       {showAddEvent && !addEventStage && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
-          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
+          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1 md:hidden">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
@@ -353,7 +353,7 @@ export default function CalendarPage() {
       {showAddEvent && addEventStage && !addEventCompanyId && (
         <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
-          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg p-5 space-y-4">
+          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1 md:hidden">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
@@ -396,7 +396,7 @@ export default function CalendarPage() {
                 {getCompanyName(addEventCompanyId)}
               </p>
             </div>
-            <div className="p-4 space-y-4">
+            <div className="px-4 space-y-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
               <label className="block text-[13px] text-[var(--color-text-secondary)]">
                 {getDateLabel(addEventStage)}はありますか？（任意）
               </label>
