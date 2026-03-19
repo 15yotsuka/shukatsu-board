@@ -35,7 +35,7 @@ export default function RootLayout({
         <ThemeProvider>
           <DeadlineProvider>
             <Header />
-            <main className="pb-16 min-h-screen" style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' }}>
+            <main className="min-h-screen" style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))', paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
               <PageTransition>{children}</PageTransition>
             </main>
             <BottomNav />

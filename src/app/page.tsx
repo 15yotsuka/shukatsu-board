@@ -285,7 +285,7 @@ export default function Home() {
       )}
 
       {/* Stat chips */}
-      <div className="fixed bottom-[5.5rem] left-0 right-0 flex justify-center pointer-events-none">
+      <div className="fixed left-0 right-0 flex justify-center pointer-events-none" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
         <div className="flex gap-2 pointer-events-auto">
           <button
             onClick={() => router.push('/tasks?filter=active')}
@@ -354,6 +354,12 @@ export default function Home() {
                 {label}
               </button>
             ))}
+            <button
+              onClick={() => setShowSortSheet(false)}
+              className="w-full py-3 rounded-xl text-[15px] font-medium ios-tap bg-[var(--color-bg)] text-[var(--color-text-secondary)]"
+            >
+              キャンセル
+            </button>
           </div>
         </div>
       )}

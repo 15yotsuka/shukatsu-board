@@ -716,7 +716,8 @@ function TasksContent() {
 
       <button
         onClick={() => setShowAddForm(true)}
-        className="fixed bottom-20 right-5 z-40 w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center ios-tap transition-all duration-150 active:scale-95 hover:brightness-95"
+        className="fixed right-5 z-40 w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center ios-tap transition-all duration-150 active:scale-95 hover:brightness-95"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         aria-label="企業を追加"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -814,7 +815,7 @@ function TasksContent() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 mb-2">
               <button
                 onClick={() => advanceToNextStage(false)}
                 className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-border)] text-[var(--color-text)] min-h-[44px]"
@@ -829,6 +830,12 @@ function TasksContent() {
                 設定
               </button>
             </div>
+            <button
+              onClick={() => setNextStageTarget(null)}
+              className="w-full py-2.5 rounded-xl text-[14px] font-medium text-[var(--color-text-secondary)] min-h-[44px]"
+            >
+              キャンセル
+            </button>
           </div>
         </div>
       )}
