@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:ios": "next build && npx cap sync ios"
   },
   "dependencies": {
     "@capacitor/core": "^8.2.0",

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, Suspense } from 'react';
+import React, { useState, useMemo, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
@@ -89,6 +89,8 @@ interface TaskCardProps {
   onOpenDetail: () => void;
   onAdvance: (e: React.MouseEvent) => void;
   onToggleAwaitingResult: () => void;
+  onLongPress: () => void;
+  onSwipeLeft: () => void;
 }
 
 function TaskCard({
@@ -103,6 +105,8 @@ function TaskCard({
   onOpenDetail,
   onAdvance,
   onToggleAwaitingResult,
+  onLongPress,
+  onSwipeLeft,
 }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: company.id,
@@ -116,6 +120,56 @@ function TaskCard({
 
   const nextStepLabel = getNextStepLabel(company);
 
+  // Long press
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const swipeStartX = useRef<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showSwipeAction, setShowSwipeAction] = useState(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    swipeStartX.current = touch.clientX;
+    longPressTimer.current = setTimeout(() => {
+      longPressTimer.current = null;
+      onLongPress();
+    }, 500);
+  }, [onLongPress]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (touchStartPos.current) {
+      const dx = touch.clientX - touchStartPos.current.x;
+      const dy = touch.clientY - touchStartPos.current.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+      }
+      if (dx < -20 && Math.abs(dy) < 30) {
+        const offset = Math.max(dx, -80);
+        setSwipeOffset(offset);
+        setShowSwipeAction(offset < -50);
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (swipeOffset < -60) {
+      onSwipeLeft();
+    }
+    setSwipeOffset(0);
+    setShowSwipeAction(false);
+    touchStartPos.current = null;
+    swipeStartX.current = null;
+  }, [swipeOffset, onSwipeLeft]);
+
   const upcomingInterview = useMemo(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
     return (
@@ -126,10 +180,20 @@ function TaskCard({
   }, [interviews, company.id]);
 
   return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Swipe left background */}
+      {showSwipeAction && (
+        <div className="absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center bg-red-500 rounded-r-2xl">
+          <span className="text-white text-[12px] font-bold">見送り</span>
+        </div>
+      )}
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ ...style, transform: `${CSS.Transform.toString(transform) ?? ''} translateX(${swipeOffset}px)`, transition: swipeOffset === 0 ? 'transform 0.3s ease' : 'none' }}
       onClick={onOpenDetail}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className="relative bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
     >
       {/* Left color strip (stage color) - tappable to toggle awaitingResult */}
@@ -240,6 +304,7 @@ function TaskCard({
 
       </div>
     </div>
+    </div>
   );
 }
 
@@ -277,6 +342,7 @@ function TasksContent() {
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+  const [quickEditCompany, setQuickEditCompany] = useState<Company | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -566,6 +632,14 @@ function TasksContent() {
                         const base = (c.tags ?? []).filter((t) => t !== '結果待ち');
                         updateCompany(c.id, { tags: willBeAwaiting ? [...base, '結果待ち'] : base });
                       }}
+                      onLongPress={() => setQuickEditCompany(c)}
+                      onSwipeLeft={() => {
+                        const misuCol = statusColumns.find((s) => s.name === '見送り');
+                        if (misuCol) {
+                          updateCompany(c.id, { statusId: misuCol.id });
+                          showToast(`『${c.name}』を見送りに移動しました`);
+                        }
+                      }}
                     />
                   );
                 })}
@@ -720,6 +794,52 @@ function TasksContent() {
           </div>
         </div>
       )}
+
+      {/* クイック編集モーダル（長押し） */}
+      <AnimatePresence>
+        {quickEditCompany && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-end justify-center"
+            onClick={() => setQuickEditCompany(null)}
+          >
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-lg bg-card rounded-t-3xl p-6 shadow-2xl"
+              style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-[17px] font-bold text-[var(--color-text)] mb-1">{quickEditCompany.name}</p>
+              <p className="text-[13px] text-[var(--color-text-secondary)] mb-4">選考段階を変更</p>
+              <div className="space-y-2">
+                {trackStatuses.map((col) => (
+                  <button
+                    key={col.id}
+                    onClick={() => {
+                      updateCompany(quickEditCompany.id, { statusId: col.id });
+                      showToast(`『${quickEditCompany.name}』を【${col.name}】に変更しました`);
+                      setQuickEditCompany(null);
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-[15px] font-medium ios-tap ${
+                      col.id === quickEditCompany.statusId
+                        ? 'bg-[var(--color-primary)] text-white'
+                        : 'bg-[var(--color-border)] text-[var(--color-text)]'
+                    }`}
+                  >
+                    {col.name}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {selectedCompany && (

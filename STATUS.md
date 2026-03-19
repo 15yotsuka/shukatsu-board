@@ -1,50 +1,58 @@
-# ShukatsuBoard STATUS
+# ShukatsuBoard — STATUS.md
+最終更新: 2026-03-19
 
-## 概要
-就活生向けカンバン型選考管理Webアプリ。ログイン不要、localStorage保存。「これさえ開けば次何すればいいかわかる」がコンセプト。
+## 現在地
+**Phase 1: iOS実機テスト待ち**
+Web版は全機能完成。Vercel自動デプロイ運用中（schemaVersion: 14）。
 
-## 現在の状態
-- 開発フェーズ: iOS実機テスト中（App Store公開準備ほぼ完了）
-- 最終更新: 2026-03-14
-- 動作ステータス: ✅ ビルドエラー0件・静的エクスポート済み
-- schemaVersion: **14**
+## 直近の変更（最新5件）
+- 2026-03-19: calendar/page.tsx → ScheduledActionと締切の重複表示を解消
+- 2026-03-19: deadline/page.tsx → エントリタップで企業追加/詳細表示
+- 2026-03-19: deadlines-27/28.csv → 27卒49社追加・28卒全面更新
+- 2026-03-19: 死んだコード3件削除・ESEntry完全撤去
+- 2026-03-19: CSVインポートをヘッダー名ベース変換に変更
 
-## 最後にやったこと
-- CompanyDetailModal.tsx: 選考段階を進めたとき旧ScheduledActionを削除するよう修正
-- 3バグ修正（ホーム消えない / カレンダー絞り込み / 締切HP遷移）
-- Capacitor + ローカル通知スケジューリング実装（@capacitor/local-notifications）
-- 企業タブにエントリー前絞り込み・業界絞り込み追加・チュートリアル順序変更
+## 動作状況
+- ✅ ホーム画面（今日/今週/それ以降のToDo・統計チップ）
+- ✅ 企業一覧（TaskCard・ソート/フィルター・ドラッグ並び替え）
+- ✅ 企業詳細モーダル（4タブ・選考予定・タグ・メモ）
+- ✅ カレンダー（月表示・予定追加3ステップ）
+- ✅ 締切タブ（CSV fetch・業界フィルター・27/28卒）
+- ✅ 設定・チュートリアル（7フラグ）
+- ✅ ローカル通知（Capacitor実装済み、実機未確認）
+- ⚠️ 長押しクイック編集（実機未確認）
+- ⚠️ 左スワイプ見送り（実機未確認）
+- ⚠️ 色帯タップ結果待ちON/OFF（実機未確認）
 
-## 未解決・次やること
-- iOS実機テスト（長押しクイック編集・左スワイプで見送り・色帯タップ結果待ち・ローカル通知）
-- タグ欄「結果待ち」タグ削除（awaitingResultフラグと二重管理になっている）
-- App Store Connect提出（Xcodeビルド → 提出）
+## バグ・注意事項
+### 発見済み問題（未修正）
+- **同日複数面接の重複排除**: page.tsx の重複排除が時刻を無視するため、同日2本目の面接が隠れる可能性
+- **23:00→00:00自動計算**: CompanyDetailModal で終了時刻 `(h+1)%24` により23:00→00:00になる（翌日扱いなし）
+- **結果待ちの二重管理**: `awaitingResult` フラグと `'結果待ち'` タグが共存
+- **nextDeadline の複数アクション非対応**: addScheduledAction() が nextActionDate を上書きするため複数アクション時は最初の期日のみ反映
 
-## 直近修正済みバグ（2026-03-14）
-- showProgressBar/showTag が TaskCard に未適用 → 修正済み
-- awaitingResult解除時にタグ「結果待ち」が残る → 修正済み
-- FILTER_GROUPSのステータス名が古くフィルターが全機能しない → 修正済み
-- 企業一覧「次の段階へ」で旧ScheduledActionが残りホーム・カレンダー未更新 → 修正済み
-- カレンダー「選考中」フィルターがCSV締切・日付詳細リストに未適用 → 修正済み
+### 技術的制約（必ず守る）
+- Zustandセレクタ内でfilter/map禁止（React 19無限ループ）→ useMemo or useShallow
+- date-fns v4はparseISO後にisValid()チェック必須
+- schemaVersion上げずに型変更禁止 → マイグレーション必須
+- `npm run build` エラー0件確認後にpush
+- Tailwind CSS v4: `dark:` は `@custom-variant dark (&:where(.dark, .dark *))` で動作
+- gradYear===nullのときDeadlineContextはfetchしない
 
-## 技術スタック
-- Next.js 16.1.6 (App Router, output:'export'), TypeScript, Tailwind CSS v4
-- Zustand v5+persist (schemaVersion=14), @dnd-kit/core v6, date-fns v4, framer-motion v12
-- @capacitor/core v8.2, @capacitor/local-notifications v8.0.2
-- Vercel（Web自動デプロイ済み）, Capacitor（iOS向け・appId: com.yuotsuka.shukatsuboard）
+### コードベース統計（2026-03-19時点）
+- 総ファイル数: 38 (.ts/.tsx) / 総行数: 約11,960行
+- 未使用コンポーネント: なし（確認済み）
+- ビルドエラー: 0件
 
-## ファイル構成（主要ファイル）
-- `src/app/page.tsx` — ホーム（今日/今週/それ以降のToDoリスト、統計チップ）
-- `src/app/tasks/page.tsx` — 企業一覧（TaskCard、ソート/フィルター、ドラッグ並び替え）
-- `src/app/calendar/page.tsx` — カレンダー（月表示、予定追加3ステップ）
-- `src/app/deadline/page.tsx` — 締切タブ（CSVフェッチ方式）
-- `src/components/board/TaskCard.tsx` — 企業一覧で使用中のカード（色帯・進度ドット・タグ）
-- `src/components/board/CompanyDetailModal.tsx` — 4タブ詳細（選考詳細/基本情報/マイページ/メモ）
-- `src/components/board/AddCompanyForm.tsx` — 企業追加フォーム
-- `src/components/board/BulkImportModal.tsx` — CSV/テキスト一括インポート
-- `src/components/layout/NotificationScheduler.tsx` — Capacitorローカル通知スケジュール
-- `src/store/useAppStore.ts` — Zustand全状態管理（schemaVersion: 14）
-- `src/lib/types.ts` — Company, StatusColumn, Interview, ESEntry, ScheduledAction, Tag, ActionType
-- `src/lib/notifications.ts` — scheduleLocalNotifications() / requestNotificationPermission()
-- `public/deadlines-27.csv`, `public/deadlines-28.csv` — 締切情報CSVデータ
+## 次やること
+### Phase 1（今ここ）
+1. Xcodeで実機ビルド → 長押し・左スワイプ・色帯タップ・ローカル通知を実機確認
+2. 不具合があれば修正
 
+### Phase 2（App Store公開）
+1. App Store Connect 提出
+
+### Phase 3（クリーンアップ・後回しOK）
+1. 「結果待ち」タグの二重管理を解消（awaitingResultフラグに統一）
+2. 同日複数面接の重複排除バグ修正
+3. 23:00→00:00 自動計算バグ修正

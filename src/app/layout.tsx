@@ -18,6 +18,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -34,7 +35,7 @@ export default function RootLayout({
         <ThemeProvider>
           <DeadlineProvider>
             <Header />
-            <main className="pt-14 pb-16 min-h-screen">
+            <main className="pb-16 min-h-screen" style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' }}>
               <PageTransition>{children}</PageTransition>
             </main>
             <BottomNav />

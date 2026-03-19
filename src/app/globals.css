@@ -41,6 +41,14 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+/* iOSモメンタムスクロール */
+main, .scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
 }
 
 /* CSS変数ベースのユーティリティ（Tailwindの任意値が効かない場合の保険） */
