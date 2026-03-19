@@ -125,7 +125,7 @@ function TaskCard({
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const swipeStartX = useRef<number | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
-  const [showSwipeAction, setShowSwipeAction] = useState(false);
+  const [isFlyingOut, setIsFlyingOut] = useState(false);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -133,6 +133,9 @@ function TaskCard({
     swipeStartX.current = touch.clientX;
     longPressTimer.current = setTimeout(() => {
       longPressTimer.current = null;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(30);
+      }
       onLongPress();
     }, 500);
   }, [onLongPress]);
@@ -149,9 +152,8 @@ function TaskCard({
         }
       }
       if (dx < -20 && Math.abs(dy) < 30) {
-        const offset = Math.max(dx, -80);
+        const offset = Math.max(dx, -100);
         setSwipeOffset(offset);
-        setShowSwipeAction(offset < -50);
       }
     }
   }, []);
@@ -161,11 +163,21 @@ function TaskCard({
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-    if (swipeOffset < -60) {
-      onSwipeLeft();
+    if (swipeOffset < -70) {
+      // カードを画面外へ飛ばしてから状態更新
+      setIsFlyingOut(true);
+      setSwipeOffset(-window.innerWidth);
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      setTimeout(() => {
+        onSwipeLeft();
+        setSwipeOffset(0);
+        setIsFlyingOut(false);
+      }, 320);
+    } else {
+      setSwipeOffset(0);
     }
-    setSwipeOffset(0);
-    setShowSwipeAction(false);
     touchStartPos.current = null;
     swipeStartX.current = null;
   }, [swipeOffset, onSwipeLeft]);
@@ -180,21 +192,35 @@ function TaskCard({
   }, [interviews, company.id]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Swipe left background */}
-      {showSwipeAction && (
-        <div className="absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center bg-red-500 rounded-r-2xl">
-          <span className="text-white text-[12px] font-bold">見送り</span>
+    <div className="relative overflow-hidden rounded-2xl no-select">
+      {/* Swipe left background — always rendered, opacity tied to swipe distance */}
+      <div
+        className="absolute inset-0 flex items-center justify-end pr-6 bg-red-500 rounded-2xl"
+        style={{ opacity: Math.min(1, Math.max(0, (Math.abs(swipeOffset) - 20) / 60)) }}
+      >
+        <div className="flex flex-col items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span className="text-white text-[11px] font-bold">見送り</span>
         </div>
-      )}
+      </div>
     <div
       ref={setNodeRef}
-      style={{ ...style, transform: `${CSS.Transform.toString(transform) ?? ''} translateX(${swipeOffset}px)`, transition: swipeOffset === 0 ? 'transform 0.3s ease' : 'none' }}
+      style={{
+        ...style,
+        transform: `${CSS.Transform.toString(transform) ?? ''} translateX(${swipeOffset}px)`,
+        transition: isFlyingOut
+          ? 'transform 0.32s ease-out'
+          : swipeOffset === 0
+          ? 'transform 0.3s ease'
+          : 'none',
+      }}
       onClick={onOpenDetail}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+      className="relative bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98]"
     >
       {/* Left color strip (stage color) - tappable to toggle awaitingResult */}
       <button
@@ -343,6 +369,11 @@ function TasksContent() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [quickEditCompany, setQuickEditCompany] = useState<Company | null>(null);
+  const [quickEditStep, setQuickEditStep] = useState<'status' | 'datetime'>('status');
+  const [quickEditColId, setQuickEditColId] = useState<string>('');
+  const [quickEditDate, setQuickEditDate] = useState('');
+  const [quickEditStartTime, setQuickEditStartTime] = useState('');
+  const [quickEditEndTime, setQuickEditEndTime] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -632,7 +663,14 @@ function TasksContent() {
                         const base = (c.tags ?? []).filter((t) => t !== '結果待ち');
                         updateCompany(c.id, { tags: willBeAwaiting ? [...base, '結果待ち'] : base });
                       }}
-                      onLongPress={() => setQuickEditCompany(c)}
+                      onLongPress={() => {
+                        setQuickEditCompany(c);
+                        setQuickEditStep('status');
+                        setQuickEditColId('');
+                        setQuickEditDate('');
+                        setQuickEditStartTime('');
+                        setQuickEditEndTime('');
+                      }}
                       onSwipeLeft={() => {
                         const misuCol = statusColumns.find((s) => s.name === '見送り');
                         if (misuCol) {
@@ -811,31 +849,153 @@ function TasksContent() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-lg bg-card rounded-t-3xl p-6 shadow-2xl"
-              style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+              className="relative w-full max-w-lg bg-card rounded-t-3xl shadow-2xl"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-[17px] font-bold text-[var(--color-text)] mb-1">{quickEditCompany.name}</p>
-              <p className="text-[13px] text-[var(--color-text-secondary)] mb-4">選考段階を変更</p>
-              <div className="space-y-2">
-                {trackStatuses.map((col) => (
+              {/* ヘッダー */}
+              <div className="px-6 pt-5 pb-4">
+                <div className="flex items-center justify-between mb-1">
+                  {quickEditStep === 'datetime' ? (
+                    <button
+                      onClick={() => setQuickEditStep('status')}
+                      className="flex items-center gap-1 text-[var(--color-primary)] text-[15px] font-medium -ml-1 px-1 py-1 min-w-[44px] min-h-[44px]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                      </svg>
+                      戻る
+                    </button>
+                  ) : (
+                    <p className="text-[17px] font-bold text-[var(--color-text)] truncate flex-1">{quickEditCompany.name}</p>
+                  )}
                   <button
-                    key={col.id}
-                    onClick={() => {
-                      updateCompany(quickEditCompany.id, { statusId: col.id });
-                      showToast(`『${quickEditCompany.name}』を【${col.name}】に変更しました`);
-                      setQuickEditCompany(null);
-                    }}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-[15px] font-medium ios-tap ${
-                      col.id === quickEditCompany.statusId
-                        ? 'bg-[var(--color-primary)] text-white'
-                        : 'bg-[var(--color-border)] text-[var(--color-text)]'
-                    }`}
+                    onClick={() => setQuickEditCompany(null)}
+                    className="w-11 h-11 flex items-center justify-center rounded-full bg-[var(--color-border)] text-[var(--color-text-secondary)] flex-none ml-2"
+                    aria-label="閉じる"
                   >
-                    {col.name}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
-                ))}
+                </div>
+                <p className={`text-[13px] text-[var(--color-text-secondary)] ${quickEditStep === 'datetime' ? 'mt-1' : ''}`}>
+                  {quickEditStep === 'status' ? '選考段階を変更' : `${trackStatuses.find(c => c.id === quickEditColId)?.name ?? ''} の日時を設定`}
+                </p>
               </div>
+
+              {quickEditStep === 'status' ? (
+                /* Step 1: 選考段階選択 */
+                <div className="max-h-[55vh] overflow-y-auto px-6 pb-6 space-y-2 hide-scrollbar">
+                  {trackStatuses.map((col) => (
+                    <button
+                      key={col.id}
+                      onClick={() => {
+                        if (col.id === quickEditCompany.statusId) {
+                          setQuickEditCompany(null);
+                          return;
+                        }
+                        setQuickEditColId(col.id);
+                        setQuickEditStep('datetime');
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-[15px] font-medium ios-tap flex items-center gap-2 ${
+                        col.id === quickEditCompany.statusId
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'bg-[var(--color-border)] text-[var(--color-text)]'
+                      }`}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full flex-none"
+                        style={{ backgroundColor: getStageColor(col.name) }}
+                      />
+                      {col.name}
+                      {col.id === quickEditCompany.statusId && (
+                        <span className="ml-auto text-[12px] opacity-80">現在</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                /* Step 2: 日時設定 */
+                <div className="px-6 pb-6">
+                  <div className="space-y-3 mb-4">
+                    <input
+                      type="date"
+                      value={quickEditDate}
+                      onChange={(e) => setQuickEditDate(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] text-[15px]"
+                    />
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
+                        <input
+                          type="time"
+                          step={300}
+                          value={quickEditStartTime}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setQuickEditStartTime(v);
+                            if (v && !quickEditEndTime) {
+                              const [h, m] = v.split(':').map(Number);
+                              setQuickEditEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                            }
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] text-[14px]"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
+                        <input
+                          type="time"
+                          step={300}
+                          value={quickEditEndTime}
+                          onChange={(e) => setQuickEditEndTime(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] text-[14px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        // スキップ: 日時なしで段階だけ更新
+                        const col = trackStatuses.find((c) => c.id === quickEditColId);
+                        if (!col) return;
+                        updateCompany(quickEditCompany.id, { statusId: quickEditColId });
+                        showToast(`『${quickEditCompany.name}』を【${col.name}】に変更しました`);
+                        setQuickEditCompany(null);
+                      }}
+                      className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-border)] text-[var(--color-text)] min-h-[44px]"
+                    >
+                      スキップ
+                    </button>
+                    <button
+                      onClick={() => {
+                        const col = trackStatuses.find((c) => c.id === quickEditColId);
+                        if (!col) return;
+                        updateCompany(quickEditCompany.id, { statusId: quickEditColId });
+                        if (quickEditDate) {
+                          const { type, subType } = scheduleStageToAction(col.name);
+                          addScheduledAction({
+                            companyId: quickEditCompany.id,
+                            type,
+                            subType,
+                            date: quickEditDate,
+                            startTime: quickEditStartTime || undefined,
+                            endTime: quickEditEndTime || undefined,
+                          });
+                        }
+                        showToast(`『${quickEditCompany.name}』を【${col.name}】に変更しました`);
+                        setQuickEditCompany(null);
+                      }}
+                      disabled={!quickEditDate}
+                      className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[var(--color-primary)] text-white min-h-[44px] disabled:opacity-40"
+                    >
+                      設定
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

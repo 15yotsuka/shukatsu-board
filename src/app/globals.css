@@ -269,3 +269,10 @@ main, .scroll-container {
 .dark .ios-button-secondary {
   color: var(--color-primary);
 }
+
+/* カード長押し時のテキスト選択を防止 */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
