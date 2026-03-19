@@ -138,15 +138,15 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
         transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
       >
         {/* Grab bar */}
-        <div className="flex justify-center pt-2 pb-0 md:hidden">
+        <div className="flex justify-center pt-3 pb-1 md:hidden">
           <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
         </div>
 
-        <div className="px-4 pt-4 pb-2">
+        <div className="px-4 pt-3 pb-2">
           <h2 className="text-[17px] font-bold text-center text-[var(--color-text)]">企業を追加</h2>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto flex-1" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))', WebkitOverflowScrolling: 'touch' }}>
+        <div className="p-4 space-y-4 overflow-y-auto flex-1 pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
           {/* 企業名 + サジェスト */}
           <div className="relative">
             <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">
@@ -341,6 +341,13 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
             />
           </div>
 
+        </div>
+
+        {/* Fixed footer — ナビゲーションバーに絶対かぶらない */}
+        <div
+          className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] bg-card space-y-2"
+          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+        >
           <button onClick={handleSubmit} className="ios-button-primary">
             追加する
           </button>
