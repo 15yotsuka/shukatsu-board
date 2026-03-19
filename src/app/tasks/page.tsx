@@ -124,6 +124,8 @@ function TaskCard({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const swipeStartX = useRef<number | null>(null);
+  const touchStartTime = useRef<number>(0);
+  const hapticFired = useRef(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isFlyingOut, setIsFlyingOut] = useState(false);
 
@@ -131,6 +133,8 @@ function TaskCard({
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     swipeStartX.current = touch.clientX;
+    touchStartTime.current = Date.now();
+    hapticFired.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressTimer.current = null;
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -154,6 +158,13 @@ function TaskCard({
       if (dx < -20 && Math.abs(dy) < 30) {
         const offset = Math.max(dx, -100);
         setSwipeOffset(offset);
+        // 閾値越えハプティクス
+        if (offset < -70 && !hapticFired.current) {
+          hapticFired.current = true;
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(10);
+          }
+        }
       }
     }
   }, []);
@@ -163,7 +174,10 @@ function TaskCard({
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-    if (swipeOffset < -70) {
+    const elapsed = Date.now() - touchStartTime.current;
+    const velocityX = elapsed > 0 ? Math.abs(swipeOffset) / elapsed * 1000 : 0;
+    const shouldTrigger = swipeOffset < -70 || (swipeOffset < -30 && velocityX > 500);
+    if (shouldTrigger) {
       // カードを画面外へ飛ばしてから状態更新
       setIsFlyingOut(true);
       setSwipeOffset(-window.innerWidth);
@@ -180,6 +194,7 @@ function TaskCard({
     }
     touchStartPos.current = null;
     swipeStartX.current = null;
+    hapticFired.current = false;
   }, [swipeOffset, onSwipeLeft]);
 
   const upcomingInterview = useMemo(() => {
@@ -213,8 +228,9 @@ function TaskCard({
         transition: isFlyingOut
           ? 'transform 0.32s ease-out'
           : swipeOffset === 0
-          ? 'transform 0.3s ease'
+          ? 'transform 0.3s cubic-bezier(0.25, 1.05, 0.5, 1)'
           : 'none',
+        touchAction: 'pan-y',
       }}
       onClick={onOpenDetail}
       onTouchStart={handleTouchStart}
@@ -857,7 +873,7 @@ function TasksContent() {
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="relative w-full max-w-lg bg-card rounded-t-3xl shadow-2xl"
-              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* ヘッダー */}

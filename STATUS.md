@@ -2,12 +2,15 @@
 最終更新: 2026-03-20
 
 ## 現在地
-**Phase 1: iOS実機テスト待ち — スワイプ/長押しUX改善済み**
+**Phase 1: iOS実機テスト待ち — Round 2 safe-area全修正・UX改善済み**
 Web版は全機能完成。Vercel自動デプロイ運用中（schemaVersion: 14）。
 
 ## 直近の変更（最新5件）
+- 2026-03-20: CompanyDetailModal.tsx → グラブバーdrag-to-dismiss・fullheight・safe-area・Webテスト折り返し修正
+- 2026-03-20: SettingsModal/BulkImportModal → 全ボトムシートsafe-area修正・JSON削除・CSV→バックアップ
+- 2026-03-20: AddCompanyForm.tsx → autoFocus削除（iOSキーボード自動表示防止）
+- 2026-03-20: calendar/page.tsx → 時間入力5分刻み（step=300）
 - 2026-03-20: tasks/page.tsx → 左スワイプ強化（赤背景＋ゴミ箱アイコン常時表示・飛ばしアニメ・haptic）
-- 2026-03-20: tasks/page.tsx → クイック編集を2段階UI（Step1=選考選択→Step2=日時設定＋スキップ）に改良
 - 2026-03-20: tasks/page.tsx → 長押し時テキスト選択防止（no-selectクラス）・閉じるボタン44px
 - 2026-03-19: calendar/page.tsx → ScheduledActionと締切の重複表示を解消
 - 2026-03-19: deadline/page.tsx → エントリタップで企業追加/詳細表示

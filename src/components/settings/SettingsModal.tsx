@@ -46,7 +46,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up">
+      <div className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Grab bar (mobile) */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
           <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
@@ -93,7 +93,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
       {gradYear !== null && !tutorialFlags.settings && (
         <TutorialModal
-          steps={[{ title: '⚙️ 設定でできること', body: '・選考段階の管理：選考ステップの追加・削除・並び替え\n・表示設定：カードに表示する情報のON/OFF\n・データ管理：バックアップ・復元・企業の一括追加\n・機種変更時はJSONエクスポート→新端末でインポート' }]}
+          steps={[{ title: '⚙️ 設定でできること', body: '・選考段階の管理：選考ステップの追加・削除・並び替え\n・表示設定：カードに表示する情報のON/OFF\n・データ管理：バックアップ・復元・企業の一括追加\n・機種変更時はCSVエクスポート→新端末でインポート' }]}
           onComplete={() => markTutorialSeen('settings')}
         />
       )}
@@ -392,36 +392,15 @@ function parseCSVRow(line: string): string[] {
 function DataTab({ onClose }: { onClose: () => void }) {
   const companies = useAppStore((s) => s.companies);
   const statusColumns = useAppStore((s) => s.statusColumns);
-  const loadBackup = useAppStore((s) => s.loadBackup);
   const addCompany = useAppStore((s) => s.addCompany);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
   const resetTutorials = useAppStore((s) => s.resetTutorials);
 
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showCsvHelp, setShowCsvHelp] = useState(false);
-  const importRef = useRef<HTMLInputElement>(null);
   const csvImportRef = useRef<HTMLInputElement>(null);
 
   const trackStatuses = [...statusColumns].sort((a, b) => a.order - b.order);
-
-  const handleExportJSON = () => {
-    const state = useAppStore.getState();
-    const data = {
-      schemaVersion: state.schemaVersion,
-      companies: state.companies,
-      statusColumns: state.statusColumns,
-      interviews: state.interviews,
-      scheduledActions: state.scheduledActions,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shukatsu-board-backup-${today}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const handleExportCSV = () => {
     const state = useAppStore.getState();
@@ -453,23 +432,6 @@ function DataTab({ onClose }: { onClose: () => void }) {
     a.download = `shukatsu-board-export-${date}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (!window.confirm('現在のデータはすべて上書きされます。\nバックアップから復元しますか？')) return;
-        loadBackup(data);
-      } catch {
-        alert('JSONファイルの読み込みに失敗しました。\nファイルが正しい形式か確認してください。');
-      }
-    };
-    reader.readAsText(file, 'utf-8');
-    e.target.value = '';
   };
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -539,32 +501,6 @@ function DataTab({ onClose }: { onClose: () => void }) {
       <div className="bg-card rounded-xl overflow-hidden">
         <div className="px-4 py-2 border-b border-[var(--color-border)]">
           <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">バックアップ</span>
-        </div>
-        <button onClick={handleExportJSON} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap border-b border-[var(--color-border)]">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-primary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <div>
-            <div className="text-[15px] text-[var(--color-text)]">エクスポート（JSON）</div>
-            <div className="text-[12px] text-[var(--color-text-secondary)]">全データをJSONファイルとして保存</div>
-          </div>
-        </button>
-        <button onClick={() => importRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          <div>
-            <div className="text-[15px] text-[var(--color-text)]">インポート（復元）</div>
-            <div className="text-[12px] text-[var(--color-text-secondary)]">JSONファイルから復元</div>
-          </div>
-        </button>
-        <input ref={importRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden" />
-      </div>
-
-      {/* CSV */}
-      <div className="bg-card rounded-xl overflow-hidden">
-        <div className="px-4 py-2 border-b border-[var(--color-border)]">
-          <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">CSV</span>
         </div>
         <button onClick={handleExportCSV} className="w-full flex items-center gap-3 px-4 py-3 text-left ios-tap border-b border-[var(--color-border)]">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[var(--color-primary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -764,7 +700,7 @@ ES,トヨタ自動車,
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-4 border-t border-[var(--color-border)] shrink-0 space-y-2">
+            <div className="px-4 pt-4 border-t border-[var(--color-border)] shrink-0 space-y-2" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
               <button
                 onClick={() => { setShowCsvHelp(false); csvImportRef.current?.click(); }}
                 className="ios-button-primary"

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useDragControls } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
 
@@ -53,6 +53,8 @@ const TAB_LABELS = ['選考詳細', '基本情報', 'マイページ', 'メモ']
 type TabIndex = 0 | 1 | 2 | 3;
 
 export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps) {
+  const dragControls = useDragControls();
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -189,13 +191,25 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 24, opacity: 0 }}
         transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.7 }}
+        onDragEnd={(_, { offset, velocity }) => {
+          if (offset.y > 100 || velocity.y > 500) onClose();
+        }}
         className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
-        style={{ maxHeight: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
+        style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
       >
         {/* Fixed header */}
         <div className="bg-card px-4 pt-4 pb-0 flex-shrink-0 border-b border-[var(--color-border)]">
-          {/* Grab bar */}
-          <div className="flex justify-center pb-2 md:hidden">
+          {/* Grab bar — drag to dismiss */}
+          <div
+            className="flex justify-center pb-2 md:hidden"
+            onPointerDown={(e) => dragControls.start(e)}
+            style={{ touchAction: 'none', cursor: 'grab' }}
+          >
             <div className="w-10 h-1.5 bg-[var(--color-border)] rounded-full" />
           </div>
 
@@ -223,7 +237,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <button
               onClick={() => setShowStagePicker(true)}
-              className="flex-1 min-w-0 text-[14px] font-semibold bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-full px-3 py-1 ios-tap text-left"
+              className="shrink-0 whitespace-nowrap max-w-[120px] truncate text-[14px] font-semibold bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-full px-3 py-1 ios-tap text-left"
             >
               {statusColumns.find((s) => s.id === statusId)?.name ?? ''} ▾
             </button>
@@ -459,7 +473,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       {showStagePicker && !stagePickerSelectedId && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStagePicker(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 pb-10 shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 shadow-xl" style={{ paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))' }} onPointerDown={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-center text-[16px] text-gray-900 dark:text-gray-100 mb-3">選考段階を変更</h3>
             {trackStatuses.map((s) => (
               <button
@@ -490,7 +504,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         return (
           <div className="fixed inset-0 z-[70] flex items-end justify-center">
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => { setShowStagePicker(false); setStagePickerSelectedId(null); }} />
-            <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 pb-10 shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg p-4 shadow-xl" style={{ paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))' }} onPointerDown={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setStagePickerSelectedId(null)}
                 className="text-[13px] text-gray-500 dark:text-gray-400 mb-3 ios-tap"

@@ -406,12 +406,12 @@ export default function CalendarPage() {
                 </div>
                 {needsTimeInput(addEventStage) && (
                   <div className="flex-1">
-                    <input type="time" value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" />
+                    <input type="time" step={300} value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" />
                   </div>
                 )}
                 {!needsTimeInput(addEventStage) && (
                   <div className="flex-1">
-                    <input type="time" value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" placeholder="時間" />
+                    <input type="time" step={300} value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" placeholder="時間" />
                   </div>
                 )}
               </div>

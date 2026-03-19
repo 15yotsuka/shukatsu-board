@@ -165,7 +165,6 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
               }}
               className={`ios-input ${nameError ? '!shadow-[0_0_0_3px_rgba(255,59,48,0.3)]' : ''}`}
               placeholder="例: 株式会社○○"
-              autoFocus
             />
             {nameError && <p className="text-[var(--color-danger)] text-[12px] mt-1">{nameError}</p>}
             {showSuggestions && (

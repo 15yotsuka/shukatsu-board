@@ -597,7 +597,7 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
         )}
 
         {/* Footer */}
-        <div className="px-5 pb-6 pt-3 flex-shrink-0 space-y-2 border-t border-[var(--color-border)]">
+        <div className="px-5 pt-3 flex-shrink-0 space-y-2 border-t border-[var(--color-border)]" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
           {mode === 'rows' && (
             <>
               {validRows.length > 0 && (
