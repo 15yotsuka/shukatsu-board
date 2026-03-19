@@ -864,6 +864,7 @@ function TasksContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[70] flex items-end justify-center"
+            style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
             onClick={() => setQuickEditCompany(null)}
           >
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />

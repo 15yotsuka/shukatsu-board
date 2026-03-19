@@ -322,7 +322,7 @@ export default function CalendarPage() {
 
       {/* Step 1: 種別選択（フラット） */}
       {showAddEvent && !addEventStage && (
-        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1 md:hidden">
@@ -351,7 +351,7 @@ export default function CalendarPage() {
 
       {/* Step 2: 企業選択 */}
       {showAddEvent && addEventStage && !addEventCompanyId && (
-        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1 md:hidden">
@@ -382,7 +382,7 @@ export default function CalendarPage() {
 
       {/* Step 3: 日時入力フォーム */}
       {showAddEvent && addEventCompanyId && addEventStage && (
-        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
           <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
             <div className="flex justify-center pt-2 pb-0 md:hidden">

@@ -330,7 +330,7 @@ export default function Home() {
       </AnimatePresence>
 
       {showSortSheet && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowSortSheet(false)} />
           <div className="relative bg-card rounded-t-2xl w-full max-w-lg px-5 pt-5 space-y-2" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1">

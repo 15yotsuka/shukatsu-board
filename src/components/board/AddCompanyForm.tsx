@@ -121,7 +121,7 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <motion.div
         className="absolute inset-0 bg-black/30"
         initial={{ opacity: 0 }}

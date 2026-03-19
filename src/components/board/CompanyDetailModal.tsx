@@ -177,7 +177,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -200,7 +200,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           if (offset.y > 100 || velocity.y > 500) onClose();
         }}
         className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
-        style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
+        style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))', maxHeight: '100%' }}
       >
         {/* Fixed header */}
         <div className="bg-card px-4 pt-4 pb-0 flex-shrink-0 border-b border-[var(--color-border)]">
@@ -471,7 +471,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
       {/* 選考段階ピッカー — Step 1: 段階選択（全画面） */}
       {showStagePicker && !stagePickerSelectedId && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStagePicker(false)} />
           <div
             className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg flex flex-col shadow-xl"
@@ -518,7 +518,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         const pickedStatus = trackStatuses.find((s) => s.id === stagePickerSelectedId);
         if (!pickedStatus) return null;
         return (
-          <div className="fixed inset-0 z-[70] flex items-end justify-center">
+          <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => { setShowStagePicker(false); setStagePickerSelectedId(null); }} />
             <div
               className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg flex flex-col shadow-xl"

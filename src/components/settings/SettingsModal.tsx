@@ -44,7 +44,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   const gradYear = useAppStore((s) => s.gradYear);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
       <div className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Grab bar (mobile) */}
@@ -593,7 +593,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
       )}
 
       {showCsvHelp && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center">
+        <div className="fixed inset-0 z-[80] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowCsvHelp(false)} />
           <div className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Header */}
