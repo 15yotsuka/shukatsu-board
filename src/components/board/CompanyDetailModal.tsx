@@ -200,7 +200,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           if (offset.y > 100 || velocity.y > 500) onClose();
         }}
         className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
-        style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
+        style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
       >
         {/* Fixed header */}
         <div className="bg-card px-4 pt-4 pb-0 flex-shrink-0 border-b border-[var(--color-border)]">
@@ -448,7 +448,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         </div>
 
         {/* Fixed footer */}
-        <div className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] bg-card space-y-2" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+        <div className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] bg-card space-y-2" style={{ paddingBottom: '1.5rem' }}>
           <button onClick={handleSave} className="ios-button-primary shadow-sm hover:opacity-90 transition-opacity">
             保存
           </button>
@@ -475,7 +475,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStagePicker(false)} />
           <div
             className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg flex flex-col shadow-xl"
-            style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
+            style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="px-4 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 dark:border-gray-700">
@@ -501,7 +501,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 </button>
               ))}
             </div>
-            <div className="flex-shrink-0 px-4 pt-3 border-t border-gray-100 dark:border-gray-700" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+            <div className="flex-shrink-0 px-4 pt-3 border-t border-gray-100 dark:border-gray-700" style={{ paddingBottom: '1.5rem' }}>
               <button
                 onClick={() => setShowStagePicker(false)}
                 className="w-full py-3 rounded-xl text-[15px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700"
@@ -522,7 +522,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => { setShowStagePicker(false); setStagePickerSelectedId(null); }} />
             <div
               className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg flex flex-col shadow-xl"
-              style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
+              style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <div className="px-4 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 dark:border-gray-700">
@@ -552,7 +552,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   </div>
                 )}
               </div>
-              <div className="flex-shrink-0 px-4 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+              <div className="flex-shrink-0 px-4 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2" style={{ paddingBottom: '1.5rem' }}>
                 <div className="flex gap-2">
                   <button onClick={() => { setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap">
                     スキップ

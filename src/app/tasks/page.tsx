@@ -873,7 +873,7 @@ function TasksContent() {
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="relative w-full max-w-lg bg-card rounded-t-3xl shadow-2xl flex flex-col"
-              style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top))' }}
+              style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* ヘッダー */}
@@ -980,7 +980,7 @@ function TasksContent() {
                     </div>
                   </div>
                 </div>
-                <div className="flex-shrink-0 px-6 pt-3 border-t border-[var(--color-border)] space-y-2" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+                <div className="flex-shrink-0 px-6 pt-3 border-t border-[var(--color-border)] space-y-2" style={{ paddingBottom: '1.5rem' }}>
                   <div className="flex gap-3">
                     <button
                       onClick={() => {
