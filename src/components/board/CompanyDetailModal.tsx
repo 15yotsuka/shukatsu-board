@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { ja } from 'date-fns/locale';
 import { formatDateUnified, formatTimeRange } from '@/lib/dateUtils';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 interface MemoData {
   es: string;
@@ -178,7 +179,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -200,7 +201,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         onDragEnd={(_, { offset, velocity }) => {
           if (offset.y > 100 || velocity.y > 500) onClose();
         }}
-        className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
+        className="relative bg-[var(--color-bg)] rounded-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden overflow-x-hidden"
         style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))', maxHeight: '100%' }}
       >
         {/* Fixed header */}
@@ -276,7 +277,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               const futureCsvDeadlines = csvDeadlines.filter((d) => d.deadline >= today);
               if (futureCsvDeadlines.length === 0) return null;
               return (
-                <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                <span className="flex-none text-[13px] font-semibold rounded-full px-3 py-1 bg-[var(--color-border)] text-[var(--color-text-secondary)]">
                   締切 {formatDateUnified(futureCsvDeadlines[0].deadline)}
                   {futureCsvDeadlines.length > 1 && ` 他${futureCsvDeadlines.length - 1}件`}
                 </span>
@@ -464,7 +465,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       {gradYear !== null && !tutorialFlags.detail && (
         <TutorialModal
           steps={[
-            { title: '企業詳細の使い方', body: '選考詳細タブで選考予定を管理\nメモタブでES・面接ログを記録\nマイページタブでログイン情報を保存' },
+            { title: '📅 選考詳細タブ', body: '面接・ES・GDなどの\n選考予定を日時付きで登録できます\n\n「次の段階へ」を押すと\n自動で選考予定が追加されます' },
+            { title: '📝 メモタブ', body: 'ESの内容・面接で聞かれたこと\nなどを自由に記録できます\n\n選考が終わった後の振り返りにも使えます' },
+            { title: '🔑 マイページタブ', body: 'マイページのログインIDや\nパスワードを保存できます\n\n応募ごとにバラバラになりがちな\nアカウント情報を一元管理できます' },
           ]}
           onComplete={() => markTutorialSeen('detail')}
         />
@@ -472,15 +475,15 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
       {/* 選考段階ピッカー — Step 1: 段階選択（全画面） */}
       {showStagePicker && !stagePickerSelectedId && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-0 z-[70] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowStagePicker(false)} />
           <div
-            className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg flex flex-col shadow-xl"
+            className="relative bg-card rounded-2xl w-full max-w-lg flex flex-col shadow-xl"
             style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <div className="px-4 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-bold text-center text-[16px] text-gray-900 dark:text-gray-100">選考段階を変更</h3>
+            <div className="px-4 pt-4 pb-3 flex-shrink-0 border-b border-[var(--color-border)]">
+              <h3 className="font-bold text-center text-[16px] text-[var(--color-text)]">選考段階を変更</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-1">
               {trackStatuses.map((s) => (
@@ -502,10 +505,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                 </button>
               ))}
             </div>
-            <div className="flex-shrink-0 px-4 pt-3 border-t border-gray-100 dark:border-gray-700" style={{ paddingBottom: '1.5rem' }}>
+            <div className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)]" style={{ paddingBottom: '1.5rem' }}>
               <button
                 onClick={() => setShowStagePicker(false)}
-                className="w-full py-3 rounded-xl text-[15px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700"
+                className="w-full py-3 rounded-xl text-[15px] font-medium text-[var(--color-text-secondary)] bg-[var(--color-border)]"
               >
                 キャンセル
               </button>
@@ -519,43 +522,38 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         const pickedStatus = trackStatuses.find((s) => s.id === stagePickerSelectedId);
         if (!pickedStatus) return null;
         return (
-          <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+          <div className="fixed inset-0 z-[70] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => { setShowStagePicker(false); setStagePickerSelectedId(null); }} />
             <div
-              className="relative bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-lg flex flex-col shadow-xl"
+              className="relative bg-card rounded-2xl w-full max-w-lg flex flex-col shadow-xl"
               style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <div className="px-4 pt-4 pb-3 flex-shrink-0 border-b border-gray-100 dark:border-gray-700">
-                <button onClick={() => setStagePickerSelectedId(null)} className="text-[13px] text-gray-500 dark:text-gray-400 ios-tap mb-2">
+              <div className="px-4 pt-4 pb-3 flex-shrink-0 border-b border-[var(--color-border)]">
+                <button onClick={() => setStagePickerSelectedId(null)} className="text-[13px] text-[var(--color-text-secondary)] ios-tap mb-2">
                   ← 戻る
                 </button>
-                <h3 className="font-bold text-[16px] text-gray-900 dark:text-gray-100">{pickedStatus.name}</h3>
-                <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">{getDateLabel(pickedStatus.name)}はありますか？（任意）</p>
+                <h3 className="font-bold text-[16px] text-[var(--color-text)]">{pickedStatus.name}</h3>
+                <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{getDateLabel(pickedStatus.name)}はありますか？（任意）</p>
               </div>
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-                <input
-                  type="date"
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
-                  value={stagePickerDate}
-                  onChange={(e) => setStagePickerDate(e.target.value)}
-                />
+                <DatePicker value={stagePickerDate} onChange={setStagePickerDate} />
                 {needsTimeInput(pickedStatus.name) && (
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
+                      <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
                       <TimeSelect value={stagePickerStartTime} onChange={(v) => { setStagePickerStartTime(v); if (v && !stagePickerEndTime) { const [h, m] = v.split(':').map(Number); setStagePickerEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }} />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
+                      <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
                       <TimeSelect value={stagePickerEndTime} onChange={setStagePickerEndTime} />
                     </div>
                   </div>
                 )}
               </div>
-              <div className="flex-shrink-0 px-4 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2" style={{ paddingBottom: '1.5rem' }}>
+              <div className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] space-y-2" style={{ paddingBottom: '1.5rem' }}>
                 <div className="flex gap-2">
-                  <button onClick={() => { setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap">
+                  <button onClick={() => { setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
                     スキップ
                   </button>
                   <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">
@@ -570,30 +568,25 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
       {/* 次の段階へポップアップ */}
       {showNextStagePopup && nextStatus && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center modal-safe">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onPointerDown={() => setShowNextStagePopup(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-xl p-4 mx-4 max-w-sm w-full shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-[16px]">
+          <div className="relative bg-card rounded-xl p-4 mx-4 max-w-sm w-full shadow-xl" onPointerDown={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-[var(--color-text)] mb-3 text-[16px]">
               {nextStatus.name}の日程を設定
             </h3>
-            <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-2">
+            <label className="block text-[12px] text-[var(--color-text-secondary)] mb-2">
               {getDateLabel(nextStatus.name)}はありますか？（任意）
             </label>
             <div className="space-y-2 mb-4">
-              <input
-                type="date"
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
-                value={nextStageDate}
-                onChange={(e) => setNextStageDate(e.target.value)}
-              />
+              <DatePicker value={nextStageDate} onChange={setNextStageDate} />
               {needsTimeInput(nextStatus.name) && (
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">開始</label>
+                    <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
                     <TimeSelect value={nextStageStartTime} onChange={(v) => { setNextStageStartTime(v); if (v && !nextStageEndTime) { const [h, m] = v.split(':').map(Number); setNextStageEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }} />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[12px] text-gray-500 dark:text-gray-400 mb-1">終了</label>
+                    <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
                     <TimeSelect value={nextStageEndTime} onChange={setNextStageEndTime}
                     />
                   </div>
@@ -613,7 +606,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   });
                   setShowNextStagePopup(false);
                 }}
-                className="flex-1 py-2.5 text-[14px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl ios-tap"
+                className="flex-1 py-2.5 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap"
               >
                 スキップ
               </button>
@@ -656,7 +649,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
       {/* 削除確認ダイアログ */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center modal-safe">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl">
             <h3 className="text-[17px] font-bold text-[var(--color-text)] mb-2">削除確認</h3>

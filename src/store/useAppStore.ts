@@ -22,12 +22,12 @@ export interface DisplaySettings {
 }
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
-  showTag: true,
-  showIndustry: true,
-  showNextInterview: true,
-  showUpdatedDate: true,
+  showTag: false,
+  showIndustry: false,
+  showNextInterview: false,
+  showUpdatedDate: false,
   showDeadlineBadge: true,
-  showProgressBar: true,
+  showProgressBar: false,
 };
 
 export interface NotificationSettings {

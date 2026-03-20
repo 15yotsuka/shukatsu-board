@@ -140,20 +140,30 @@ export default function CalendarPage() {
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
       </div>
 
-      {/* プルダウン絞り込み */}
-      <select
-        value={filterValue}
-        onChange={(e) => setFilterValue(e.target.value)}
-        className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-card text-[var(--color-text)] text-[14px] font-medium"
-      >
-        <option value="all">すべて</option>
-        <option value="選考中">選考中企業のみ</option>
-        <option value="ES">ES</option>
-        <option value="Webテスト">Webテスト</option>
-        <option value="面接">面接</option>
-        <option value="締切">締切</option>
-        <option value="その他">その他</option>
-      </select>
+      {/* フィルター chips */}
+      <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-1">
+        {([
+          { value: 'all', label: 'すべて' },
+          { value: '選考中', label: '選考中' },
+          { value: 'ES', label: 'ES' },
+          { value: 'Webテスト', label: 'Webテスト' },
+          { value: '面接', label: '面接' },
+          { value: '締切', label: '締切' },
+          { value: 'その他', label: 'その他' },
+        ] as { value: string; label: string }[]).map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setFilterValue(value)}
+            className={`flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors ${
+              filterValue === value
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} />
 
       {selectedDate && activeFilters.has('interview') && selectedInterviews.length > 0 && (
@@ -323,9 +333,9 @@ export default function CalendarPage() {
 
       {/* Step 1: 種別選択（フラット） */}
       {showAddEvent && !addEventStage && (
-        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
-          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+          <div className="relative bg-card rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1 md:hidden">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
@@ -352,9 +362,9 @@ export default function CalendarPage() {
 
       {/* Step 2: 企業選択 */}
       {showAddEvent && addEventStage && !addEventCompanyId && (
-        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
-          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+          <div className="relative bg-card rounded-2xl w-full max-w-lg px-5 pt-5 space-y-4" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1 md:hidden">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
@@ -383,9 +393,9 @@ export default function CalendarPage() {
 
       {/* Step 3: 日時入力フォーム */}
       {showAddEvent && addEventCompanyId && addEventStage && (
-        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={resetAddFlow} />
-          <div className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg animate-slide-up">
+          <div className="relative bg-card rounded-2xl w-full max-w-lg animate-slide-up">
             <div className="flex justify-center pt-2 pb-0 md:hidden">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
@@ -420,7 +430,10 @@ export default function CalendarPage() {
 
       {gradYear !== null && !tutorialFlags.calendar && (
         <TutorialModal
-          steps={[{ title: 'カレンダーの使い方', body: '日付をタップすると\nその日の面接・アクションが表示されます\nフィルターで種別ごとに絞り込めます' }]}
+          steps={[
+              { title: '📆 カレンダーの使い方', body: '面接・ES締切などの予定が\nカレンダー上にまとめて表示されます\n\n日付をタップすると\nその日の予定一覧が確認できます' },
+              { title: 'フィルターを活用しよう', body: '上部のチップで\n表示する種別を絞り込めます\n\n「面接のみ」「ES締切のみ」など\n確認したい情報だけ表示できます', highlight: '複数の予定がある日は色が濃くなります' },
+            ]}
           onComplete={() => markTutorialSeen('calendar')}
         />
       )}

@@ -122,7 +122,7 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <motion.div
         className="absolute inset-0 bg-black/30"
         initial={{ opacity: 0 }}
@@ -132,7 +132,7 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-card rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
+        className="relative bg-card rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 24, opacity: 0 }}
@@ -357,8 +357,13 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
         <TutorialModal
           steps={[
             {
-              title: '企業追加のヒント',
-              body: '企業名を入力すると候補が表示されます\n業界や締切日も自動で入力されます\n\n選考フローは企業ごとにカスタマイズ可能です',
+              title: '企業を追加しよう ➕',
+              body: '企業名を入力すると\n候補が自動表示されます\n\n選択すると業界・締切日が\n自動で入力されます',
+            },
+            {
+              title: '選考フローをカスタマイズ',
+              body: '「選考フロー」では企業ごとに\nES・面接の段階をカスタマイズできます\n\n最初から選考フローが違う企業も\n正確に管理できます',
+              highlight: 'インターン経由の企業はフローを変えよう！',
             },
           ]}
           onComplete={() => markTutorialSeen('addCompany')}

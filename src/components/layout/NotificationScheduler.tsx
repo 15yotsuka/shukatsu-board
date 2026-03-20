@@ -10,11 +10,6 @@ export function NotificationScheduler() {
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const notificationSettings = useAppStore(useShallow((s) => s.notificationSettings));
 
-  // 初回マウント時に通知許可を要求
-  useEffect(() => {
-    requestNotificationPermission();
-  }, []);
-
   // companies・scheduledActions・notificationSettings が変わるたびに再スケジュール
   useEffect(() => {
     scheduleLocalNotifications(companies, scheduledActions, notificationSettings);

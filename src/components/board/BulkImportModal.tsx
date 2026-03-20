@@ -320,9 +320,9 @@ export function BulkImportModal({ statusColumns, onClose }: BulkImportModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="relative bg-card w-full max-w-lg rounded-2xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Grab bar */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
           <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />

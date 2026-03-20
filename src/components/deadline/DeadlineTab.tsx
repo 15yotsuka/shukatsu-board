@@ -329,8 +329,13 @@ export default function DeadlineTab() {
         <TutorialModal
           steps={[
             {
-              title: '締切一覧の使い方',
-              body: '登録済みの締切情報が表示されます\n卒年タブで対象年度を切り替えられます\n\n業界フィルターやソート順で\n必要な情報をすばやく確認できます',
+              title: '⏰ 締切タブの使い方',
+              body: '外資・日系企業の締切情報を\n自動で取得して表示します\n\n気になる企業をタップすると\n企業一覧に追加できます',
+            },
+            {
+              title: '卒年・フィルターを使おう',
+              body: '上部の卒年タブで\n「27卒」「28卒」を切り替えられます\n\n業界フィルターで絞り込んで\n志望業界の締切を一覧確認できます',
+              highlight: '気になる企業はそのまま追加しよう！',
             },
           ]}
           onComplete={() => markTutorialSeen('deadline')}

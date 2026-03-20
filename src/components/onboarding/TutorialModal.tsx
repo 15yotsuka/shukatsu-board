@@ -20,7 +20,7 @@ export function TutorialModal({ steps, onComplete }: TutorialModalProps) {
   const isLast = currentStep === steps.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center modal-safe">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <motion.div
         key={currentStep}

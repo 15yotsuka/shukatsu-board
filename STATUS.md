@@ -2,37 +2,49 @@
 最終更新: 2026-03-20
 
 ## 現在地
-**Phase 1: iOS実機テスト待ち — Round 2 safe-area全修正・UX改善済み**
-Web版は全機能完成。Vercel自動デプロイ運用中（schemaVersion: 14）。
+**Phase 3: App Store 審査中**
+バージョン1.0を審査提出済み。審査結果待ち（最大48時間）。
 
 ## 直近の変更（最新5件）
-- 2026-03-20: CompanyDetailModal.tsx → グラブバーdrag-to-dismiss・fullheight・safe-area・Webテスト折り返し修正
-- 2026-03-20: SettingsModal/BulkImportModal → 全ボトムシートsafe-area修正・JSON削除・CSV→バックアップ
-- 2026-03-20: AddCompanyForm.tsx → autoFocus削除（iOSキーボード自動表示防止）
-- 2026-03-20: calendar/page.tsx → 時間入力5分刻み（step=300）
-- 2026-03-20: tasks/page.tsx → 左スワイプ強化（赤背景＋ゴミ箱アイコン常時表示・飛ばしアニメ・haptic）
-- 2026-03-20: tasks/page.tsx → 長押し時テキスト選択防止（no-selectクラス）・閉じるボタン44px
-- 2026-03-19: calendar/page.tsx → ScheduledActionと締切の重複表示を解消
-- 2026-03-19: deadline/page.tsx → エントリタップで企業追加/詳細表示
+- 2026-03-20: App Store Connect → バージョン1.0「審査に提出」完了（審査待ちステータス）
+- 2026-03-20: App Store Connect API → 企業画面スクショをIMG_9633に差し替え再アップロード
+- 2026-03-20: App Store Connect API → iPhone(1290x2796)・iPad(2048x2732) スクリーンショット各4枚を最新版に差し替え（見切れ修正・デモデータ更新）
+- 2026-03-20: src/app/privacy/page.tsx → プライバシーポリシーページ新規作成 → Vercel公開
+- 2026-03-20: App Store Connect API → 説明文・キーワード・カテゴリ・著作権・サポートURL・プライバシーURL設定
+- 2026-03-20: useAppStore.ts → DEFAULT_DISPLAY_SETTINGS を最小表示に変更
+- 2026-03-20: 実機インストール完了（iPhone / com.yuotsuka.shukatsuboard）
 
 ## 動作状況
 - ✅ ホーム画面（今日/今週/それ以降のToDo・統計チップ）
-- ✅ 企業一覧（TaskCard・ソート/フィルター・ドラッグ並び替え）
+- ✅ 企業一覧（TaskCard・ソート/フィルター・スワイプ削除）
 - ✅ 企業詳細モーダル（4タブ・選考予定・タグ・メモ）
 - ✅ カレンダー（月表示・予定追加3ステップ）
 - ✅ 締切タブ（CSV fetch・業界フィルター・27/28卒）
-- ✅ 設定・チュートリアル（7フラグ）
-- ✅ ローカル通知（Capacitor実装済み、実機未確認）
-- ⚠️ 長押しクイック編集（改善済み・実機確認待ち）
-- ⚠️ 左スワイプ見送り（改善済み・実機確認待ち）
-- ⚠️ 色帯タップ結果待ちON/OFF（実機未確認）
+- ✅ TestFlight ビルドアップロード済み（外部審査待ち）
+- ✅ Vercel デプロイ済み（https://shukatsu-board.vercel.app）
+- ⚠️ ローカル通知（実機未確認）
+
+## App Store 提出状況
+### 自動設定済み（API）
+- ✅ アプリ説明文（日本語）
+- ✅ キーワード（10語）
+- ✅ サポートURL: https://shukatsu-board.vercel.app
+- ✅ プライバシーポリシーURL: https://shukatsu-board.vercel.app/privacy
+- ✅ カテゴリ: 教育（プライマリ）/ 仕事効率化（セカンダリ）
+- ✅ 著作権: 2026 Yu Otsuka
+- ✅ サブタイトル: 就職活動の選考を一元管理
+- ✅ スクリーンショット: iPhone 4枚(1290x2796) + iPad 4枚(2048x2732)
+  - グラデーション背景 + キャッチコピー + 最新デモデータ画面
+
+### ユーザー操作が必要（手動）
+1. ~~**年齢制限設定**: App Store Connect → アプリ → 年齢制限 → 「4+」を選択~~ ✅ 完了
+2. ~~**審査提出**: App Store Connect → バージョン1.0 → 「審査に提出」ボタン~~ ✅ 完了（審査待ち）
 
 ## バグ・注意事項
 ### 発見済み問題（未修正）
 - **同日複数面接の重複排除**: page.tsx の重複排除が時刻を無視するため、同日2本目の面接が隠れる可能性
 - **23:00→00:00自動計算**: CompanyDetailModal で終了時刻 `(h+1)%24` により23:00→00:00になる（翌日扱いなし）
 - **結果待ちの二重管理**: `awaitingResult` フラグと `'結果待ち'` タグが共存
-- **nextDeadline の複数アクション非対応**: addScheduledAction() が nextActionDate を上書きするため複数アクション時は最初の期日のみ反映
 
 ### 技術的制約（必ず守る）
 - Zustandセレクタ内でfilter/map禁止（React 19無限ループ）→ useMemo or useShallow
@@ -42,20 +54,16 @@ Web版は全機能完成。Vercel自動デプロイ運用中（schemaVersion: 14
 - Tailwind CSS v4: `dark:` は `@custom-variant dark (&:where(.dark, .dark *))` で動作
 - gradYear===nullのときDeadlineContextはfetchしない
 
-### コードベース統計（2026-03-19時点）
-- 総ファイル数: 38 (.ts/.tsx) / 総行数: 約11,960行
-- 未使用コンポーネント: なし（確認済み）
-- ビルドエラー: 0件
+## App Store 設定値メモ
+- App ID: 6760877374 / Bundle: com.yuotsuka.shukatsuboard
+- Version ID: 9d6821e0-58ea-43c6-9acf-adec9aa52e1a
+- iPhone Set ID: 8fb5d59a-4f59-4da3-93df-b41a1210c422 (APP_IPHONE_67)
+- iPad Set ID: 36eda342-9338-415c-9bff-2a8e7e6a427a (APP_IPAD_PRO_3GEN_129)
+- ASC API Key: C9WM6RT2H7 / Issuer: 91a75030-20b6-40af-a732-405c5c4b04ac
+- スクショ生成スクリプト: /tmp/gen_promo.py（再生成用）
 
 ## 次やること
-### Phase 1（今ここ）
-1. Xcodeで実機ビルド → 長押し・左スワイプ・色帯タップ・ローカル通知を実機確認
-2. 不具合があれば修正
-
-### Phase 2（App Store公開）
-1. App Store Connect 提出
-
-### Phase 3（クリーンアップ・後回しOK）
+### Phase 3（審査結果待ち・後回しOK）
 1. 「結果待ち」タグの二重管理を解消（awaitingResultフラグに統一）
 2. 同日複数面接の重複排除バグ修正
 3. 23:00→00:00 自動計算バグ修正

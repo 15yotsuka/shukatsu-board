@@ -63,7 +63,7 @@ export type Tag = '優遇あり' | '早期選考' | 'リクルーター面談' |
 export const TAG_CONFIG: Record<Tag, { label: string; className: string }> = {
   '優遇あり':         { label: '優遇あり',  className: 'bg-red-500/10 text-red-500' },
   '早期選考':         { label: '早期選考',  className: 'bg-blue-500/10 text-blue-500' },
-  'リクルーター面談': { label: 'リク面',    className: 'bg-purple-500/10 text-purple-500' },
+  'リクルーター面談': { label: 'リクルーター付き', className: 'bg-purple-500/10 text-purple-500' },
   '結果待ち':         { label: '結果待ち',  className: 'bg-amber-500/10 text-amber-500' },
   'インターン参加済み': { label: 'インターン済', className: 'bg-green-500/10 text-green-500' },
 };

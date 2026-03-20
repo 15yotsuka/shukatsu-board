@@ -230,41 +230,60 @@ export default function Home() {
   return (
     <div className="pb-28 px-4 pt-4">
 
-      {/* 色凡例 */}
-      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
-      </div>
+      {/* 色凡例 — チュートリアル前のみ表示 */}
+      {!tutorialFlags.home && (
+        <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
+        </div>
+      )}
 
-      {/* フィルター + 並べ替え */}
-      <div className="flex items-center gap-2 mb-4">
-        <select
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          className="flex-1 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-card text-[var(--color-text)] text-[14px] font-medium"
-        >
-          <option value="all">すべて</option>
-          <option value="ES">ES提出</option>
-          <option value="Webテスト">Webテスト</option>
-          <option value="面接">面接</option>
-          <option value="その他">その他</option>
-        </select>
-        <button
-          onClick={() => setShowSortSheet(true)}
-          className="flex-none flex items-center gap-1 px-3 py-2 bg-[var(--color-border)] rounded-xl text-[13px] font-semibold text-[var(--color-text-secondary)] ios-tap"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />
-          </svg>
-          {sortKind === 'asc' ? '近い順' : sortKind === 'desc' ? '遠い順' : '企業名順'}
-        </button>
+      {/* フィルター chips + 並べ替え */}
+      <div className="mb-4">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-2">
+          {([
+            { value: 'all', label: 'すべて' },
+            { value: 'ES', label: 'ES提出' },
+            { value: 'Webテスト', label: 'Webテスト' },
+            { value: '面接', label: '面接' },
+            { value: 'その他', label: 'その他' },
+          ] as { value: string; label: string }[]).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setFilterValue(value)}
+              className={`flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors ${
+                filterValue === value
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowSortSheet(true)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-[var(--color-border)] rounded-full text-[13px] font-semibold text-[var(--color-text-secondary)] ios-tap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />
+            </svg>
+            {sortKind === 'asc' ? '近い順' : sortKind === 'desc' ? '遠い順' : '企業名順'}
+          </button>
+        </div>
       </div>
 
       {filteredSortedItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-14 h-14 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
           <p className="text-[16px] font-semibold text-[var(--color-text)] mb-1">
             {todoItems.length === 0 ? '予定はありません' : '該当する予定がありません'}
           </p>
@@ -284,28 +303,26 @@ export default function Home() {
         </div>
       )}
 
-      {/* Stat chips */}
-      <div className="fixed left-0 right-0 flex justify-center pointer-events-none" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
-        <div className="flex gap-2 pointer-events-auto">
-          <button
-            onClick={() => router.push('/tasks?filter=active')}
-            className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
-          >
-            進行中 {activeCount}社
-          </button>
-          <button
-            onClick={() => router.push('/tasks?filter=offer')}
-            className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm ios-tap active:scale-95 transition-transform"
-          >
-            内定 {offerCount}社
-          </button>
-          <button
-            onClick={() => router.push('/tasks?filter=rejected')}
-            className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
-          >
-            見送り {sayonaraCount}社
-          </button>
-        </div>
+      {/* Stat chips — inline at bottom */}
+      <div className="flex justify-center gap-2 pt-6 pb-2">
+        <button
+          onClick={() => router.push('/tasks?filter=active')}
+          className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
+        >
+          進行中 {activeCount}社
+        </button>
+        <button
+          onClick={() => router.push('/tasks?filter=offer')}
+          className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm ios-tap active:scale-95 transition-transform"
+        >
+          内定 {offerCount}社
+        </button>
+        <button
+          onClick={() => router.push('/tasks?filter=rejected')}
+          className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
+        >
+          見送り {sayonaraCount}社
+        </button>
       </div>
 
       <AnimatePresence>
@@ -330,9 +347,9 @@ export default function Home() {
       </AnimatePresence>
 
       {showSortSheet && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-0 z-[70] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowSortSheet(false)} />
-          <div className="relative bg-card rounded-t-2xl w-full max-w-lg px-5 pt-5 space-y-2" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+          <div className="relative bg-card rounded-2xl w-full max-w-lg px-5 pt-5 space-y-2" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
             <div className="flex justify-center pb-1">
               <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
             </div>
@@ -366,10 +383,21 @@ export default function Home() {
 
       {gradYear !== null && !tutorialFlags.home && (
         <TutorialModal
-          steps={[{
-            title: '色は選考段階を表します',
-            body: '🟣 ES　🔵 Webテスト　🟠 面接　🟢 内定\nカードの左端の色帯で一目で分かります\n\n💡 色帯をタップすると「結果待ち」に切り替わります\n結果が出たら「次の段階へ→」で自動解除されます'
-          }]}
+          steps={[
+            {
+              title: 'ホームへようこそ 👋',
+              body: '今日・今週・それ以降の\n選考予定が自動でまとまります\n\n締切が近い企業は赤く表示されます',
+            },
+            {
+              title: '色は選考段階を表します',
+              body: '🟣 ES　🔵 Webテスト\n🟠 面接　🟢 内定\n\nカードの左端の色帯で\n今の選考段階が一目でわかります',
+            },
+            {
+              title: '結果待ちマーク',
+              body: '面接後など、返事を待っているとき\n色帯をタップすると\n「結果待ち」状態に切り替わります\n\n「次の段階へ→」を押すと自動で解除されます',
+              highlight: '色帯タップで結果待ちON/OFF！',
+            },
+          ]}
           onComplete={() => markTutorialSeen('home')}
         />
       )}

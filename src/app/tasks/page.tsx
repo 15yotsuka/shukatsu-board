@@ -35,6 +35,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TimeSelect } from '@/components/ui/TimeSelect';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 type SortField = 'deadline' | 'status' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
@@ -227,11 +228,12 @@ function TaskCard({
         ...style,
         transform: `${CSS.Transform.toString(transform) ?? ''} translateX(${swipeOffset}px)`,
         transition: isFlyingOut
-          ? 'transform 0.32s ease-out'
+          ? 'transform 0.3s ease-out'
           : swipeOffset === 0
-          ? 'transform 0.3s cubic-bezier(0.25, 1.05, 0.5, 1)'
+          ? 'transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1)'
           : 'none',
         touchAction: 'pan-y',
+        willChange: 'transform',
       }}
       onClick={onOpenDetail}
       onTouchStart={handleTouchStart}
@@ -284,7 +286,7 @@ function TaskCard({
           )}
           <button
             onClick={onAdvance}
-            className="flex-none text-[12px] px-2 py-1 rounded-lg bg-blue-500/20 text-blue-500 font-medium whitespace-nowrap ios-tap"
+            className="flex-none text-[12px] px-2 py-1 rounded-lg bg-[var(--color-primary)]/20 text-[var(--color-primary)] font-medium whitespace-nowrap ios-tap"
           >
             次の段階へ →
           </button>
@@ -354,7 +356,6 @@ function TaskCard({
 const SORT_BUTTONS: { field: SortField; label: string }[] = [
   { field: 'deadline', label: '締切日' },
   { field: 'status', label: '選考段階' },
-  { field: 'industry', label: '業界' },
   { field: 'manual', label: '手動' },
 ];
 
@@ -391,6 +392,7 @@ function TasksContent() {
   const [quickEditDate, setQuickEditDate] = useState('');
   const [quickEditStartTime, setQuickEditStartTime] = useState('');
   const [quickEditEndTime, setQuickEditEndTime] = useState('');
+  const [showSortSheet, setShowSortSheet] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const filter = searchParams.get('filter') ?? '';
@@ -459,8 +461,7 @@ function TasksContent() {
     if (!nextStageTarget) return;
     const { company, nextName, nextColumnId } = nextStageTarget;
     if (company.awaitingResult) toggleAwaitingResult(company.id);
-    updateCompany(company.id, { statusId: nextColumnId });
-    // 現在の選考段階のScheduledActionを削除（CompanyDetailModalと同じ処理）
+    // 現在の選考段階のScheduledActionを削除
     const currentStatus = statusColumns.find((s) => s.id === company.statusId);
     if (currentStatus) {
       const { type: currentType } = scheduleStageToAction(currentStatus.name);
@@ -469,6 +470,8 @@ function TasksContent() {
         .forEach((a) => deleteScheduledAction(a.id));
     }
     if (withDate && nextStageDate) {
+      // 日時あり: statusIdのみ更新し、addScheduledActionがnextActionDateをセット
+      updateCompany(company.id, { statusId: nextColumnId });
       const { type, subType } = scheduleStageToAction(nextName);
       addScheduledAction({
         companyId: company.id,
@@ -477,6 +480,15 @@ function TasksContent() {
         date: nextStageDate,
         startTime: nextStageStartTime || undefined,
         endTime: nextStageEndTime || undefined,
+      });
+    } else {
+      // スキップ: nextActionDate等を明示的にクリア（削除対象がなかった場合も含む）
+      updateCompany(company.id, {
+        statusId: nextColumnId,
+        nextActionDate: undefined,
+        nextActionType: undefined,
+        nextActionTime: undefined,
+        nextDeadline: undefined,
       });
     }
     showToast(`『${company.name}』を【${nextName}】に更新しました。`);
@@ -554,15 +566,17 @@ function TasksContent() {
 
   return (
     <div className="pb-24 px-4 pt-4">
-      {/* 色凡例 */}
-      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#6B7280'}} />見送り</span>
-      </div>
+      {/* 色凡例 — チュートリアル前のみ表示 */}
+      {!tutorialFlags.companies && (
+        <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#6B7280'}} />見送り</span>
+        </div>
+      )}
 
       {/* Header row with bulk action buttons */}
       <div className="flex items-center justify-between mb-3">
@@ -584,61 +598,45 @@ function TasksContent() {
         </div>
       </div>
 
-      {/* Sort buttons */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
-        {SORT_BUTTONS.map(({ field, label }) => {
-          const isActive = sortField === field;
-          return (
-            <button
-              key={field}
-              onClick={() => handleSort(field)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-semibold ios-tap transition-all ${
-                isActive
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-              }`}
-            >
-              {label}
-              {isActive && field !== 'manual' && (
-                <span className="text-[11px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filter dropdowns */}
-      <div className="flex gap-2 mb-4">
-        <select
-          value={filter}
-          onChange={(e) => {
-            const v = e.target.value;
-            router.push(v ? `/tasks?filter=${encodeURIComponent(v)}` : '/tasks');
-          }}
-          className="flex-1 px-3 py-2 rounded-xl text-[14px] font-medium bg-card border border-[var(--color-border)] text-[var(--color-text)] appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")` }}
-        >
-          {FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedIndustry}
-          onChange={(e) => setSelectedIndustry(e.target.value)}
-          className="flex-1 px-3 py-2 rounded-xl text-[14px] font-medium bg-card border border-[var(--color-border)] text-[var(--color-text)] appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")` }}
-        >
-          <option value="all">すべての業界</option>
-          {industries.map((ind) => (
-            <option key={ind} value={ind}>{ind}</option>
-          ))}
-        </select>
+      {/* Filter chips + sort button */}
+      <div className="mb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1 pb-1">
+            {FILTER_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => router.push(value ? `/tasks?filter=${encodeURIComponent(value)}` : '/tasks')}
+                className={`flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors ${
+                  filter === value
+                    ? 'bg-[var(--color-primary)] text-white'
+                    : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowSortSheet(true)}
+            className="flex-none flex items-center gap-1 px-3 py-1.5 bg-[var(--color-border)] rounded-full text-[13px] font-semibold text-[var(--color-text-secondary)] ios-tap whitespace-nowrap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />
+            </svg>
+            {sortField === 'deadline' ? `締切${sortOrder === 'asc' ? '↑' : '↓'}` :
+             sortField === 'status' ? `段階${sortOrder === 'asc' ? '↑' : '↓'}` :
+             sortField === 'industry' ? `業界${sortOrder === 'asc' ? '↑' : '↓'}` : '手動'}
+          </button>
+        </div>
       </div>
 
       {active.length === 0 && archived.length === 0 && !filter ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
           <p className="text-[16px] font-semibold text-[var(--color-text)] mb-1">企業が登録されていません</p>
           <p className="text-[13px] text-[var(--color-text-secondary)]">右下の＋ボタンから追加してください</p>
           <button
@@ -649,7 +647,14 @@ function TasksContent() {
           </button>
         </div>
       ) : active.length === 0 && archived.length === 0 && filter ? (
-        <p className="text-center text-[var(--color-text-secondary)] py-20">該当する企業はありません</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+            </svg>
+          </div>
+          <p className="text-center text-[var(--color-text-secondary)]">該当する企業はありません</p>
+        </div>
       ) : (
         <>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -731,6 +736,41 @@ function TasksContent() {
         </>
       )}
 
+      {/* ソートシート */}
+      {showSortSheet && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowSortSheet(false)} />
+          <div className="relative bg-card rounded-2xl w-full max-w-lg px-5 pt-5 space-y-2" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+            <div className="flex justify-center pb-1">
+              <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
+            </div>
+            <h3 className="text-[15px] font-bold text-center text-[var(--color-text)] pb-1">並べ替え</h3>
+            {SORT_BUTTONS.map(({ field, label }) => (
+              <button
+                key={field}
+                onClick={() => { handleSort(field); setShowSortSheet(false); }}
+                className={`w-full py-3 rounded-xl text-[15px] font-medium ios-tap flex items-center justify-center gap-1 ${
+                  sortField === field
+                    ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    : 'bg-[var(--color-bg)] text-[var(--color-text)]'
+                }`}
+              >
+                {label}
+                {sortField === field && field !== 'manual' && (
+                  <span className="text-[13px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowSortSheet(false)}
+              className="w-full py-3 rounded-xl text-[15px] font-medium ios-tap bg-[var(--color-bg)] text-[var(--color-text-secondary)]"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => setShowAddForm(true)}
         className="fixed right-5 z-40 w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center ios-tap transition-all duration-150 active:scale-95 hover:brightness-95"
@@ -751,7 +791,7 @@ function TasksContent() {
       {/* インターン→本選考 昇格ダイアログ */}
       <AnimatePresence>
         {promoteToMainTarget && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center modal-safe">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setPromoteToMainTarget(null)} />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl">
               <h3 className="text-[17px] font-bold text-[var(--color-text)] mb-2">🎉 本選考に進みますか？</h3>
@@ -781,7 +821,7 @@ function TasksContent() {
       {/* 次の段階へ 日時設定ポップアップ */}
       {nextStageTarget && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 modal-safe"
           onPointerDown={() => setNextStageTarget(null)}
         >
           <div
@@ -796,12 +836,7 @@ function TasksContent() {
               次の選考の日程を設定してください
             </p>
             <div className="space-y-2 mb-4">
-              <input
-                type="date"
-                value={nextStageDate}
-                onChange={(e) => setNextStageDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[15px]"
-              />
+              <DatePicker value={nextStageDate} onChange={setNextStageDate} />
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
@@ -845,7 +880,7 @@ function TasksContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-end justify-center"
+            className="fixed inset-0 z-[70] flex items-end justify-center modal-safe"
             style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
             onClick={() => setQuickEditCompany(null)}
           >
@@ -855,7 +890,7 @@ function TasksContent() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-lg bg-card rounded-t-3xl shadow-2xl flex flex-col"
+              className="relative w-full max-w-lg bg-card rounded-3xl shadow-2xl flex flex-col"
               style={{ height: 'calc(100dvh - 3.5rem - env(safe-area-inset-top) - 4rem - env(safe-area-inset-bottom))' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -948,10 +983,23 @@ function TasksContent() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => {
-                        // スキップ: 日時なしで段階だけ更新
+                        // スキップ: 日時なしで段階だけ更新、前の予定をクリア
                         const col = trackStatuses.find((c) => c.id === quickEditColId);
                         if (!col) return;
-                        updateCompany(quickEditCompany.id, { statusId: quickEditColId });
+                        const prevStatus = statusColumns.find((s) => s.id === quickEditCompany.statusId);
+                        if (prevStatus) {
+                          const { type: prevType } = scheduleStageToAction(prevStatus.name);
+                          scheduledActions
+                            .filter((a) => a.companyId === quickEditCompany.id && a.type === prevType)
+                            .forEach((a) => deleteScheduledAction(a.id));
+                        }
+                        updateCompany(quickEditCompany.id, {
+                          statusId: quickEditColId,
+                          nextActionDate: undefined,
+                          nextActionType: undefined,
+                          nextActionTime: undefined,
+                          nextDeadline: undefined,
+                        });
                         showToast(`『${quickEditCompany.name}』を【${col.name}】に変更しました`);
                         setQuickEditCompany(null);
                       }}
@@ -996,7 +1044,7 @@ function TasksContent() {
         {selectedCompany && (
           <ErrorBoundary
             fallback={
-              <div className="fixed inset-0 z-[60] flex items-center justify-center">
+              <div className="fixed inset-0 z-[60] flex items-center justify-center modal-safe">
                 <div className="bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl text-center">
                   <p className="text-[17px] font-bold text-[var(--color-text)] mb-2">表示エラー</p>
                   <p className="text-[14px] text-[var(--color-text-secondary)] mb-4">企業データの読み込みに失敗しました。</p>
@@ -1017,17 +1065,21 @@ function TasksContent() {
         <TutorialModal
           steps={[
             {
-              title: '企業一覧へようこそ',
-              body: '応募中の企業を一覧で管理できます。\n並べ替え・絞り込みで\n今の状況をすぐ把握できます。',
+              title: '企業一覧へようこそ 📋',
+              body: '応募中の全企業を一覧で管理できます\n上のチップで絞り込み、\nソートボタンで並び替えができます',
             },
             {
-              title: '結果待ちをマークしよう',
-              body: '面接後など、返事を待っているときに\n使えるマーク機能があります。',
-              highlight: '左端の色帯をタップすると\n「結果待ち」タグが付きます！\n絞り込みでまとめて確認できます。',
+              title: 'カードをタップ',
+              body: 'カードをタップすると\n企業の詳細画面が開きます\n\n選考予定・メモ・ログイン情報など\n企業ごとの情報をまとめて管理できます',
             },
             {
               title: 'カードの操作',
-              body: '「次の段階へ →」で選考段階を更新\n長押しでクイック編集\n左スワイプで見送りに移動',
+              body: '「次の段階へ →」\n→ 選考段階を1つ進める\n\n長押し\n→ 段階をクイック変更\n\n左にスワイプ\n→ 見送りに移動',
+              highlight: '長押し・スワイプを使いこなそう！',
+            },
+            {
+              title: '結果待ちマーク',
+              body: '面接後など返事待ちのとき\nカード左端の色帯をタップすると\n「結果待ち」状態になります\n\n絞り込みで「結果待ち」だけ\nまとめて確認できます',
             },
           ]}
           onComplete={() => markTutorialSeen('companies')}

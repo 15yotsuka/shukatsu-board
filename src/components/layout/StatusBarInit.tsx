@@ -7,8 +7,9 @@ export function StatusBarInit() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-      StatusBar.setOverlaysWebView({ overlay: false });
-      StatusBar.setStyle({ style: Style.Default });
+      StatusBar.setOverlaysWebView({ overlay: true });
+      const isDark = document.documentElement.classList.contains('dark');
+      StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
     });
   }, []);
 

@@ -10,7 +10,7 @@ export default function GradYearSelectModal() {
   if (gradYear !== null) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 modal-safe">
       <div className="bg-[var(--color-bg)] rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl">
         <h2 className="text-[20px] font-bold text-[var(--color-text)] text-center mb-2">
           ようこそ！

@@ -35,6 +35,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
+button, input, select, textarea {
+  font-family: var(--font-sans);
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -45,8 +49,8 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* iOSモメンタムスクロール */
-main, .scroll-container {
+/* iOSモメンタムスクロール — mainはドキュメントスクロールに任せる */
+.scroll-container {
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
 }
@@ -187,6 +191,11 @@ main, .scroll-container {
 /* iPhone セーフエリア対応 */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* モーダルオーバーレイ用セーフゾーン */
+.modal-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* iOS風 入力フィールド共通 */

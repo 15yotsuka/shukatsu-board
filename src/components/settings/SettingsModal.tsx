@@ -44,9 +44,9 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   const gradYear = useAppStore((s) => s.gradYear);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-[var(--color-bg)] rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="relative bg-[var(--color-bg)] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Grab bar (mobile) */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
           <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
@@ -295,8 +295,9 @@ function DisplayTab() {
       </div>
 
       {/* カード表示設定 */}
-      <div className="text-[13px] text-[var(--color-text-secondary)] px-1">
-        カードに表示する項目を選択してください。企業名は常に表示されます。
+      <div className="text-[13px] text-[var(--color-text-secondary)] px-1 leading-relaxed">
+        デフォルトでは企業名と次の選考予定のみ表示しています。<br/>
+        ここで表示項目を追加してカードの情報量を増やせます。
       </div>
       <div className="bg-card rounded-xl divide-y divide-[var(--color-border)]">
         {DISPLAY_ITEMS.map(({ key, label }) => (
@@ -320,6 +321,14 @@ function NotificationTab() {
   const updateNotificationEnabled = useAppStore((s) => s.updateNotificationEnabled);
   const updateNotificationTiming = useAppStore((s) => s.updateNotificationTiming);
 
+  const handleEnableToggle = async (v: boolean) => {
+    if (v) {
+      const { requestNotificationPermission } = await import('@/lib/notifications');
+      await requestNotificationPermission();
+    }
+    updateNotificationEnabled(v);
+  };
+
   const timingItems: { key: keyof NotificationSettings['timing']; label: string }[] = [
     { key: 'sameDay', label: '当日' },
     { key: 'oneDayBefore', label: '1日前' },
@@ -335,7 +344,7 @@ function NotificationTab() {
           <span className="text-[15px] text-[var(--color-text)]">リマインダー通知</span>
           <Toggle
             value={notificationSettings.enabled}
-            onChange={updateNotificationEnabled}
+            onChange={handleEnableToggle}
           />
         </div>
       </div>
@@ -593,9 +602,9 @@ function DataTab({ onClose }: { onClose: () => void }) {
       )}
 
       {showCsvHelp && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-0 z-[80] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowCsvHelp(false)} />
-          <div className="relative bg-[var(--color-bg)] rounded-t-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+          <div className="relative bg-[var(--color-bg)] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--color-border)] shrink-0">
               <h3 className="text-[17px] font-bold text-[var(--color-text)]">CSVインポートの使い方</h3>
