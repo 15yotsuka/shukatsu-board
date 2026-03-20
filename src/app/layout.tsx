@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ToastDisplay } from "@/components/layout/ToastDisplay";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { NotificationScheduler } from "@/components/layout/NotificationScheduler";
+import { StatusBarInit } from "@/components/layout/StatusBarInit";
 import { DeadlineProvider } from "@/contexts/DeadlineContext";
 import GradYearSelectModal from "@/components/onboarding/GradYearSelectModal";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
             <ToastDisplay />
             <GradYearSelectModal />
             <NotificationScheduler />
+            <StatusBarInit />
           </DeadlineProvider>
         </ThemeProvider>
       </body>

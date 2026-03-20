@@ -124,7 +124,11 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
 
           const hasDeadline =
             filters.has('deadline') &&
-            (companies.some((c) => (c.nextDeadline === dateStr || c.nextActionDate === dateStr) && inCompanyFilter(c.id)) ||
+            (companies.some((c) =>
+              (c.nextDeadline === dateStr || c.nextActionDate === dateStr) &&
+              inCompanyFilter(c.id) &&
+              !scheduledActions.some((a) => a.companyId === c.id && a.date === dateStr)
+            ) ||
               (!activeCompanyIds && deadlines.some((dd) => dd.deadline === dateStr)));
           if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
 

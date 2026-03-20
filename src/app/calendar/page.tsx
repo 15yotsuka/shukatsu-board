@@ -8,6 +8,7 @@ import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, SCHEDULE_STAGE_OPTIONS, scheduleStageToAction, getDateLabel, needsTimeInput, type ActionType } from '@/lib/types';
+import { TimeSelect } from '@/components/ui/TimeSelect';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useDeadlines } from '@/contexts/DeadlineContext';
@@ -404,16 +405,9 @@ export default function CalendarPage() {
                 <div className="flex-[2]">
                   <input type="date" value={actionDate} onChange={(e) => setActionDate(e.target.value)} className="ios-input" />
                 </div>
-                {needsTimeInput(addEventStage) && (
-                  <div className="flex-1">
-                    <input type="time" step={300} value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" />
-                  </div>
-                )}
-                {!needsTimeInput(addEventStage) && (
-                  <div className="flex-1">
-                    <input type="time" step={300} value={actionTime} onChange={(e) => setActionTime(e.target.value)} className="ios-input" placeholder="時間" />
-                  </div>
-                )}
+                <div className="flex-1">
+                  <TimeSelect value={actionTime} onChange={setActionTime} />
+                </div>
               </div>
               <button onClick={handleAddAction} disabled={!actionDate || (needsTimeInput(addEventStage!) && !actionTime)} className="ios-button-primary disabled:opacity-40">
                 追加する

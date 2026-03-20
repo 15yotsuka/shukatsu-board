@@ -34,6 +34,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { TimeSelect } from '@/components/ui/TimeSelect';
 
 type SortField = 'deadline' | 'status' | 'industry' | 'manual';
 type SortOrder = 'asc' | 'desc';
@@ -804,30 +805,11 @@ function TasksContent() {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
-                  <input
-                    type="time"
-                    step={300}
-                    value={nextStageStartTime}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setNextStageStartTime(v);
-                      if (v && !nextStageEndTime) {
-                        const [h, m] = v.split(':').map(Number);
-                        setNextStageEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-                      }
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
-                  />
+                  <TimeSelect value={nextStageStartTime} onChange={(v) => { setNextStageStartTime(v); if (v && !nextStageEndTime) { const [h, m] = v.split(':').map(Number); setNextStageEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }} />
                 </div>
                 <div className="flex-1">
                   <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
-                  <input
-                    type="time"
-                    step={300}
-                    value={nextStageEndTime}
-                    onChange={(e) => setNextStageEndTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 text-[var(--color-text)] text-[14px]"
-                  />
+                  <TimeSelect value={nextStageEndTime} onChange={setNextStageEndTime} />
                 </div>
               </div>
             </div>
@@ -953,30 +935,11 @@ function TasksContent() {
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">開始</label>
-                        <input
-                          type="time"
-                          step={300}
-                          value={quickEditStartTime}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setQuickEditStartTime(v);
-                            if (v && !quickEditEndTime) {
-                              const [h, m] = v.split(':').map(Number);
-                              setQuickEditEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-                            }
-                          }}
-                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] text-[14px]"
-                        />
+                        <TimeSelect value={quickEditStartTime} onChange={(v) => { setQuickEditStartTime(v); if (v && !quickEditEndTime) { const [h, m] = v.split(':').map(Number); setQuickEditEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }} />
                       </div>
                       <div className="flex-1">
                         <label className="block text-[12px] text-[var(--color-text-secondary)] mb-1">終了</label>
-                        <input
-                          type="time"
-                          step={300}
-                          value={quickEditEndTime}
-                          onChange={(e) => setQuickEditEndTime(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] text-[14px]"
-                        />
+                        <TimeSelect value={quickEditEndTime} onChange={setQuickEditEndTime} />
                       </div>
                     </div>
                   </div>

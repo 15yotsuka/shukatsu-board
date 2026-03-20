@@ -9,6 +9,7 @@ import { INDUSTRIES } from '@/lib/industries';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { SelectionFlowEditor, DEFAULT_FLOW_STAGES } from '@/components/board/SelectionFlowEditor';
+import { TimeSelect } from '@/components/ui/TimeSelect';
 
 interface AddCompanyFormProps {
   onClose: () => void;
@@ -239,12 +240,7 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
             {needsTimeInput(selectedStageName) && (
               <div className="mt-2">
                 <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-1.5">時間（任意）</label>
-                <input
-                  type="time"
-                  value={deadlineTime}
-                  onChange={(e) => setDeadlineTime(e.target.value)}
-                  className="ios-input"
-                />
+                <TimeSelect value={deadlineTime} onChange={setDeadlineTime} />
               </div>
             )}
             {deadlineSuggestions.length > 0 && (
