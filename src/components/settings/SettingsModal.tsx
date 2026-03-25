@@ -745,7 +745,7 @@ function Toggle({
         disabled
           ? 'opacity-40 cursor-not-allowed'
           : 'ios-tap'
-      } ${value ? 'bg-[var(--color-primary)]' : 'bg-gray-300 dark:bg-gray-600'}`}
+      } ${disabled ? 'bg-gray-300 dark:bg-gray-400' : value ? 'bg-[var(--color-primary)]' : 'bg-gray-300 dark:bg-gray-600'}`}
       aria-checked={value}
       role="switch"
     >

@@ -593,7 +593,7 @@ function TasksContent() {
       {/* Filter chips + sort button */}
       <div className="mb-3">
         <div className="flex items-center gap-2">
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1 pb-1">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
             {FILTER_OPTIONS.map(({ value, label }) => (
               <button
                 key={value}
