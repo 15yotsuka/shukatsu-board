@@ -232,8 +232,8 @@ export default function Home() {
 
 
       {/* フィルター chips + 並べ替え */}
-      <div className="mb-4">
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-2">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
           {([
             { value: 'all', label: 'すべて' },
             { value: 'ES', label: 'ES提出' },
@@ -254,17 +254,15 @@ export default function Home() {
             </button>
           ))}
         </div>
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowSortSheet(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-[var(--color-border)] rounded-full text-[13px] font-semibold text-[var(--color-text-secondary)] ios-tap"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />
-            </svg>
-            {sortKind === 'asc' ? '近い順' : sortKind === 'desc' ? '遠い順' : '企業名順'}
-          </button>
-        </div>
+        <button
+          onClick={() => setShowSortSheet(true)}
+          className="flex-none flex items-center gap-1 px-3 py-1.5 bg-[var(--color-border)] rounded-full text-[13px] font-semibold text-[var(--color-text-secondary)] ios-tap whitespace-nowrap"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />
+          </svg>
+          {sortKind === 'asc' ? '近い順' : sortKind === 'desc' ? '遠い順' : '企業名順'}
+        </button>
       </div>
 
       {filteredSortedItems.length === 0 ? (

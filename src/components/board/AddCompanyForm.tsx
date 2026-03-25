@@ -342,7 +342,7 @@ export function AddCompanyForm({ onClose, initialName, initialIndustry, initialD
         {/* Fixed footer — ナビゲーションバーに絶対かぶらない */}
         <div
           className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] bg-card space-y-2"
-          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
           <button onClick={handleSubmit} className="ios-button-primary">
             追加する
