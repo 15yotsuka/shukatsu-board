@@ -94,6 +94,9 @@ interface TaskCardProps {
   onToggleAwaitingResult: () => void;
   onLongPress: () => void;
   onSwipeLeft: () => void;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: () => void;
 }
 
 function TaskCard({
@@ -110,6 +113,9 @@ function TaskCard({
   onToggleAwaitingResult,
   onLongPress,
   onSwipeLeft,
+  isSelectMode,
+  isSelected,
+  onToggleSelect,
 }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: company.id,
@@ -227,7 +233,7 @@ function TaskCard({
       ref={setNodeRef}
       style={{
         ...style,
-        transform: `${CSS.Transform.toString(transform) ?? ''} translateX(${swipeOffset}px)`,
+        transform: `${CSS.Transform.toString(transform) ?? ''} translateX(${isSelectMode ? 0 : swipeOffset}px)`,
         transition: isFlyingOut
           ? 'transform 0.3s ease-out'
           : swipeOffset === 0
@@ -236,16 +242,32 @@ function TaskCard({
         touchAction: 'pan-y',
         willChange: 'transform',
       }}
-      onClick={onOpenDetail}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onClick={isSelectMode ? onToggleSelect : onOpenDetail}
+      onTouchStart={isSelectMode ? undefined : handleTouchStart}
+      onTouchMove={isSelectMode ? undefined : handleTouchMove}
+      onTouchEnd={isSelectMode ? undefined : handleTouchEnd}
       className="relative bg-card dark:bg-zinc-900 rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden cursor-pointer active:scale-[0.98]"
     >
+      {/* 選択モード: チェックボックスオーバーレイ */}
+      {isSelectMode && (
+        <div className="absolute left-0 top-0 bottom-0 w-6 z-10 flex items-center justify-center rounded-l-2xl bg-black/10 dark:bg-black/20">
+          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+            isSelected
+              ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+              : 'border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-zinc-800/80'
+          }`}>
+            {isSelected && (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
       {/* Left color strip (stage color) - tappable to toggle awaitingResult */}
       <button
-        onClick={(e) => { e.stopPropagation(); onToggleAwaitingResult(); }}
-        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onToggleAwaitingResult(); }}
+        onClick={(e) => { e.stopPropagation(); if (!isSelectMode) onToggleAwaitingResult(); }}
+        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (!isSelectMode) onToggleAwaitingResult(); }}
         className="absolute left-0 top-0 bottom-0 w-6 rounded-l-2xl transition-opacity"
         style={{
           backgroundColor: getStageColor(statusName),
@@ -371,12 +393,15 @@ function TasksContent() {
   const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
+  const deleteCompany = useAppStore((s) => s.deleteCompany);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const gradYear = useAppStore((s) => s.gradYear);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
   const [nextStageTarget, setNextStageTarget] = useState<{ company: Company; nextName: string; nextColumnId: string } | null>(null);
@@ -500,6 +525,22 @@ function TasksContent() {
     deleteAllCompanies();
   };
 
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`選択した${selectedIds.size}社を削除しますか？\nこの操作は取り消せません。`)) return;
+    selectedIds.forEach((id) => deleteCompany(id));
+    setSelectedIds(new Set());
+    setIsSelectMode(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   const sortedAll = useMemo(() => {
     const cols = [...statusColumns].sort((a, b) => a.order - b.order);
     if (sortField === 'manual') return companies;
@@ -569,24 +610,53 @@ function TasksContent() {
       {/* 色凡例 — 常時表示 */}
       <StageLegend />
 
-      {/* Header row with bulk action buttons */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex gap-2 ml-auto">
-          <button
-            onClick={() => setShowBulkAdd(true)}
-            className="text-[13px] px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-500 font-medium ios-tap"
-          >
-            + 一括追加
-          </button>
-          {companies.length > 0 && (
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-3 min-h-[32px]">
+        {isSelectMode ? (
+          <>
+            <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+              {selectedIds.size}社選択中
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }}
+                className="text-[13px] px-3 py-1.5 rounded-lg bg-[var(--color-border)] text-[var(--color-text-secondary)] font-medium ios-tap"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDeleteSelected}
+                disabled={selectedIds.size === 0}
+                className="flex items-center gap-1.5 text-[13px] px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-medium ios-tap disabled:opacity-40"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                削除
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-2 ml-auto">
             <button
-              onClick={handleBulkDelete}
-              className="text-[13px] px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-medium ios-tap"
+              onClick={() => setShowBulkAdd(true)}
+              className="text-[13px] px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-500 font-medium ios-tap"
             >
-              一括削除
+              + 一括追加
             </button>
-          )}
-        </div>
+            {companies.length > 0 && (
+              <button
+                onClick={() => setIsSelectMode(true)}
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--color-border)] text-[var(--color-text-secondary)] ios-tap"
+                aria-label="削除モード"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Filter chips + sort button */}
@@ -691,6 +761,9 @@ function TasksContent() {
                           showToast(`『${c.name}』を見送りに移動しました`);
                         }
                       }}
+                      isSelectMode={isSelectMode}
+                      isSelected={selectedIds.has(c.id)}
+                      onToggleSelect={() => toggleSelect(c.id)}
                     />
                   );
                 })}
