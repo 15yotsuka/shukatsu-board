@@ -10,8 +10,9 @@ import type { Company } from '@/lib/types';
 import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
 
 type UnifiedItem =
-  | { kind: 'interview'; sortKey: string; companyId: string; label: string; sub: string; color: string }
-  | { kind: 'action'; sortKey: string; companyId: string; label: string; sub: string; color: string };
+  | { kind: 'interview'; priority: 0; sortKey: string; companyId: string; label: string; sub: string; color: string }
+  | { kind: 'action'; priority: 0; sortKey: string; companyId: string; label: string; sub: string; color: string }
+  | { kind: 'deadline'; priority: 1; sortKey: string; companyId: string; label: string; sub: string; color: string };
 
 interface UpcomingListProps {
   activeFilters?: Set<FilterKind>;
@@ -44,6 +45,7 @@ export function UpcomingList({ activeFilters, activeCompanyIds }: UpcomingListPr
         .filter((i) => (isAfter(new Date(i.datetime), today) || format(new Date(i.datetime), 'yyyy-MM-dd') === todayStr) && inCompanyFilter(i.companyId))
         .map((i) => ({
           kind: 'interview' as const,
+          priority: 0 as const,
           sortKey: i.datetime,
           companyId: i.companyId,
           label: `${i.type} - ${getCompanyName(i.companyId)}`,
@@ -56,6 +58,7 @@ export function UpcomingList({ activeFilters, activeCompanyIds }: UpcomingListPr
     .filter((a) => a.date >= todayStr && filters.has(toFilterKind(a.type)) && inCompanyFilter(a.companyId))
     .map((a) => ({
       kind: 'action' as const,
+      priority: 0 as const,
       sortKey: a.date,
       companyId: a.companyId,
       label: `${ACTION_TYPE_LABELS[a.type]} - ${getCompanyName(a.companyId)}`,
@@ -68,8 +71,9 @@ export function UpcomingList({ activeFilters, activeCompanyIds }: UpcomingListPr
         .filter((c) => c.nextDeadline && c.nextDeadline >= todayStr && inCompanyFilter(c.id) &&
           !scheduledActions.some((a) => a.companyId === c.id && a.date === c.nextDeadline))
         .map((c) => ({
-          kind: 'action' as const,
-          sortKey: c.nextDeadline! + 'T00:00:00',
+          kind: 'deadline' as const,
+          priority: 1 as const,
+          sortKey: c.nextDeadline!,
           companyId: c.id,
           label: `締切 - ${c.name}`,
           sub: formatDateUnified(c.nextDeadline!),
@@ -78,7 +82,11 @@ export function UpcomingList({ activeFilters, activeCompanyIds }: UpcomingListPr
     : [];
 
   const unified = [...interviewItems, ...actionItems, ...deadlineItems]
-    .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+    .sort((a, b) => {
+      const dateDiff = a.sortKey.localeCompare(b.sortKey);
+      if (dateDiff !== 0) return dateDiff;
+      return a.priority - b.priority;
+    })
     .slice(0, 10);
 
   if (unified.length === 0) {
