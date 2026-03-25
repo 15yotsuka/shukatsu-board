@@ -6,6 +6,7 @@ import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { useAppStore } from '@/store/useAppStore';
+import { useShallow } from 'zustand/shallow';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, SCHEDULE_STAGE_OPTIONS, scheduleStageToAction, getDateLabel, needsTimeInput, type ActionType } from '@/lib/types';
 import { TimeSelect } from '@/components/ui/TimeSelect';
@@ -31,6 +32,7 @@ export default function CalendarPage() {
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const gradYear = useAppStore((s) => s.gradYear);
+  const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const { deadlines } = useDeadlines();
 
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
@@ -156,7 +158,7 @@ export default function CalendarPage() {
           </button>
         ))}
       </div>
-      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} />
+      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} dotColor={displaySettings.calendarDotColor} />
 
       {selectedDate && activeFilters.has('interview') && selectedInterviews.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">

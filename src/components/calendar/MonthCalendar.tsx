@@ -17,22 +17,20 @@ import {
 import { ja } from 'date-fns/locale';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
-import { ACTION_TYPE_COLORS } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
-
-const DEADLINE_DOT_COLOR = '#FF3B30';
 
 interface MonthCalendarProps {
   onDateSelect: (date: Date, interviews: Interview[], actions: ScheduledAction[]) => void;
   selectedDate?: Date | null;
   activeFilters?: Set<FilterKind>;
   activeCompanyIds?: Set<string>;
+  dotColor?: string;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
-export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activeCompanyIds }: MonthCalendarProps) {
+export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activeCompanyIds, dotColor = '#3B82F6' }: MonthCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
@@ -120,8 +118,6 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
           const todayCell = isToday(d);
           const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
 
-          const dots: string[] = [];
-
           const hasDeadline =
             filters.has('deadline') &&
             (companies.some((c) =>
@@ -130,14 +126,10 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
               !scheduledActions.some((a) => a.companyId === c.id && a.date === dateStr)
             ) ||
               (!activeCompanyIds && deadlines.some((dd) => dd.deadline === dateStr)));
-          if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
 
-          if (filters.has('interview') && dateInterviews.length > 0) dots.push('#F97316');
-
-          const filteredActions = dateActions.filter((a) => filters.has(toFilterKind(a.type)));
-          if (filteredActions.length > 0) dots.push(ACTION_TYPE_COLORS[filteredActions[0].type]);
-
-          const finalDots = dots.slice(0, 3);
+          const hasInterview = filters.has('interview') && dateInterviews.length > 0;
+          const hasAction = dateActions.some((a) => filters.has(toFilterKind(a.type)));
+          const hasEvent = hasDeadline || hasInterview || hasAction;
 
           return (
             <button
@@ -153,16 +145,11 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
                 }`}
             >
               <span>{format(d, 'd')}</span>
-              {finalDots.length > 0 && (
-                <div className="absolute bottom-0.5 flex gap-0.5">
-                  {finalDots.map((color, i) => (
-                    <span
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: todayCell ? 'rgba(255,255,255,0.8)' : color }}
-                    />
-                  ))}
-                </div>
+              {hasEvent && (
+                <span
+                  className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: todayCell ? 'rgba(255,255,255,0.8)' : dotColor }}
+                />
               )}
             </button>
           );

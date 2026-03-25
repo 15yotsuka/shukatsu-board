@@ -304,11 +304,34 @@ function DisplayTab() {
           <div key={key} className="flex items-center justify-between px-4 py-3 min-h-[52px]">
             <span className="text-[15px] text-[var(--color-text)]">{label}</span>
             <Toggle
-              value={displaySettings[key]}
+              value={displaySettings[key] as boolean}
               onChange={(v) => updateDisplaySetting(key, v)}
             />
           </div>
         ))}
+      </div>
+
+      {/* カレンダードット色 */}
+      <div className="bg-card rounded-xl overflow-hidden">
+        <div className="px-4 py-2 border-b border-[var(--color-border)]">
+          <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">カレンダーのドット色</span>
+        </div>
+        <div className="px-4 py-3 flex flex-wrap gap-3">
+          {['#3B82F6','#8B5CF6','#F97316','#22C55E','#EF4444','#EC4899','#F59E0B','#06B6D4'].map((color) => (
+            <button
+              key={color}
+              onClick={() => updateDisplaySetting('calendarDotColor', color)}
+              className="w-8 h-8 rounded-full ios-tap flex items-center justify-center"
+              style={{ backgroundColor: color }}
+            >
+              {displaySettings.calendarDotColor === color && (
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ export interface DisplaySettings {
   showUpdatedDate: boolean;
   showDeadlineBadge: boolean;
   showProgressBar: boolean;
+  calendarDotColor: string;
 }
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
@@ -28,6 +29,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   showUpdatedDate: false,
   showDeadlineBadge: true,
   showProgressBar: false,
+  calendarDotColor: '#3B82F6',
 };
 
 export interface NotificationSettings {
@@ -102,7 +104,7 @@ interface AppActions {
   deleteScheduledAction: (id: string) => void;
 
   // Display settings
-  updateDisplaySetting: <K extends keyof DisplaySettings>(key: K, value: boolean) => void;
+  updateDisplaySetting: <K extends keyof DisplaySettings>(key: K, value: DisplaySettings[K]) => void;
 
   // Notification settings
   updateNotificationEnabled: (value: boolean) => void;
@@ -129,7 +131,7 @@ type AppStore = AppState & {
   tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 14;
+const CURRENT_SCHEMA_VERSION = 15;
 
 export function normalizeCompanyName(name: string): string {
   return name
@@ -570,6 +572,7 @@ export const useAppStore = create<AppStore>()(
           ...DEFAULT_DISPLAY_SETTINGS,
           ...existingDisplay,
           showProgressBar: existingDisplay.showProgressBar ?? true,
+          calendarDotColor: existingDisplay.calendarDotColor ?? '#3B82F6',
         };
 
         // v11→v12: migrate 'final' ActionType → 'interview' with subType='最終面接'
