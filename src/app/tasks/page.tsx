@@ -17,6 +17,7 @@ import { ACTION_TYPE_LABELS, scheduleStageToAction, TAG_CONFIG, type Tag } from 
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { getStageColor } from '@/lib/stageColors';
 import { StageLegend } from '@/components/common/StageLegend';
+import { useTasksUI } from '@/store/useTasksUI';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -393,15 +394,12 @@ function TasksContent() {
   const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
-  const deleteCompany = useAppStore((s) => s.deleteCompany);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const gradYear = useAppStore((s) => s.gradYear);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showBulkAdd, setShowBulkAdd] = useState(false);
-  const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { isSelectMode, selectedIds, toggleSelect, exitSelectMode, showBulkAdd, closeBulkAdd } = useTasksUI();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
   const [nextStageTarget, setNextStageTarget] = useState<{ company: Company; nextName: string; nextColumnId: string } | null>(null);
@@ -525,22 +523,6 @@ function TasksContent() {
     deleteAllCompanies();
   };
 
-  const handleDeleteSelected = () => {
-    if (selectedIds.size === 0) return;
-    if (!window.confirm(`選択した${selectedIds.size}社を削除しますか？\nこの操作は取り消せません。`)) return;
-    selectedIds.forEach((id) => deleteCompany(id));
-    setSelectedIds(new Set());
-    setIsSelectMode(false);
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
   const sortedAll = useMemo(() => {
     const cols = [...statusColumns].sort((a, b) => a.order - b.order);
     if (sortField === 'manual') return companies;
@@ -610,54 +592,6 @@ function TasksContent() {
       {/* 色凡例 — 常時表示 */}
       <StageLegend />
 
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-3 min-h-[32px]">
-        {isSelectMode ? (
-          <>
-            <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-              {selectedIds.size}社選択中
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }}
-                className="text-[13px] px-3 py-1.5 rounded-lg bg-[var(--color-border)] text-[var(--color-text-secondary)] font-medium ios-tap"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleDeleteSelected}
-                disabled={selectedIds.size === 0}
-                className="flex items-center gap-1.5 text-[13px] px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-medium ios-tap disabled:opacity-40"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                削除
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex gap-2 ml-auto">
-            <button
-              onClick={() => setShowBulkAdd(true)}
-              className="text-[13px] px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-500 font-medium ios-tap"
-            >
-              + 一括追加
-            </button>
-            {companies.length > 0 && (
-              <button
-                onClick={() => setIsSelectMode(true)}
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--color-border)] text-[var(--color-text-secondary)] ios-tap"
-                aria-label="削除モード"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Filter chips + sort button */}
       <div className="mb-3">
@@ -762,7 +696,7 @@ function TasksContent() {
                         }
                       }}
                       isSelectMode={isSelectMode}
-                      isSelected={selectedIds.has(c.id)}
+                      isSelected={selectedIds.includes(c.id)}
                       onToggleSelect={() => toggleSelect(c.id)}
                     />
                   );
@@ -850,7 +784,7 @@ function TasksContent() {
         {showAddForm && <AddCompanyForm onClose={() => setShowAddForm(false)} />}
       </AnimatePresence>
 
-      {showBulkAdd && <BulkImportModal statusColumns={trackStatuses} onClose={() => setShowBulkAdd(false)} />}
+      {showBulkAdd && <BulkImportModal statusColumns={trackStatuses} onClose={closeBulkAdd} />}
 
       {/* インターン→本選考 昇格ダイアログ */}
       <AnimatePresence>
