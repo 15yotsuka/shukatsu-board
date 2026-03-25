@@ -134,6 +134,14 @@ export default function CalendarPage() {
 
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
+      {/* 色凡例 */}
+      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#FF3B30'}} />締切</span>
+      </div>
+
       {/* フィルター chips */}
       <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-1">
         {([
@@ -158,7 +166,7 @@ export default function CalendarPage() {
           </button>
         ))}
       </div>
-      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} dotColor={displaySettings.calendarDotColor} />
+      <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} />
 
       {selectedDate && activeFilters.has('interview') && selectedInterviews.length > 0 && (
         <div className="bg-card rounded-xl overflow-hidden">
