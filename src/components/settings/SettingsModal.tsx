@@ -83,7 +83,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
         </div>
 
         {/* Tab content */}
-        <div className="h-[400px] overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 overscroll-contain relative">
           {activeTab === 'status' && <StatusTab onClose={onClose} />}
           {activeTab === 'display' && <DisplayTab />}
           {activeTab === 'notification' && <NotificationTab />}
@@ -602,7 +602,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
       )}
 
       {showCsvHelp && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <div className="absolute inset-0 z-[80] flex items-end justify-center" style={{ paddingBottom: '1rem' }}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowCsvHelp(false)} />
           <div className="relative bg-[var(--color-bg)] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Header */}

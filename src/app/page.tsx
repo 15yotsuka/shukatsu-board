@@ -13,6 +13,7 @@ import type { Company, Tag, ActionType } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import type { FilterKind } from '@/components/calendar/FilterChips';
+import { StageLegend } from '@/components/common/StageLegend';
 
 interface TodoItem {
   id: string;
@@ -230,16 +231,8 @@ export default function Home() {
   return (
     <div className="pb-28 px-4 pt-4">
 
-      {/* 色凡例 — チュートリアル前のみ表示 */}
-      {!tutorialFlags.home && (
-        <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
-        </div>
-      )}
+      {/* 色凡例 — 常時表示 */}
+      <StageLegend />
 
       {/* フィルター chips + 並べ替え */}
       <div className="mb-4">

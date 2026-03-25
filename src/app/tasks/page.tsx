@@ -16,6 +16,7 @@ import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, scheduleStageToAction, TAG_CONFIG, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { getStageColor } from '@/lib/stageColors';
+import { StageLegend } from '@/components/common/StageLegend';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -325,15 +326,10 @@ function TaskCard({
           </div>
         )}
 
-        {/* Row 3: deadline + interview (conditional) */}
+        {/* Row 3: next action — upcomingInterview優先、なければnextStepLabel */}
         {(nextStepLabel || upcomingInterview) && (
           <div className="flex items-center gap-3 flex-wrap text-[12px]">
-            {nextStepLabel && (
-              <span className={`flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-zinc-400'}`}>
-                {nextStepLabel}
-              </span>
-            )}
-            {displaySettings.showNextInterview && upcomingInterview && (() => {
+            {displaySettings.showNextInterview && upcomingInterview ? (() => {
               const dt = new Date(upcomingInterview.datetime);
               const dateStr = format(dt, 'M/d(E)', { locale: ja });
               const startTime = format(dt, 'HH:mm');
@@ -343,7 +339,11 @@ function TaskCard({
                   {dateStr} {startTime}{endStr} {upcomingInterview.type}
                 </span>
               );
-            })()}
+            })() : nextStepLabel ? (
+              <span className={`flex items-center gap-1 ${hasDeadlineNow ? 'text-[var(--color-danger)]' : 'text-zinc-400'}`}>
+                {nextStepLabel}
+              </span>
+            ) : null}
           </div>
         )}
 
@@ -566,17 +566,8 @@ function TasksContent() {
 
   return (
     <div className="pb-24 px-4 pt-4">
-      {/* 色凡例 — チュートリアル前のみ表示 */}
-      {!tutorialFlags.companies && (
-        <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#9CA3AF'}} />エントリー前</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#22C55E'}} />内定</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#6B7280'}} />見送り</span>
-        </div>
-      )}
+      {/* 色凡例 — 常時表示 */}
+      <StageLegend />
 
       {/* Header row with bulk action buttons */}
       <div className="flex items-center justify-between mb-3">
