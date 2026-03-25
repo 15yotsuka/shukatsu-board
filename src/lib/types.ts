@@ -5,6 +5,7 @@ export interface StatusColumn {
   id: string;
   name: string;
   order: number;
+  color: string;
 }
 
 // ============================

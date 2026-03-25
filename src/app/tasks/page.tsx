@@ -15,7 +15,6 @@ import { createSampleCompanies, SAMPLE_SCHEDULED_ACTIONS } from '@/lib/sampleDat
 import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, scheduleStageToAction, TAG_CONFIG, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
-import { getStageColor } from '@/lib/stageColors';
 import { useTasksUI } from '@/store/useTasksUI';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
@@ -83,6 +82,7 @@ const getNextStepLabel = (company: Company): string | null => {
 interface TaskCardProps {
   company: Company;
   statusName: string;
+  stageColor: string;
   isDraggable: boolean;
   hasDeadlineNow: boolean;
   milestones: string[];
@@ -102,6 +102,7 @@ interface TaskCardProps {
 function TaskCard({
   company,
   statusName,
+  stageColor,
   isDraggable,
   hasDeadlineNow,
   milestones,
@@ -270,7 +271,7 @@ function TaskCard({
         onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (!isSelectMode) onToggleAwaitingResult(); }}
         className="absolute left-0 top-0 bottom-0 w-6 rounded-l-2xl transition-opacity"
         style={{
-          backgroundColor: getStageColor(statusName),
+          backgroundColor: stageColor,
           opacity: company.awaitingResult ? 0.4 : 1,
           WebkitTapHighlightColor: 'transparent',
           touchAction: 'manipulation',
@@ -428,6 +429,9 @@ function TasksContent() {
 
   const getStatusName = (statusId: string) =>
     statusColumns.find((s) => s.id === statusId)?.name ?? '';
+
+  const getStatusColor = (statusId: string) =>
+    statusColumns.find((s) => s.id === statusId)?.color ?? '#9CA3AF';
 
   const trackStatuses = useMemo(() => [...statusColumns].sort((a, b) => a.order - b.order), [statusColumns]);
 
@@ -663,6 +667,7 @@ function TasksContent() {
                       key={c.id}
                       company={c}
                       statusName={statusName}
+                      stageColor={getStatusColor(c.statusId)}
                       isDraggable={sortField === 'manual'}
                       hasDeadlineNow={hasDeadlineNow}
                       milestones={ms}
@@ -942,7 +947,7 @@ function TasksContent() {
                     >
                       <span
                         className="w-3 h-3 rounded-full flex-none"
-                        style={{ backgroundColor: getStageColor(col.name) }}
+                        style={{ backgroundColor: col.color }}
                       />
                       {col.name}
                       {col.id === quickEditCompany.statusId && (

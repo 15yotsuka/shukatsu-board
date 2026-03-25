@@ -10,6 +10,7 @@ import type {
   Tag,
 } from '@/lib/types';
 import { createAllDefaultStatuses } from '@/lib/defaults';
+import { STAGE_COLORS } from '@/lib/stageColors';
 import type { GradYear } from '@/lib/gradYears';
 
 export interface DisplaySettings {
@@ -19,7 +20,6 @@ export interface DisplaySettings {
   showUpdatedDate: boolean;
   showDeadlineBadge: boolean;
   showProgressBar: boolean;
-  calendarDotColor: string;
 }
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
@@ -29,7 +29,6 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   showUpdatedDate: false,
   showDeadlineBadge: true,
   showProgressBar: false,
-  calendarDotColor: '#3B82F6',
 };
 
 export interface NotificationSettings {
@@ -103,6 +102,9 @@ interface AppActions {
   updateScheduledAction: (id: string, updates: Partial<ScheduledAction>) => void;
   deleteScheduledAction: (id: string) => void;
 
+  // Status color
+  updateStatusColor: (id: string, color: string) => void;
+
   // Display settings
   updateDisplaySetting: <K extends keyof DisplaySettings>(key: K, value: DisplaySettings[K]) => void;
 
@@ -131,7 +133,7 @@ type AppStore = AppState & {
   tutorialFlags: TutorialFlags;
 } & AppActions;
 
-const CURRENT_SCHEMA_VERSION = 15;
+const CURRENT_SCHEMA_VERSION = 16;
 
 export function normalizeCompanyName(name: string): string {
   return name
@@ -261,8 +263,17 @@ export const useAppStore = create<AppStore>()(
           id: nanoid(),
           name,
           order: state.statusColumns.length,
+          color: STAGE_COLORS[name] ?? '#9CA3AF',
         };
         set({ statusColumns: [...state.statusColumns, newStatus] });
+      },
+
+      updateStatusColor: (id, color) => {
+        set((state) => ({
+          statusColumns: state.statusColumns.map((s) =>
+            s.id === id ? { ...s, color } : s
+          ),
+        }));
       },
 
       updateStatus: (id, name) => {
@@ -572,8 +583,13 @@ export const useAppStore = create<AppStore>()(
           ...DEFAULT_DISPLAY_SETTINGS,
           ...existingDisplay,
           showProgressBar: existingDisplay.showProgressBar ?? true,
-          calendarDotColor: existingDisplay.calendarDotColor ?? '#3B82F6',
         };
+
+        // v15→v16: add color field to statusColumns
+        statusColumns = statusColumns.map((col: StatusColumn) => ({
+          ...col,
+          color: (col as StatusColumn & { color?: string }).color ?? STAGE_COLORS[col.name] ?? '#9CA3AF',
+        }));
 
         // v11→v12: migrate 'final' ActionType → 'interview' with subType='最終面接'
         const migratedScheduledActions = (state.scheduledActions ?? []).map(

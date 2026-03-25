@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   format,
   startOfMonth,
@@ -17,7 +17,6 @@ import {
 import { ja } from 'date-fns/locale';
 import { useAppStore } from '@/store/useAppStore';
 import type { Interview, ScheduledAction } from '@/lib/types';
-import { ACTION_TYPE_COLORS } from '@/lib/types';
 import { useDeadlines } from '@/contexts/DeadlineContext';
 import { type FilterKind, ALL_FILTERS } from '@/components/calendar/FilterChips';
 
@@ -37,7 +36,22 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
   const interviews = useAppStore((s) => s.interviews);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
   const companies = useAppStore((s) => s.companies);
+  const statusColumns = useAppStore((s) => s.statusColumns);
   const { deadlines } = useDeadlines();
+
+  // action type → 段階色のマッピング（statusColumnsから動的に取得）
+  const actionTypeColor = useMemo(() => {
+    const esCol = statusColumns.find((c) => c.name === 'ES');
+    const webCol = statusColumns.find((c) => c.name === 'Webテスト');
+    const interviewCol = statusColumns.find((c) => c.name.includes('面接'));
+    return {
+      es: esCol?.color ?? '#8B5CF6',
+      webtest: webCol?.color ?? '#3B82F6',
+      interview: interviewCol?.color ?? '#F97316',
+      gd: interviewCol?.color ?? '#F97316',
+      other: '#8E8E93',
+    } as Record<string, string>;
+  }, [statusColumns]);
 
   const filters = activeFilters ?? new Set(ALL_FILTERS);
   const inCompanyFilter = (companyId: string) => !activeCompanyIds || activeCompanyIds.has(companyId);
@@ -132,10 +146,10 @@ export function MonthCalendar({ onDateSelect, selectedDate, activeFilters, activ
               (!activeCompanyIds && deadlines.some((dd) => dd.deadline === dateStr)));
           if (hasDeadline) dots.push(DEADLINE_DOT_COLOR);
 
-          if (filters.has('interview') && dateInterviews.length > 0) dots.push('#F97316');
+          if (filters.has('interview') && dateInterviews.length > 0) dots.push(actionTypeColor.interview);
 
           const filteredActions = dateActions.filter((a) => filters.has(toFilterKind(a.type)));
-          if (filteredActions.length > 0) dots.push(ACTION_TYPE_COLORS[filteredActions[0].type]);
+          if (filteredActions.length > 0) dots.push(actionTypeColor[filteredActions[0].type] ?? '#8E8E93');
 
           const finalDots = dots.slice(0, 3);
 

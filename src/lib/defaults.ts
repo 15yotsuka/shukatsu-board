@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import type { StatusColumn } from './types';
+import { STAGE_COLORS } from './stageColors';
 
 export const DEFAULT_STATUS_NAMES = [
   'エントリー前',
@@ -26,5 +27,6 @@ export function createAllDefaultStatuses(): StatusColumn[] {
     id: nanoid(),
     name,
     order: index,
+    color: STAGE_COLORS[name] ?? '#9CA3AF',
   }));
 }

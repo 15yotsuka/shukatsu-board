@@ -103,11 +103,14 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
 // ─── 選考段階管理タブ ───────────────────────────────────────────
 
+const COLOR_SWATCHES = ['#8B5CF6','#3B82F6','#F97316','#22C55E','#EF4444','#EC4899','#F59E0B','#9CA3AF'];
+
 function StatusTab({ onClose }: { onClose: () => void }) {
   const statusColumns = useAppStore((s) => s.statusColumns);
   const companies = useAppStore((s) => s.companies);
   const addStatus = useAppStore((s) => s.addStatus);
   const updateStatus = useAppStore((s) => s.updateStatus);
+  const updateStatusColor = useAppStore((s) => s.updateStatusColor);
   const deleteStatus = useAppStore((s) => s.deleteStatus);
   const reorderStatuses = useAppStore((s) => s.reorderStatuses);
 
@@ -165,6 +168,7 @@ function StatusTab({ onClose }: { onClose: () => void }) {
                 status={status}
                 companyCount={companies.filter((c) => c.statusId === status.id).length}
                 onUpdate={updateStatus}
+                onUpdateColor={updateStatusColor}
                 onDelete={handleDelete}
               />
             ))}
@@ -201,12 +205,14 @@ interface SortableStatusItemProps {
   status: StatusColumn;
   companyCount: number;
   onUpdate: (id: string, name: string) => void;
+  onUpdateColor: (id: string, color: string) => void;
   onDelete: (id: string) => void;
 }
 
-function SortableStatusItem({ status, companyCount, onUpdate, onDelete }: SortableStatusItemProps) {
+function SortableStatusItem({ status, companyCount, onUpdate, onUpdateColor, onDelete }: SortableStatusItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(status.name);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: status.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -221,36 +227,62 @@ function SortableStatusItem({ status, companyCount, onUpdate, onDelete }: Sortab
     <div
       ref={setNodeRef}
       style={style}
-      className={`px-4 py-3 flex items-center gap-3 min-h-[44px] ${isDragging ? 'opacity-50 bg-[var(--color-bg)]' : ''}`}
+      className={`${isDragging ? 'opacity-50 bg-[var(--color-bg)]' : ''}`}
     >
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-manipulation p-1 text-[var(--color-border)]">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
-        </svg>
-      </div>
-      {isEditing ? (
-        <input
-          type="text"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className="flex-1 ios-input !py-1 !px-2 !text-[15px]"
-          autoFocus
+      <div className="px-4 py-3 flex items-center gap-3 min-h-[44px]">
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-manipulation p-1 text-[var(--color-border)]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+          </svg>
+        </div>
+        {/* 色ドット */}
+        <button
+          onClick={() => setShowColorPicker(!showColorPicker)}
+          className="w-5 h-5 rounded-full flex-none ios-tap"
+          style={{ backgroundColor: status.color }}
         />
-      ) : (
-        <button onClick={() => setIsEditing(true)} className="flex-1 text-left text-[15px] text-[var(--color-text)] min-h-[44px] flex items-center ios-tap">
-          {status.name}
+        {isEditing ? (
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            className="flex-1 ios-input !py-1 !px-2 !text-[15px]"
+            autoFocus
+          />
+        ) : (
+          <button onClick={() => setIsEditing(true)} className="flex-1 text-left text-[15px] text-[var(--color-text)] min-h-[44px] flex items-center ios-tap">
+            {status.name}
+          </button>
+        )}
+        <span className="text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full px-2 py-0.5">
+          {companyCount}
+        </span>
+        <button onClick={() => onDelete(status.id)} className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
         </button>
+      </div>
+      {showColorPicker && (
+        <div className="px-4 pb-3 flex flex-wrap gap-2">
+          {COLOR_SWATCHES.map((color) => (
+            <button
+              key={color}
+              onClick={() => { onUpdateColor(status.id, color); setShowColorPicker(false); }}
+              className="w-7 h-7 rounded-full ios-tap flex items-center justify-center"
+              style={{ backgroundColor: color }}
+            >
+              {status.color === color && (
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
       )}
-      <span className="text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-full px-2 py-0.5">
-        {companyCount}
-      </span>
-      <button onClick={() => onDelete(status.id)} className="w-11 h-11 flex items-center justify-center text-[var(--color-danger)] ios-tap">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
     </div>
   );
 }
@@ -311,28 +343,6 @@ function DisplayTab() {
         ))}
       </div>
 
-      {/* カレンダードット色 */}
-      <div className="bg-card rounded-xl overflow-hidden">
-        <div className="px-4 py-2 border-b border-[var(--color-border)]">
-          <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">カレンダーのドット色</span>
-        </div>
-        <div className="px-4 py-3 flex flex-wrap gap-3">
-          {['#3B82F6','#8B5CF6','#F97316','#22C55E','#EF4444','#EC4899','#F59E0B','#06B6D4'].map((color) => (
-            <button
-              key={color}
-              onClick={() => updateDisplaySetting('calendarDotColor', color)}
-              className="w-8 h-8 rounded-full ios-tap flex items-center justify-center"
-              style={{ backgroundColor: color }}
-            >
-              {displaySettings.calendarDotColor === color && (
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

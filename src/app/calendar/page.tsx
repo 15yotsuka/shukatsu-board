@@ -6,7 +6,6 @@ import { UpcomingList } from '@/components/calendar/UpcomingList';
 import { ALL_FILTERS, type FilterKind } from '@/components/calendar/FilterChips';
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
 import { useAppStore } from '@/store/useAppStore';
-import { useShallow } from 'zustand/shallow';
 import type { Interview, ScheduledAction } from '@/lib/types';
 import { ACTION_TYPE_LABELS, ACTION_TYPE_COLORS, SCHEDULE_STAGE_OPTIONS, scheduleStageToAction, getDateLabel, needsTimeInput, type ActionType } from '@/lib/types';
 import { TimeSelect } from '@/components/ui/TimeSelect';
@@ -32,8 +31,11 @@ export default function CalendarPage() {
   const tutorialFlags = useAppStore((s) => s.tutorialFlags);
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const gradYear = useAppStore((s) => s.gradYear);
-  const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
   const { deadlines } = useDeadlines();
+
+  const esColor = statusColumns.find((c) => c.name === 'ES')?.color ?? '#8B5CF6';
+  const webColor = statusColumns.find((c) => c.name === 'Webテスト')?.color ?? '#3B82F6';
+  const interviewColor = statusColumns.find((c) => c.name.includes('面接'))?.color ?? '#F97316';
 
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
 
@@ -136,9 +138,9 @@ export default function CalendarPage() {
     <div className="px-4 py-4 pb-28 space-y-4">
       {/* 色凡例 */}
       <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#8B5CF6'}} />ES</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#3B82F6'}} />Webテスト</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#F97316'}} />面接</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor: esColor}} />ES</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor: webColor}} />Webテスト</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor: interviewColor}} />面接</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#FF3B30'}} />締切</span>
       </div>
 
