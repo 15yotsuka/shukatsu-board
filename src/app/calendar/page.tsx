@@ -136,37 +136,35 @@ export default function CalendarPage() {
 
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
-      {/* 色凡例 */}
-      <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-gray-400 dark:text-gray-500">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor: esColor}} />ES</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor: webColor}} />Webテスト</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor: interviewColor}} />面接</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:'#FF3B30'}} />締切</span>
-      </div>
-
       {/* フィルター chips */}
       <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-1">
         {([
-          { value: 'all', label: 'すべて' },
-          { value: '選考中', label: '選考中' },
-          { value: 'ES', label: 'ES' },
-          { value: 'Webテスト', label: 'Webテスト' },
-          { value: '面接', label: '面接' },
-          { value: '締切', label: '締切' },
-          { value: 'その他', label: 'その他' },
-        ] as { value: string; label: string }[]).map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setFilterValue(value)}
-            className={`flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors ${
-              filterValue === value
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+          { value: 'all',    label: 'すべて',    color: null },
+          { value: '選考中', label: '選考中',    color: null },
+          { value: 'ES',     label: 'ES',        color: esColor },
+          { value: 'Webテスト', label: 'Webテスト', color: webColor },
+          { value: '面接',   label: '面接',      color: interviewColor },
+          { value: '締切',   label: '締切',      color: '#FF3B30' },
+          { value: 'その他', label: 'その他',    color: null },
+        ] as { value: string; label: string; color: string | null }[]).map(({ value, label, color }) => {
+          const isActive = filterValue === value;
+          return (
+            <button
+              key={value}
+              onClick={() => setFilterValue(value)}
+              className="flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors"
+              style={
+                isActive
+                  ? { backgroundColor: color ?? 'var(--color-primary)', color: 'white' }
+                  : color
+                  ? { backgroundColor: `${color}20`, color: color }
+                  : { backgroundColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
       <MonthCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} activeFilters={activeFilters} activeCompanyIds={activeCompanyIds} />
 
