@@ -232,27 +232,38 @@ export default function Home() {
 
 
       {/* フィルター chips + 並べ替え */}
+      {(() => {
+        const esColor = statusColumns.find((c) => c.name === 'ES')?.color ?? '#8B5CF6';
+        const webColor = statusColumns.find((c) => c.name === 'Webテスト')?.color ?? '#3B82F6';
+        const interviewColor = statusColumns.find((c) => c.name.includes('面接'))?.color ?? '#F97316';
+        return (
       <div className="flex items-center gap-2 mb-4">
         <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
           {([
-            { value: 'all', label: 'すべて' },
-            { value: 'ES', label: 'ES提出' },
-            { value: 'Webテスト', label: 'Webテスト' },
-            { value: '面接', label: '面接' },
-            { value: 'その他', label: 'その他' },
-          ] as { value: string; label: string }[]).map(({ value, label }) => (
+            { value: 'all',      label: 'すべて',    color: null },
+            { value: 'ES',       label: 'ES提出',    color: esColor },
+            { value: 'Webテスト', label: 'Webテスト', color: webColor },
+            { value: '面接',     label: '面接',      color: interviewColor },
+            { value: 'その他',   label: 'その他',    color: null },
+          ] as { value: string; label: string; color: string | null }[]).map(({ value, label, color }) => {
+            const isActive = filterValue === value;
+            return (
             <button
               key={value}
               onClick={() => setFilterValue(value)}
-              className={`flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors ${
-                filterValue === value
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-              }`}
+              className="flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors"
+              style={
+                isActive
+                  ? { backgroundColor: color ?? 'var(--color-primary)', color: 'white' }
+                  : color
+                  ? { backgroundColor: `${color}20`, color }
+                  : { backgroundColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }
+              }
             >
               {label}
             </button>
-          ))}
+            );
+          })}
         </div>
         <button
           onClick={() => setShowSortSheet(true)}
@@ -264,6 +275,8 @@ export default function Home() {
           {sortKind === 'asc' ? '近い順' : sortKind === 'desc' ? '遠い順' : '企業名順'}
         </button>
       </div>
+        );
+      })()}
 
       {filteredSortedItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">

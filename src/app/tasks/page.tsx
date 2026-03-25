@@ -598,19 +598,39 @@ function TasksContent() {
       <div className="mb-3">
         <div className="flex items-center gap-2">
           <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
-            {FILTER_OPTIONS.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => router.push(value ? `/tasks?filter=${encodeURIComponent(value)}` : '/tasks')}
-                className={`flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors ${
-                  filter === value
-                    ? 'bg-[var(--color-primary)] text-white'
-                    : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {(() => {
+              const esColor = statusColumns.find((c) => c.name === 'ES')?.color ?? '#8B5CF6';
+              const webColor = statusColumns.find((c) => c.name === 'Webテスト')?.color ?? '#3B82F6';
+              const interviewColor = statusColumns.find((c) => c.name.includes('面接'))?.color ?? '#F97316';
+              const offerColor = statusColumns.find((c) => c.name === '内定')?.color ?? '#22C55E';
+              const rejectedColor = statusColumns.find((c) => c.name === '見送り')?.color ?? '#6B7280';
+              const entryColor = statusColumns.find((c) => c.name === 'エントリー前')?.color ?? '#9CA3AF';
+              const colorMap: Record<string, string | null> = {
+                '': null, active: null, awaiting: null,
+                entry_before: entryColor, entry: esColor,
+                interview: interviewColor, offer: offerColor, rejected: rejectedColor,
+              };
+              return FILTER_OPTIONS.map(({ value, label }) => {
+                const color = colorMap[value] ?? null;
+                const isActive = filter === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => router.push(value ? `/tasks?filter=${encodeURIComponent(value)}` : '/tasks')}
+                    className="flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors"
+                    style={
+                      isActive
+                        ? { backgroundColor: color ?? 'var(--color-primary)', color: 'white' }
+                        : color
+                        ? { backgroundColor: `${color}20`, color }
+                        : { backgroundColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }
+                    }
+                  >
+                    {label}
+                  </button>
+                );
+              });
+            })()}
           </div>
           <button
             onClick={() => setShowSortSheet(true)}

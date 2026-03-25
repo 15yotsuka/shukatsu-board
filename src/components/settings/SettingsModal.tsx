@@ -46,7 +46,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center modal-safe" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-[var(--color-bg)] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="relative bg-[var(--color-bg)] rounded-2xl w-full max-w-lg h-[85vh] flex flex-col animate-slide-up" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Grab bar (mobile) */}
         <div className="flex justify-center pt-2 pb-0 md:hidden">
           <div className="w-9 h-1 bg-[var(--color-border)] rounded-full" />
