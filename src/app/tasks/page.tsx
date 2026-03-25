@@ -16,7 +16,6 @@ import type { Company, Interview } from '@/lib/types';
 import { ACTION_TYPE_LABELS, scheduleStageToAction, TAG_CONFIG, type Tag } from '@/lib/types';
 import { getMilestones, getMilestoneIndex } from '@/lib/progressMilestones';
 import { getStageColor } from '@/lib/stageColors';
-import { StageLegend } from '@/components/common/StageLegend';
 import { useTasksUI } from '@/store/useTasksUI';
 import { useToast } from '@/lib/useToast';
 import { format, parseISO, isValid } from 'date-fns';
@@ -589,8 +588,6 @@ function TasksContent() {
 
   return (
     <div className="pb-24 px-4 pt-4">
-      {/* 色凡例 — 常時表示 */}
-      <StageLegend />
 
 
       {/* Filter chips + sort button */}

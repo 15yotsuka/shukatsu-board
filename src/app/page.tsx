@@ -13,7 +13,6 @@ import type { Company, Tag, ActionType } from '@/lib/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import type { FilterKind } from '@/components/calendar/FilterChips';
-import { StageLegend } from '@/components/common/StageLegend';
 
 interface TodoItem {
   id: string;
@@ -231,8 +230,6 @@ export default function Home() {
   return (
     <div className="pb-28 px-4 pt-4">
 
-      {/* 色凡例 — 常時表示 */}
-      <StageLegend />
 
       {/* フィルター chips + 並べ替え */}
       <div className="mb-4">
