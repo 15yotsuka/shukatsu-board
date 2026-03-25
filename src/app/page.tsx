@@ -304,26 +304,34 @@ export default function Home() {
       )}
 
       {/* Stat chips — inline at bottom */}
-      <div className="flex justify-center gap-2 pt-6 pb-2">
-        <button
-          onClick={() => router.push('/tasks?filter=active')}
-          className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
-        >
-          進行中 {activeCount}社
-        </button>
-        <button
-          onClick={() => router.push('/tasks?filter=offer')}
-          className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm ios-tap active:scale-95 transition-transform"
-        >
-          内定 {offerCount}社
-        </button>
-        <button
-          onClick={() => router.push('/tasks?filter=rejected')}
-          className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
-        >
-          見送り {sayonaraCount}社
-        </button>
-      </div>
+      {(activeCount > 0 || offerCount > 0 || sayonaraCount > 0) && (
+        <div className="flex justify-center gap-2 pt-6 pb-2">
+          {activeCount > 0 && (
+            <button
+              onClick={() => router.push('/tasks?filter=active')}
+              className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
+            >
+              進行中 {activeCount}社
+            </button>
+          )}
+          {offerCount > 0 && (
+            <button
+              onClick={() => router.push('/tasks?filter=offer')}
+              className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-amber-500 shadow-sm ios-tap active:scale-95 transition-transform"
+            >
+              内定 {offerCount}社
+            </button>
+          )}
+          {sayonaraCount > 0 && (
+            <button
+              onClick={() => router.push('/tasks?filter=rejected')}
+              className="bg-card border border-[var(--color-border)] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-secondary)] shadow-sm ios-tap active:scale-95 transition-transform"
+            >
+              見送り {sayonaraCount}社
+            </button>
+          )}
+        </div>
+      )}
 
       <AnimatePresence>
         {selectedCompany && (

@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 text-gray-800">
       <h1 className="text-2xl font-bold mb-2">プライバシーポリシー</h1>
-      <p className="text-sm text-gray-500 mb-8">最終更新: 2026年3月20日</p>
+      <p className="text-sm text-gray-500 mb-8">最終更新: 2026年3月24日</p>
 
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3">1. 収集する情報</h2>
@@ -31,6 +31,8 @@ export default function PrivacyPage() {
           入力されたすべてのデータはお使いのデバイス（端末）のローカルストレージにのみ保存されます。
           クラウドへのアップロードやバックアップは行われません。
           アプリを削除した場合、すべてのデータは完全に削除されます。
+          また、設定画面の「全企業を削除」機能から、いつでも全データをデバイスから削除できます。
+          なお、ユーザーが任意で入力した企業のマイページURL・ログインID・パスワードはデバイス内にのみ保存され、外部に送信されることはありません。
         </p>
       </section>
 
@@ -42,9 +44,16 @@ export default function PrivacyPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-3">5. お問い合わせ</h2>
+        <h2 className="text-lg font-semibold mb-3">5. ポリシーの変更</h2>
         <p className="text-sm leading-relaxed text-gray-700">
-          プライバシーポリシーに関するご質問は、App Store のサポートページよりお問い合わせください。
+          本プライバシーポリシーは、必要に応じて変更することがあります。変更した場合は、アプリの更新時またはこのページにてお知らせします。
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold mb-3">6. お問い合わせ</h2>
+        <p className="text-sm leading-relaxed text-gray-700">
+          プライバシーポリシーに関するご質問は、App Store のサポートページ、またはメール（15yotsuka@gmail.com）よりお問い合わせください。
         </p>
       </section>
 

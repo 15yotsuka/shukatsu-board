@@ -584,7 +584,7 @@ function DataTab({ onClose }: { onClose: () => void }) {
 
       <div className="text-center">
         <a
-          href="/privacy-policy.html"
+          href="/privacy"
           target="_blank"
           rel="noopener noreferrer"
           className="text-[13px] text-[var(--color-text-secondary)] underline"
