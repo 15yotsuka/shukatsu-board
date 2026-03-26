@@ -556,7 +556,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
               </div>
               <div className="flex-shrink-0 px-4 pt-3 border-t border-[var(--color-border)] space-y-2" style={{ paddingBottom: '1.5rem' }}>
                 <div className="flex gap-2">
-                  <button onClick={() => { setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
+                  <button onClick={() => {
+                    const currentStageName = trackStatuses[currentStatusIndex]?.name ?? '';
+                    const { type: skipType, subType: skipSubType } = scheduleStageToAction(currentStageName);
+                    allScheduledActions
+                      .filter((a) => a.companyId === company.id && a.type === skipType && a.subType === skipSubType)
+                      .forEach((a) => deleteScheduledAction(a.id));
+                    setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
                     スキップ
                   </button>
                   <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">

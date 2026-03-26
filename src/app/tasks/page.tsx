@@ -401,7 +401,8 @@ function TasksContent() {
   const gradYear = useAppStore((s) => s.gradYear);
   const [showAddForm, setShowAddForm] = useState(false);
   const { isSelectMode, selectedIds, toggleSelect, exitSelectMode, showBulkAdd, closeBulkAdd } = useTasksUI();
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const selectedCompany = companies.find((c) => c.id === selectedCompanyId) ?? null;
   const [promoteToMainTarget, setPromoteToMainTarget] = useState<Company | null>(null);
   const [nextStageTarget, setNextStageTarget] = useState<{ company: Company; nextName: string; nextColumnId: string } | null>(null);
   const [nextStageDate, setNextStageDate] = useState('');
@@ -485,7 +486,12 @@ function TasksContent() {
   const advanceToNextStage = (withDate: boolean) => {
     if (!nextStageTarget) return;
     const { company, nextName, nextColumnId } = nextStageTarget;
-    if (company.awaitingResult) toggleAwaitingResult(company.id);
+    if (company.awaitingResult) {
+      updateCompany(company.id, {
+        awaitingResult: false,
+        tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+      });
+    }
     // 現在の選考段階のScheduledActionを削除
     const currentStatus = statusColumns.find((s) => s.id === company.statusId);
     if (currentStatus) {
@@ -706,7 +712,7 @@ function TasksContent() {
                       milestoneIdx={msIdx}
                       interviews={interviews}
                       displaySettings={displaySettings}
-                      onOpenDetail={() => setSelectedCompany(c)}
+                      onOpenDetail={() => setSelectedCompanyId(c.id)}
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
                       onToggleAwaitingResult={() => {
                         const willBeAwaiting = !c.awaitingResult;
@@ -725,7 +731,13 @@ function TasksContent() {
                       onSwipeLeft={() => {
                         const misuCol = statusColumns.find((s) => s.name === '見送り');
                         if (misuCol) {
-                          updateCompany(c.id, { statusId: misuCol.id });
+                          updateCompany(c.id, {
+                            statusId: misuCol.id,
+                            ...(c.awaitingResult ? {
+                              awaitingResult: false,
+                              tags: (c.tags ?? []).filter((t) => t !== '結果待ち'),
+                            } : {}),
+                          });
                           showToast(`『${c.name}』を見送りに移動しました`);
                         }
                       }}
@@ -750,7 +762,7 @@ function TasksContent() {
                   return (
                     <div
                       key={c.id}
-                      onClick={() => setSelectedCompany(c)}
+                      onClick={() => setSelectedCompanyId(c.id)}
                       className="bg-card dark:bg-zinc-900 rounded-2xl px-5 py-3 shadow-sm border border-[var(--color-border)] flex items-center gap-3 cursor-pointer"
                     >
                       <div className="flex-1 min-w-0">
@@ -1043,6 +1055,13 @@ function TasksContent() {
                       onClick={() => {
                         const col = trackStatuses.find((c) => c.id === quickEditColId);
                         if (!col) return;
+                        const prevStatus = statusColumns.find((s) => s.id === quickEditCompany.statusId);
+                        if (prevStatus) {
+                          const { type: prevType, subType: prevSubType } = scheduleStageToAction(prevStatus.name);
+                          scheduledActions
+                            .filter((a) => a.companyId === quickEditCompany.id && a.type === prevType && a.subType === prevSubType)
+                            .forEach((a) => deleteScheduledAction(a.id));
+                        }
                         updateCompany(quickEditCompany.id, { statusId: quickEditColId });
                         if (quickEditDate) {
                           const { type, subType } = scheduleStageToAction(col.name);
@@ -1080,14 +1099,14 @@ function TasksContent() {
                 <div className="bg-card rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl text-center">
                   <p className="text-[17px] font-bold text-[var(--color-text)] mb-2">表示エラー</p>
                   <p className="text-[14px] text-[var(--color-text-secondary)] mb-4">企業データの読み込みに失敗しました。</p>
-                  <button onClick={() => setSelectedCompany(null)} className="ios-button-primary">閉じる</button>
+                  <button onClick={() => setSelectedCompanyId(null)} className="ios-button-primary">閉じる</button>
                 </div>
               </div>
             }
           >
             <CompanyDetailModal
               company={selectedCompany}
-              onClose={() => setSelectedCompany(null)}
+              onClose={() => setSelectedCompanyId(null)}
             />
           </ErrorBoundary>
         )}

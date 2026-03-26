@@ -317,6 +317,7 @@ function DisplayTab() {
             onChange={(e) => { if (e.target.value !== '') setGradYear(Number(e.target.value) as GradYear); }}
             className="ios-input w-full"
           >
+            <option value="">卒業年を選択</option>
             {GRAD_YEARS.map((year) => (
               <option key={year} value={year}>
                 {GRAD_YEAR_LABELS[year as GradYear]}
