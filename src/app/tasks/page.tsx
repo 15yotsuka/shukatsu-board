@@ -392,7 +392,6 @@ function TasksContent() {
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const scheduledActions = useAppStore((s) => s.scheduledActions);
-  const toggleAwaitingResult = useAppStore((s) => s.toggleAwaitingResult);
   const reorderCompanies = useAppStore((s) => s.reorderCompanies);
   const deleteAllCompanies = useAppStore((s) => s.deleteAllCompanies);
   const displaySettings = useAppStore(useShallow((s) => s.displaySettings));
@@ -716,9 +715,11 @@ function TasksContent() {
                       onAdvance={(e) => handleAdvanceStatus(e, c)}
                       onToggleAwaitingResult={() => {
                         const willBeAwaiting = !c.awaitingResult;
-                        toggleAwaitingResult(c.id);
                         const base = (c.tags ?? []).filter((t) => t !== '結果待ち');
-                        updateCompany(c.id, { tags: willBeAwaiting ? [...base, '結果待ち'] : base });
+                        updateCompany(c.id, {
+                          awaitingResult: willBeAwaiting,
+                          tags: willBeAwaiting ? [...base, '結果待ち'] : base,
+                        });
                       }}
                       onLongPress={() => {
                         setQuickEditCompany(c);
@@ -1043,6 +1044,7 @@ function TasksContent() {
                           nextActionType: undefined,
                           nextActionTime: undefined,
                           nextDeadline: undefined,
+                          ...(quickEditCompany.awaitingResult ? { awaitingResult: false, tags: (quickEditCompany.tags ?? []).filter((t) => t !== '結果待ち') } : {}),
                         });
                         showToast(`『${quickEditCompany.name}』を【${col.name}】に変更しました`);
                         setQuickEditCompany(null);
@@ -1062,7 +1064,10 @@ function TasksContent() {
                             .filter((a) => a.companyId === quickEditCompany.id && a.type === prevType && a.subType === prevSubType)
                             .forEach((a) => deleteScheduledAction(a.id));
                         }
-                        updateCompany(quickEditCompany.id, { statusId: quickEditColId });
+                        updateCompany(quickEditCompany.id, {
+                          statusId: quickEditColId,
+                          ...(quickEditCompany.awaitingResult ? { awaitingResult: false, tags: (quickEditCompany.tags ?? []).filter((t) => t !== '結果待ち') } : {}),
+                        });
                         if (quickEditDate) {
                           const { type, subType } = scheduleStageToAction(col.name);
                           addScheduledAction({

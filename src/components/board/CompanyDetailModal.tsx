@@ -145,6 +145,13 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
         fireConfetti();
       }
       showToast(`『${trimmed}』を【${newStatus.name}】に更新しました。`);
+      const currentStatus = statusColumns.find((s) => s.id === company.statusId);
+      if (currentStatus) {
+        const { type: currentType, subType: currentSubType } = scheduleStageToAction(currentStatus.name);
+        allScheduledActions
+          .filter((a) => a.companyId === company.id && a.type === currentType && a.subType === currentSubType)
+          .forEach((a) => deleteScheduledAction(a.id));
+      }
     }
 
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -562,7 +569,19 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     allScheduledActions
                       .filter((a) => a.companyId === company.id && a.type === skipType && a.subType === skipSubType)
                       .forEach((a) => deleteScheduledAction(a.id));
-                    setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
+                    setStatusId(pickedStatus.id);
+                    updateCompany(company.id, {
+                      statusId: pickedStatus.id,
+                      nextActionDate: undefined,
+                      nextActionType: undefined,
+                      nextActionTime: undefined,
+                      nextDeadline: undefined,
+                      ...(company.awaitingResult ? {
+                        awaitingResult: false,
+                        tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+                      } : {}),
+                    });
+                    setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
                     スキップ
                   </button>
                   <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">
