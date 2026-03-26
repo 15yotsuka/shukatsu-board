@@ -5,7 +5,7 @@ import { DEFAULT_STATUS_NAMES } from '@/lib/defaults';
 
 // デフォルトフローステージ（DEFAULT_STATUS_NamesからOKなもの）
 export const DEFAULT_FLOW_STAGES = DEFAULT_STATUS_NAMES.filter(
-  (s) => s !== '内定' && s !== '見送り' && s !== 'お見送り'
+  (s) => s !== '内定' && s !== '見送り'
 );
 
 // 追加候補として表示するプリセット（デフォルトに含まれないもの）

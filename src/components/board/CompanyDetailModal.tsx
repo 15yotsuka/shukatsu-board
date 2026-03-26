@@ -141,7 +141,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
 
     const newStatus = statusColumns.find((s) => s.id === statusId);
     if (statusId !== company.statusId && newStatus) {
-      if (newStatus.name === '内定' || newStatus.name === 'インターン参加') {
+      if (newStatus.name === '内定') {
         fireConfetti();
       }
       showToast(`『${trimmed}』を【${newStatus.name}】に更新しました。`);

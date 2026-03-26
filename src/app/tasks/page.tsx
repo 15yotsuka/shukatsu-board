@@ -585,6 +585,7 @@ function TasksContent() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (sortField !== 'manual') return;
+    if (activeFilters.size > 0 || selectedIndustry !== 'all') return;
     const { active: dragActive, over } = event;
     if (!over || dragActive.id === over.id) return;
     const activeIdx = active.findIndex((c) => c.id === String(dragActive.id));
