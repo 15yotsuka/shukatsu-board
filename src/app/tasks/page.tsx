@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { DisplaySettings } from '@/store/useAppStore';
@@ -43,7 +42,8 @@ type SortOrder = 'asc' | 'desc';
 const FILTER_GROUPS: Record<string, string[]> = {
   'active': ['ES', 'Webテスト', '1次面接', '2次面接', '3次面接', '最終面接'],
   'entry_before': ['エントリー前'],
-  'entry': ['ES', 'Webテスト'],
+  'es': ['ES'],
+  'webtest': ['Webテスト'],
   'interview': ['1次面接', '2次面接', '3次面接', '最終面接'],
   'offer': ['内定'],
   'rejected': ['見送り'],
@@ -54,7 +54,8 @@ const FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'active', label: '進行中' },
   { value: 'awaiting', label: '結果待ち' },
   { value: 'entry_before', label: 'エントリー前' },
-  { value: 'entry', label: 'ES/Webテスト' },
+  { value: 'es', label: 'ES' },
+  { value: 'webtest', label: 'Webテスト' },
   { value: 'interview', label: '面接中' },
   { value: 'offer', label: '内定' },
   { value: 'rejected', label: '見送り' },
@@ -416,9 +417,7 @@ function TasksContent() {
   const [quickEditStartTime, setQuickEditStartTime] = useState('');
   const [quickEditEndTime, setQuickEditEndTime] = useState('');
   const [showSortSheet, setShowSortSheet] = useState(false);
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const filter = searchParams.get('filter') ?? '';
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const showToast = useToast((s) => s.show);
 
   const sensors = useSensors(
@@ -490,9 +489,9 @@ function TasksContent() {
     // 現在の選考段階のScheduledActionを削除
     const currentStatus = statusColumns.find((s) => s.id === company.statusId);
     if (currentStatus) {
-      const { type: currentType } = scheduleStageToAction(currentStatus.name);
+      const { type: currentType, subType: currentSubType } = scheduleStageToAction(currentStatus.name);
       scheduledActions
-        .filter((a) => a.companyId === company.id && a.type === currentType)
+        .filter((a) => a.companyId === company.id && a.type === currentType && a.subType === currentSubType)
         .forEach((a) => deleteScheduledAction(a.id));
     }
     if (withDate && nextStageDate) {
@@ -562,19 +561,21 @@ function TasksContent() {
 
   const filtered = useMemo(() => {
     let list = sortedAll;
-    if (filter) {
+    if (activeFilters.size > 0) {
       list = list.filter((c) => {
-        if (filter === 'awaiting') return c.awaitingResult === true;
-        const name = getStatusName(c.statusId);
-        if (FILTER_GROUPS[filter]) return FILTER_GROUPS[filter].includes(name);
-        return name === filter || name.includes(filter);
+        return [...activeFilters].some((f) => {
+          if (f === 'awaiting') return c.awaitingResult === true;
+          const name = getStatusName(c.statusId);
+          if (FILTER_GROUPS[f]) return FILTER_GROUPS[f].includes(name);
+          return name === f || name.includes(f);
+        });
       });
     }
     if (selectedIndustry !== 'all') {
       list = list.filter((c) => (c.industry ?? '') === selectedIndustry);
     }
     return list;
-  }, [sortedAll, filter, selectedIndustry]);
+  }, [sortedAll, activeFilters, selectedIndustry]);
 
   const active = filtered.filter((c) => getStatusName(c.statusId) !== '見送り');
   const archived = filtered.filter((c) => getStatusName(c.statusId) === '見送り');
@@ -607,16 +608,27 @@ function TasksContent() {
               const entryColor = statusColumns.find((c) => c.name === 'エントリー前')?.color ?? '#9CA3AF';
               const colorMap: Record<string, string | null> = {
                 '': null, active: null, awaiting: null,
-                entry_before: entryColor, entry: esColor,
+                entry_before: entryColor, es: esColor, webtest: webColor,
                 interview: interviewColor, offer: offerColor, rejected: rejectedColor,
               };
               return FILTER_OPTIONS.map(({ value, label }) => {
                 const color = colorMap[value] ?? null;
-                const isActive = filter === value;
+                const isActive = value === '' ? activeFilters.size === 0 : activeFilters.has(value);
                 return (
                   <button
                     key={value}
-                    onClick={() => router.push(value ? `/tasks?filter=${encodeURIComponent(value)}` : '/tasks')}
+                    onClick={() => {
+                      if (value === '') {
+                        setActiveFilters(new Set());
+                      } else {
+                        setActiveFilters((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(value)) next.delete(value);
+                          else next.add(value);
+                          return next;
+                        });
+                      }
+                    }}
                     className="flex-none px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap ios-tap transition-colors"
                     style={
                       isActive
@@ -646,7 +658,7 @@ function TasksContent() {
         </div>
       </div>
 
-      {active.length === 0 && archived.length === 0 && !filter ? (
+      {active.length === 0 && archived.length === 0 && activeFilters.size === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -662,7 +674,7 @@ function TasksContent() {
             サンプルを追加
           </button>
         </div>
-      ) : active.length === 0 && archived.length === 0 && filter ? (
+      ) : active.length === 0 && archived.length === 0 && activeFilters.size > 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -1008,9 +1020,9 @@ function TasksContent() {
                         if (!col) return;
                         const prevStatus = statusColumns.find((s) => s.id === quickEditCompany.statusId);
                         if (prevStatus) {
-                          const { type: prevType } = scheduleStageToAction(prevStatus.name);
+                          const { type: prevType, subType: prevSubType } = scheduleStageToAction(prevStatus.name);
                           scheduledActions
-                            .filter((a) => a.companyId === quickEditCompany.id && a.type === prevType)
+                            .filter((a) => a.companyId === quickEditCompany.id && a.type === prevType && a.subType === prevSubType)
                             .forEach((a) => deleteScheduledAction(a.id));
                         }
                         updateCompany(quickEditCompany.id, {

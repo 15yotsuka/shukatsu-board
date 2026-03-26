@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, useDragControls } from 'framer-motion';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, normalizeCompanyName } from '@/store/useAppStore';
 import type { Company } from '@/lib/types';
 
 import { TutorialModal } from '@/components/onboarding/TutorialModal';
@@ -70,13 +70,16 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
   const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const gradYear = useAppStore((s) => s.gradYear);
   const allScheduledActions = useAppStore((s) => s.scheduledActions);
-  const scheduledActions = allScheduledActions.filter((a) => a.companyId === company.id);
+  const scheduledActions = useMemo(
+    () => allScheduledActions.filter((a) => a.companyId === company.id),
+    [allScheduledActions, company.id]
+  );
   const addScheduledAction = useAppStore((s) => s.addScheduledAction);
   const deleteScheduledAction = useAppStore((s) => s.deleteScheduledAction);
   const showToast = useToast((s) => s.show);
   const { deadlines: allCsvDeadlines } = useDeadlines();
   const csvDeadlines = useMemo(
-    () => allCsvDeadlines.filter((d) => d.company_name === company.name),
+    () => allCsvDeadlines.filter((d) => normalizeCompanyName(d.company_name) === normalizeCompanyName(company.name)),
     [allCsvDeadlines, company.name]
   );
 
@@ -604,6 +607,11 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                       tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
                     } : {}),
                   });
+                  const currentSkipStageName = trackStatuses[currentStatusIndex]?.name ?? '';
+                  const { type: skipType, subType: skipSubType } = scheduleStageToAction(currentSkipStageName);
+                  allScheduledActions
+                    .filter((a) => a.companyId === company.id && a.type === skipType && a.subType === skipSubType)
+                    .forEach((a) => deleteScheduledAction(a.id));
                   setShowNextStagePopup(false);
                 }}
                 className="flex-1 py-2.5 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap"
@@ -622,9 +630,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     } : {}),
                   });
                   const currentStageName = trackStatuses[currentStatusIndex]?.name ?? '';
-                  const { type: currentType } = scheduleStageToAction(currentStageName);
+                  const { type: currentType, subType: currentSubType } = scheduleStageToAction(currentStageName);
                   allScheduledActions
-                    .filter((a) => a.companyId === company.id && a.type === currentType)
+                    .filter((a) => a.companyId === company.id && a.type === currentType && a.subType === currentSubType)
                     .forEach((a) => deleteScheduledAction(a.id));
                   const { type, subType } = scheduleStageToAction(nextStatus.name);
                   addScheduledAction({

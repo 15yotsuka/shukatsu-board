@@ -20,7 +20,7 @@ export default function PrivacyPage() {
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3">2. 外部データの取得</h2>
         <p className="text-sm leading-relaxed text-gray-700">
-          本アプリは、企業の採用締切情報を表示するため、公開されている外部データソースにアクセスします。
+          本アプリは、企業の採用締切情報を表示するため、アプリに同梱されたデータファイルを読み込みます。
           このアクセスにはユーザーの個人情報は含まれません。
         </p>
       </section>

@@ -150,6 +150,15 @@ export default function DeadlineTab() {
       .map((key) => ({ title: key, items: grouped[key] }));
   }, [sorted, sortMode]);
 
+  if (gradYear === null) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500 dark:text-gray-400">
+        <p className="text-sm">卒業年を設定してください</p>
+        <p className="text-xs">設定タブ → 卒業年 から選択できます</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400">
@@ -177,23 +186,21 @@ export default function DeadlineTab() {
   return (
     <div className="px-4 py-4 pb-28 space-y-4">
       {/* 卒年切り替え */}
-      {gradYear !== null && (
-        <div className="flex gap-2">
-          {GRAD_YEARS.map((year) => (
-            <button
-              key={year}
-              onClick={() => setGradYear(year as GradYear)}
-              className={`flex-1 py-2 text-[14px] font-semibold rounded-xl transition-colors ios-tap ${
-                gradYear === year
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
-              }`}
-            >
-              {year}卒
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex gap-2">
+        {GRAD_YEARS.map((year) => (
+          <button
+            key={year}
+            onClick={() => setGradYear(year as GradYear)}
+            className={`flex-1 py-2 text-[14px] font-semibold rounded-xl transition-colors ios-tap ${
+              gradYear === year
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'bg-[var(--color-border)] text-[var(--color-text-secondary)]'
+            }`}
+          >
+            {year}卒
+          </button>
+        ))}
+      </div>
 
       {/* フィルター・ソートUI */}
       <div className="flex gap-2">

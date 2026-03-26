@@ -314,7 +314,7 @@ function DisplayTab() {
         <div className="px-4 py-3">
           <select
             value={gradYear ?? ''}
-            onChange={(e) => setGradYear(Number(e.target.value) as GradYear)}
+            onChange={(e) => { if (e.target.value !== '') setGradYear(Number(e.target.value) as GradYear); }}
             className="ios-input w-full"
           >
             {GRAD_YEARS.map((year) => (
@@ -357,7 +357,8 @@ function NotificationTab() {
   const handleEnableToggle = async (v: boolean) => {
     if (v) {
       const { requestNotificationPermission } = await import('@/lib/notifications');
-      await requestNotificationPermission();
+      const granted = await requestNotificationPermission();
+      if (!granted) return; // 許可拒否時はトグルを有効にしない
     }
     updateNotificationEnabled(v);
   };

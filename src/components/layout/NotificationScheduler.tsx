@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useShallow } from 'zustand/shallow';
-import { requestNotificationPermission, scheduleLocalNotifications } from '@/lib/notifications';
+import { scheduleLocalNotifications } from '@/lib/notifications';
 
 export function NotificationScheduler() {
   const companies = useAppStore((s) => s.companies);

@@ -21,12 +21,49 @@ export function useDeadlines() {
   return useContext(DeadlineContext);
 }
 
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let i = 0;
+  while (i < line.length) {
+    if (line[i] === '"') {
+      // quoted field
+      let field = '';
+      i++; // skip opening quote
+      while (i < line.length) {
+        if (line[i] === '"' && line[i + 1] === '"') {
+          field += '"';
+          i += 2;
+        } else if (line[i] === '"') {
+          i++; // skip closing quote
+          break;
+        } else {
+          field += line[i];
+          i++;
+        }
+      }
+      fields.push(field);
+      if (line[i] === ',') i++; // skip comma
+    } else {
+      // unquoted field
+      const end = line.indexOf(',', i);
+      if (end === -1) {
+        fields.push(line.slice(i));
+        break;
+      } else {
+        fields.push(line.slice(i, end));
+        i = end + 1;
+      }
+    }
+  }
+  return fields;
+}
+
 function parseCSV(text: string): DeadlineEntry[] {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
 
-  return lines.slice(1).map((line) => {
-    const cols = line.split(',');
+  return lines.slice(1).filter(line => line.trim() !== '').map((line) => {
+    const cols = parseCSVLine(line);
     return {
       company_name: (cols[0] || '').trim(),
       type: (cols[1] || '').trim(),

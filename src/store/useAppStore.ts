@@ -582,43 +582,53 @@ export const useAppStore = create<AppStore>()(
         const displaySettings = {
           ...DEFAULT_DISPLAY_SETTINGS,
           ...existingDisplay,
-          showProgressBar: existingDisplay.showProgressBar ?? true,
+          showProgressBar: version < 11 ? (existingDisplay.showProgressBar ?? true) : existingDisplay.showProgressBar,
         };
 
+        // v14→v15: (no data migration required — schema bump only)
+
         // v15→v16: add color field to statusColumns
-        statusColumns = statusColumns.map((col: StatusColumn) => ({
-          ...col,
-          color: (col as StatusColumn & { color?: string }).color ?? STAGE_COLORS[col.name] ?? '#9CA3AF',
-        }));
+        if (version < 16) {
+          statusColumns = statusColumns.map((col: StatusColumn) => ({
+            ...col,
+            color: (col as StatusColumn & { color?: string }).color ?? STAGE_COLORS[col.name] ?? '#9CA3AF',
+          }));
+        }
 
         // v11→v12: migrate 'final' ActionType → 'interview' with subType='最終面接'
-        const migratedScheduledActions = (state.scheduledActions ?? []).map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (a: any) => {
-            if (a.type === 'final') {
-              return { ...a, type: 'interview', subType: '最終面接' };
-            }
-            return a;
-          }
-        );
+        const migratedScheduledActions = version < 12
+          ? (state.scheduledActions ?? []).map(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (a: any) => {
+                if (a.type === 'final') {
+                  return { ...a, type: 'interview', subType: '最終面接' };
+                }
+                return a;
+              }
+            )
+          : (state.scheduledActions ?? []);
 
         // v12→v13: strip 株式会社/有限会社 from existing company names
-        const normalizedCompanies = companies.map((c: Company) => ({
-          ...c,
-          name: normalizeCompanyName(c.name),
-        }));
+        const normalizedCompanies = version < 13
+          ? companies.map((c: Company) => ({
+              ...c,
+              name: normalizeCompanyName(c.name),
+            }))
+          : companies;
 
         // v13→v14: rename ScheduledAction.time → startTime
-        const migratedScheduledActionsV14 = migratedScheduledActions.map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (a: any) => {
-            const { time, ...rest } = a;
-            return {
-              ...rest,
-              startTime: rest.startTime ?? time ?? undefined,
-            };
-          }
-        );
+        const migratedScheduledActionsV14 = version < 14
+          ? migratedScheduledActions.map(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (a: any) => {
+                const { time, ...rest } = a;
+                return {
+                  ...rest,
+                  startTime: rest.startTime ?? time ?? undefined,
+                };
+              }
+            )
+          : migratedScheduledActions;
 
         return {
           schemaVersion: CURRENT_SCHEMA_VERSION,

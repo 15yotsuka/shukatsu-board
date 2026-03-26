@@ -4,9 +4,10 @@ import { parseISO, isValid, isBefore, set, startOfDay, subDays } from 'date-fns'
 import type { Company, ScheduledAction } from './types';
 import type { NotificationSettings } from '@/store/useAppStore';
 
-export async function requestNotificationPermission(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
-  await LocalNotifications.requestPermissions();
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  const result = await LocalNotifications.requestPermissions();
+  return result.display === 'granted';
 }
 
 export async function scheduleLocalNotifications(
@@ -87,8 +88,14 @@ export async function scheduleLocalNotifications(
       if (offset.days === 0 && action.startTime) {
         const parts = action.startTime.split(':');
         if (parts.length === 2) {
-          hours = parseInt(parts[0], 10);
-          minutes = parseInt(parts[1], 10);
+          const parsedHours = parseInt(parts[0], 10);
+          const parsedMinutes = parseInt(parts[1], 10);
+          if (isNaN(parsedHours) || isNaN(parsedMinutes)) {
+            // 不正な時刻文字列はスキップ（朝9:00にフォールバック）
+          } else {
+            hours = parsedHours;
+            minutes = parsedMinutes;
+          }
         }
       }
 
