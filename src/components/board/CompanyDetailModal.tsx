@@ -179,6 +179,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       myPagePassword: myPagePassword.trim() || undefined,
       tags: tags.length > 0 ? tags : undefined,
       selectionFlow: isDefaultFlow ? undefined : flowStages,
+      awaitingResult: tags.includes('結果待ち'),
     });
     onClose();
   };
@@ -584,7 +585,7 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
                     スキップ
                   </button>
-                  <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id }); const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">
+                  <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id, ...(company.awaitingResult ? { awaitingResult: false, tags: (company.tags ?? []).filter((t) => t !== '結果待ち') } : {}) }); const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">
                     設定
                   </button>
                 </div>
@@ -627,6 +628,10 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   setStatusId(nextStatus.id);
                   updateCompany(company.id, {
                     statusId: nextStatus.id,
+                    nextActionDate: undefined,
+                    nextActionType: undefined,
+                    nextActionTime: undefined,
+                    nextDeadline: undefined,
                     ...(company.awaitingResult ? {
                       awaitingResult: false,
                       tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),

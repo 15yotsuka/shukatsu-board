@@ -115,9 +115,6 @@ interface AppActions {
   // Grad year
   setGradYear: (year: GradYear) => void;
 
-  // Awaiting result
-  toggleAwaitingResult: (companyId: string) => void;
-
   // Tutorial flags
   markTutorialSeen: (key: keyof TutorialFlags) => void;
   resetTutorials: () => void;
@@ -436,17 +433,6 @@ export const useAppStore = create<AppStore>()(
       // Grad year
       setGradYear: (year) => {
         set({ gradYear: year });
-      },
-
-      // Awaiting result
-      toggleAwaitingResult: (companyId) => {
-        set((state) => ({
-          companies: state.companies.map((c) =>
-            c.id === companyId
-              ? { ...c, awaitingResult: !c.awaitingResult, updatedAt: new Date().toISOString() }
-              : c
-          ),
-        }));
       },
 
       // Tutorial flags

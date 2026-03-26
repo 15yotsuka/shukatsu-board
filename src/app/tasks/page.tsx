@@ -485,12 +485,9 @@ function TasksContent() {
   const advanceToNextStage = (withDate: boolean) => {
     if (!nextStageTarget) return;
     const { company, nextName, nextColumnId } = nextStageTarget;
-    if (company.awaitingResult) {
-      updateCompany(company.id, {
-        awaitingResult: false,
-        tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
-      });
-    }
+    const awaitingClear = company.awaitingResult
+      ? { awaitingResult: false, tags: (company.tags ?? []).filter((t) => t !== '結果待ち') }
+      : {};
     // 現在の選考段階のScheduledActionを削除
     const currentStatus = statusColumns.find((s) => s.id === company.statusId);
     if (currentStatus) {
@@ -500,8 +497,8 @@ function TasksContent() {
         .forEach((a) => deleteScheduledAction(a.id));
     }
     if (withDate && nextStageDate) {
-      // 日時あり: statusIdのみ更新し、addScheduledActionがnextActionDateをセット
-      updateCompany(company.id, { statusId: nextColumnId });
+      // 日時あり: statusId + awaitingResultクリアを1回の呼び出しでまとめる
+      updateCompany(company.id, { statusId: nextColumnId, ...awaitingClear });
       const { type, subType } = scheduleStageToAction(nextName);
       addScheduledAction({
         companyId: company.id,
@@ -512,13 +509,14 @@ function TasksContent() {
         endTime: nextStageEndTime || undefined,
       });
     } else {
-      // スキップ: nextActionDate等を明示的にクリア（削除対象がなかった場合も含む）
+      // スキップ: nextActionDate等を明示的にクリアし、awaitingResultも同時にクリア
       updateCompany(company.id, {
         statusId: nextColumnId,
         nextActionDate: undefined,
         nextActionType: undefined,
         nextActionTime: undefined,
         nextDeadline: undefined,
+        ...awaitingClear,
       });
     }
     showToast(`『${company.name}』を【${nextName}】に更新しました。`);
