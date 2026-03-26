@@ -157,7 +157,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
     const statusChanged = statusId !== company.statusId;
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const futureActions = scheduledActions
+    const latestScheduledActions = useAppStore.getState().scheduledActions.filter((a) => a.companyId === company.id);
+    const futureActions = latestScheduledActions
       .filter((a) => a.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date));
     const autoDeadline = futureActions[0]?.date;

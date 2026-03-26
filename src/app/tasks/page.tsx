@@ -467,12 +467,12 @@ function TasksContent() {
     const milestones = getMilestones(company);
     const currentStatus = statusColumns.find((col) => col.id === company.statusId);
     if (currentStatus?.name === '内定' || currentStatus?.name === '見送り') return;
-    const lastMilestone = milestones[milestones.length - 1];
-    if (company.selectionType === 'intern' && currentStatus?.name === lastMilestone) {
+    const currentIdx = milestones.findIndex((m) => currentStatus?.name?.includes(m));
+    if (currentIdx === -1) return;
+    if (company.selectionType === 'intern' && currentIdx >= milestones.length - 1) {
       setPromoteToMainTarget(company);
       return;
     }
-    const currentIdx = milestones.findIndex((m) => m === currentStatus?.name);
     const nextMilestoneName = milestones[currentIdx + 1];
     if (!nextMilestoneName) return;
     const nextColumn = statusColumns.find((col) => col.name === nextMilestoneName);
