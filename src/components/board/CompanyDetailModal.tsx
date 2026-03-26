@@ -577,15 +577,16 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                       nextActionType: undefined,
                       nextActionTime: undefined,
                       nextDeadline: undefined,
-                      ...(company.awaitingResult ? {
+                      ...(tags.includes('結果待ち') ? {
                         awaitingResult: false,
-                        tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+                        tags: tags.filter((t) => t !== '結果待ち'),
                       } : {}),
                     });
+                    if (tags.includes('結果待ち')) { setTags(prev => prev.filter(t => t !== '結果待ち')); }
                     setShowStagePicker(false); setStagePickerSelectedId(null); }} className="flex-1 py-3 text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-border)] rounded-xl ios-tap">
                     スキップ
                   </button>
-                  <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id, ...(company.awaitingResult ? { awaitingResult: false, tags: (company.tags ?? []).filter((t) => t !== '結果待ち') } : {}) }); const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">
+                  <button onClick={() => { if (!stagePickerDate) return; setStatusId(pickedStatus.id); updateCompany(company.id, { statusId: pickedStatus.id, ...(tags.includes('結果待ち') ? { awaitingResult: false, tags: tags.filter((t) => t !== '結果待ち') } : {}) }); if (tags.includes('結果待ち')) { setTags(prev => prev.filter(t => t !== '結果待ち')); } const { type, subType } = scheduleStageToAction(pickedStatus.name); addScheduledAction({ companyId: company.id, type, subType, date: stagePickerDate, startTime: stagePickerStartTime || undefined, endTime: stagePickerEndTime || undefined }); setShowStagePicker(false); setStagePickerSelectedId(null); }} disabled={!stagePickerDate} className="flex-1 py-3 text-[14px] text-white bg-[var(--color-primary)] rounded-xl ios-tap disabled:opacity-40">
                     設定
                   </button>
                 </div>
@@ -632,11 +633,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                     nextActionType: undefined,
                     nextActionTime: undefined,
                     nextDeadline: undefined,
-                    ...(company.awaitingResult ? {
+                    ...(tags.includes('結果待ち') ? {
                       awaitingResult: false,
-                      tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+                      tags: tags.filter((t) => t !== '結果待ち'),
                     } : {}),
                   });
+                  if (tags.includes('結果待ち')) { setTags(prev => prev.filter(t => t !== '結果待ち')); }
                   const currentSkipStageName = trackStatuses[currentStatusIndex]?.name ?? '';
                   const { type: skipType, subType: skipSubType } = scheduleStageToAction(currentSkipStageName);
                   allScheduledActions
@@ -654,11 +656,12 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
                   setStatusId(nextStatus.id);
                   updateCompany(company.id, {
                     statusId: nextStatus.id,
-                    ...(company.awaitingResult ? {
+                    ...(tags.includes('結果待ち') ? {
                       awaitingResult: false,
-                      tags: (company.tags ?? []).filter((t) => t !== '結果待ち'),
+                      tags: tags.filter((t) => t !== '結果待ち'),
                     } : {}),
                   });
+                  if (tags.includes('結果待ち')) { setTags(prev => prev.filter(t => t !== '結果待ち')); }
                   const currentStageName = trackStatuses[currentStatusIndex]?.name ?? '';
                   const { type: currentType, subType: currentSubType } = scheduleStageToAction(currentStageName);
                   allScheduledActions
