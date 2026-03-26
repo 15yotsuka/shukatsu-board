@@ -1,11 +1,12 @@
 # ShukatsuBoard — STATUS.md
-最終更新: 2026-03-26（セッション2回目）
+最終更新: 2026-03-26
 
 ## 現在地
-**Phase 3: 1.0.1 審査待ち（WAITING_FOR_REVIEW）**
+**Phase 3: 1.0.1 審査待ち（WAITING_FOR_REVIEW）+ /check 11ラウンド完走**
 就活ボード 1.0 は審査通過・公開済み。1.0.1 を build 4（最新）で再提出済み。
 
 ## 直近の変更（最新5件）
+- 2026-03-26: /check 11ラウンド完走 — Critical 0件達成。awaitingResult管理・ScheduledAction削除漏れ・confetti条件・インターン昇格条件・handleSave stale参照など多数修正
 - 2026-03-26: tasks/page.tsx + CompanyDetailModal.tsx — awaitingResult二重呼び出し修正・quickEdit/stagePicker/handleSaveにawaitingResultクリア追加・handleSaveでステータス変更時の旧ScheduledAction削除を追加（#1〜#7）
 - 2026-03-26: App Store 1.0.1 — build 3 → build 4 に差し替えて審査再提出（WAITING_FOR_REVIEW）
 - 2026-03-24: src/app/privacy/page.tsx + public/privacy-policy.html — Guideline 5.1.1対応: 削除方法・ポリシー変更・連絡先を両ファイルで統一、「全企業を削除」UIと一致
@@ -49,7 +50,8 @@
 ### 発見済み問題（未修正）
 - **同日複数面接の重複排除**: page.tsx の重複排除が時刻を無視するため、同日2本目の面接が隠れる可能性
 - **23:00→00:00自動計算**: CompanyDetailModal で終了時刻 `(h+1)%24` により23:00→00:00になる（翌日扱いなし）
-- **結果待ちの二重管理**: `awaitingResult` フラグと `'結果待ち'` タグが共存 → #1〜#4で二重呼び出し・クリア漏れを修正済み
+- **フィルター名のハードコード依存**: FILTER_GROUPSがステータス名のリテラル（'ES', '1次面接'等）に依存しており、ユーザーがリネームするとフィルターが機能しなくなる（設計的問題）
+- **scheduleStageToActionのカスタム名非対応**: カスタムステータス名でScheduledAction削除が機能しない（デフォルト名のみ対応）
 
 ### 技術的制約（必ず守る）
 - Zustandセレクタ内でfilter/map禁止（React 19無限ループ）→ useMemo or useShallow
@@ -75,6 +77,8 @@
 → 現在 WAITING_FOR_REVIEW
 
 ### Phase 3（後回しOK）
-5. ~~「結果待ち」タグの二重管理を解消~~ ✅ 修正済み（#1〜#4）
+5. ~~「結果待ち」タグの二重管理を解消~~ ✅ 修正済み（ROUND 1〜11）
 6. 同日複数面接の重複排除バグ修正
 7. 23:00→00:00 自動計算バグ修正
+8. FILTER_GROUPSをステータスID基準に変更（カスタム名リネーム対応）
+9. scheduleStageToActionをカスタムステータス名に対応させる
