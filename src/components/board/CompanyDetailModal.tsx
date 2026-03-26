@@ -154,6 +154,8 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       }
     }
 
+    const statusChanged = statusId !== company.statusId;
+
     const today = format(new Date(), 'yyyy-MM-dd');
     const futureActions = scheduledActions
       .filter((a) => a.date >= today)
@@ -172,7 +174,9 @@ export function CompanyDetailModal({ company, onClose }: CompanyDetailModalProps
       selectionMemo: (memo.es || memo.interview || memo.reverseQuestion || memo.other)
         ? JSON.stringify(memo)
         : undefined,
-      nextDeadline: autoDeadline || undefined,
+      // ステータス変更時はdeleteScheduledActionがストア側でnextActionDateを再計算済みのため
+      // staleなscheduledActionsから算出したautoDeadlineで上書きしない
+      nextDeadline: statusChanged ? undefined : (autoDeadline || undefined),
       statusId,
       myPageUrl: myPageUrl.trim() || undefined,
       myPageId: myPageId.trim() || undefined,

@@ -467,7 +467,8 @@ function TasksContent() {
     const milestones = getMilestones(company);
     const currentStatus = statusColumns.find((col) => col.id === company.statusId);
     if (currentStatus?.name === '内定' || currentStatus?.name === '見送り') return;
-    if (company.selectionType === 'intern' && currentStatus?.name === 'インターン選考中') {
+    const lastMilestone = milestones[milestones.length - 1];
+    if (company.selectionType === 'intern' && currentStatus?.name === lastMilestone) {
       setPromoteToMainTarget(company);
       return;
     }
