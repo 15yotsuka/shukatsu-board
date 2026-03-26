@@ -753,7 +753,7 @@ function TasksContent() {
           {archived.length > 0 && (
             <div className="mt-6">
               <p className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide px-1 mb-2">
-                アーカイブ（お見送り {archived.length}件）
+                アーカイブ（見送り {archived.length}件）
               </p>
               <div className="space-y-2 opacity-60">
                 {archived.map((c) => {
